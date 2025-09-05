@@ -24,7 +24,8 @@ export const getDiaries = async ({
     // 감정 태그 필터가 있는 경우: JOIN을 사용하여 정확한 필터링
     let emotionQuery = client
       .from("diaries")
-      .select(`
+      .select(
+        `
         id,
         profile_id,
         date,
@@ -40,7 +41,8 @@ export const getDiaries = async ({
         created_at,
         updated_at,
         diary_tags!inner(emotion_tag_id)
-      `)
+      `
+      )
       .eq("profile_id", profileId)
       .eq("is_deleted", false)
       .eq("diary_tags.emotion_tag_id", emotionTagId);
@@ -70,7 +72,8 @@ export const getDiaries = async ({
     if (diaryIds.length > 0) {
       const { data: tagsData, error: tagsError } = await client
         .from("diary_tags")
-        .select(`
+        .select(
+          `
           diary_id,
           emotion_tags (
             id,
@@ -79,11 +82,12 @@ export const getDiaries = async ({
             category,
             is_default
           )
-        `)
+        `
+        )
         .in("diary_id", diaryIds);
 
       if (tagsError) throw tagsError;
-      
+
       allTags = tagsData.map(tagRelation => ({
         diary_id: tagRelation.diary_id,
         id: (tagRelation.emotion_tags as any).id,
@@ -95,19 +99,22 @@ export const getDiaries = async ({
     }
 
     // 태그를 다이어리별로 그룹화
-    const tagsByDiaryId = allTags.reduce((acc, tag) => {
-      if (!acc[tag.diary_id]) {
-        acc[tag.diary_id] = [];
-      }
-      acc[tag.diary_id].push({
-        id: tag.id,
-        name: tag.name,
-        color: tag.color,
-        category: tag.category,
-        isDefault: tag.is_default,
-      });
-      return acc;
-    }, {} as Record<number, any[]>);
+    const tagsByDiaryId = allTags.reduce(
+      (acc, tag) => {
+        if (!acc[tag.diary_id]) {
+          acc[tag.diary_id] = [];
+        }
+        acc[tag.diary_id].push({
+          id: tag.id,
+          name: tag.name,
+          color: tag.color,
+          category: tag.category,
+          isDefault: tag.is_default,
+        });
+        return acc;
+      },
+      {} as Record<number, any[]>
+    );
 
     return diariesData.map((diary: any) => ({
       id: diary.id,
@@ -196,7 +203,7 @@ export const getDiaries = async ({
 
 // 캘린더용 경량 함수 - 날짜만 가져옴
 export const getDiaryDatesForCalendar = async (
-  profileId: string, 
+  profileId: string,
   year?: number
 ): Promise<string[]> => {
   let query = client
@@ -233,10 +240,11 @@ function calculateCompletedSteps(diary: any): number {
     diary.self_kind_words,
   ];
 
-  return fields.filter(field =>
-    field !== null &&
-    field !== undefined &&
-    field !== "" &&
-    field.trim() !== ""
+  return fields.filter(
+    field =>
+      field !== null &&
+      field !== undefined &&
+      field !== "" &&
+      field.trim() !== ""
   ).length;
 }

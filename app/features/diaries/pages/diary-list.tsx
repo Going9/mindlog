@@ -21,6 +21,7 @@ import { usePagination } from "../hooks/usePagination";
 import { getDiaries, getDiaryDatesForCalendar } from "../queries";
 import type { DiaryEntry } from "../types/diary";
 import type { Route } from "./+types/diary-list";
+import { diaries } from "../schema";
 
 export const loader = async ({ request }: { request: Request }) => {
   const profileId = "b0e0e902-3488-4c10-9621-fffde048923c";
@@ -45,7 +46,7 @@ export const loader = async ({ request }: { request: Request }) => {
     : undefined;
 
   const currentYear = new Date().getFullYear();
-  
+
   // Promise.all은 동시에 실행시키고 모두 완료될 때 까지 대기
   const [diaries, emotionTags, calendarDates] = await Promise.all([
     getDiaries({
@@ -81,7 +82,8 @@ export const loader = async ({ request }: { request: Request }) => {
 };
 
 export default function DiaryListPage({ loaderData }: Route.ComponentProps) {
-  const { diaries, emotionTags, calendarDates, pagination, filters } = loaderData;
+  const { diaries, emotionTags, calendarDates, pagination, filters } =
+    loaderData;
 
   // Custom hooks for state management
   const [filterState, filterActions] = useDiaryFilters(filters, emotionTags);
