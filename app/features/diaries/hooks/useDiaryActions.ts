@@ -1,6 +1,9 @@
 import { useCallback } from "react";
+import { useNavigate } from "react-router";
 
 export function useDiaryActions() {
+  const navigate = useNavigate();
+
   const handleEdit = useCallback((id: number) => {
     console.log("Edit entry:", id);
     // TODO: Navigate to edit page
@@ -12,9 +15,8 @@ export function useDiaryActions() {
   }, []);
 
   const handleView = useCallback((id: number) => {
-    console.log("View entry:", id);
-    // TODO: Navigate to view page
-  }, []);
+    navigate(`/diary/${id}`);
+  }, [navigate]);
 
   return {
     handleEdit,

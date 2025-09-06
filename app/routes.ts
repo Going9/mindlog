@@ -4,4 +4,5 @@ export default [
   index("common/pages/landing.tsx"),
   route("diary", "features/diaries/pages/diary-list.tsx"),
   route("diary/new", "features/diaries/pages/new-diary.tsx"),
+  route("diary/:id", "features/diaries/pages/diary-detail.tsx"),
 ] satisfies RouteConfig;

@@ -228,6 +228,67 @@ export const getDiaryDatesForCalendar = async (
   return uniqueDates.sort();
 };
 
+// 단일 일기 조회
+export const getDiaryById = async (diaryId: number, profileId: string) => {
+  // 일기 기본 정보 조회
+  const { data: diaryData, error: diaryError } = await client
+    .from("diaries")
+    .select("*")
+    .eq("id", diaryId)
+    .eq("profile_id", profileId)
+    .eq("is_deleted", false)
+    .single();
+
+  if (diaryError) throw diaryError;
+  if (!diaryData) return null;
+
+  // 일기의 감정 태그들 조회
+  const { data: tagsData, error: tagsError } = await client
+    .from("diary_tags")
+    .select(
+      `
+      emotion_tags (
+        id,
+        name,
+        color,
+        category,
+        is_default
+      )
+    `
+    )
+    .eq("diary_id", diaryId);
+
+  if (tagsError) throw tagsError;
+
+  const emotionTags = tagsData.map((tagRelation: any) => ({
+    id: tagRelation.emotion_tags.id,
+    name: tagRelation.emotion_tags.name,
+    color: tagRelation.emotion_tags.color,
+    category: tagRelation.emotion_tags.category,
+    isDefault: tagRelation.emotion_tags.is_default,
+  }));
+
+  return {
+    id: diaryData.id,
+    profileId: diaryData.profile_id,
+    date: new Date(diaryData.date),
+    shortContent: diaryData.short_content,
+    situation: diaryData.situation,
+    reaction: diaryData.reaction,
+    physicalSensation: diaryData.physical_sensation,
+    desiredReaction: diaryData.desired_reaction,
+    gratitudeMoment: diaryData.gratitude_moment,
+    selfKindWords: diaryData.self_kind_words,
+    imageUrl: diaryData.image_url,
+    isDeleted: diaryData.is_deleted,
+    createdAt: diaryData.created_at,
+    updatedAt: diaryData.updated_at,
+    emotionTags,
+    completedSteps: calculateCompletedSteps(diaryData),
+    totalSteps: 7,
+  };
+};
+
 // 완료 단계 계산 함수
 function calculateCompletedSteps(diary: any): number {
   const fields = [
