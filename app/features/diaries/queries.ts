@@ -1,5 +1,20 @@
 import client from "~/supa-client";
 
+// 일기 생성용 타입 정의
+interface CreateDiaryData {
+  profileId: string;
+  date: Date;
+  shortContent?: string;
+  situation?: string;
+  reaction?: string;
+  physicalSensation?: string;
+  desiredReaction?: string;
+  gratitudeMoment?: string;
+  selfKindWords?: string;
+  imageUrl?: string;
+  emotionTagIds?: number[];
+}
+
 type GetDiariesOptions = {
   profileId: string;
   limit?: number;
@@ -56,7 +71,7 @@ export const getDiaries = async ({
 
     // Add date condition
     if (date) {
-      emotionQuery = emotionQuery.eq("date", date.toISOString().split("T")[0]);
+      emotionQuery = emotionQuery.eq("date", `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`);
     }
 
     const { data: diariesData, error: diariesError } = await emotionQuery
@@ -151,7 +166,7 @@ export const getDiaries = async ({
 
     // Add date condition
     if (date) {
-      query = query.eq("date", date.toISOString().split("T")[0]);
+      query = query.eq("date", `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`);
     }
 
     // Apply ordering
@@ -309,3 +324,102 @@ function calculateCompletedSteps(diary: any): number {
       field.trim() !== ""
   ).length;
 }
+
+// 새 일기 생성 또는 업데이트 함수
+export const createDiary = async (diaryData: CreateDiaryData) => {
+  try {
+    const dateString = `${diaryData.date.getFullYear()}-${String(diaryData.date.getMonth() + 1).padStart(2, '0')}-${String(diaryData.date.getDate()).padStart(2, '0')}`;
+    
+    // 1. 해당 날짜에 이미 일기가 있는지 확인
+    const { data: existingDiary, error: checkError } = await client
+      .from("diaries")
+      .select('id')
+      .eq("profile_id", diaryData.profileId)
+      .eq("date", dateString)
+      .eq("is_deleted", false)
+      .single();
+
+    if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "No rows returned" - expected when no existing diary
+      throw checkError;
+    }
+
+    let diaryId: number;
+
+    if (existingDiary) {
+      // 2a. 기존 일기가 있으면 업데이트
+      const { data: updatedDiary, error: updateError } = await client
+        .from("diaries")
+        .update({
+          short_content: diaryData.shortContent || null,
+          situation: diaryData.situation || null,
+          reaction: diaryData.reaction || null,
+          physical_sensation: diaryData.physicalSensation || null,
+          desired_reaction: diaryData.desiredReaction || null,
+          gratitude_moment: diaryData.gratitudeMoment || null,
+          self_kind_words: diaryData.selfKindWords || null,
+          image_url: diaryData.imageUrl || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", existingDiary.id)
+        .select('*')
+        .single();
+
+      if (updateError) throw updateError;
+      
+      diaryId = updatedDiary.id;
+
+      // 기존 감정 태그들 삭제
+      const { error: deleteTagsError } = await client
+        .from("diary_tags")
+        .delete()
+        .eq("diary_id", diaryId);
+
+      if (deleteTagsError) throw deleteTagsError;
+      
+    } else {
+      // 2b. 새 일기 생성
+      const { data: newDiary, error: diaryError } = await client
+        .from("diaries")
+        .insert({
+          profile_id: diaryData.profileId,
+          date: dateString,
+          short_content: diaryData.shortContent || null,
+          situation: diaryData.situation || null,
+          reaction: diaryData.reaction || null,
+          physical_sensation: diaryData.physicalSensation || null,
+          desired_reaction: diaryData.desiredReaction || null,
+          gratitude_moment: diaryData.gratitudeMoment || null,
+          self_kind_words: diaryData.selfKindWords || null,
+          image_url: diaryData.imageUrl || null,
+          is_deleted: false,
+        })
+        .select('*')
+        .single();
+
+      if (diaryError) throw diaryError;
+      diaryId = newDiary.id;
+    }
+
+    // 3. 감정 태그 연결 (있는 경우)
+    if (diaryData.emotionTagIds && diaryData.emotionTagIds.length > 0) {
+      const tagRelations = diaryData.emotionTagIds.map(tagId => ({
+        diary_id: diaryId,
+        emotion_tag_id: tagId,
+      }));
+
+      const { error: tagsError } = await client
+        .from("diary_tags")
+        .insert(tagRelations);
+
+      if (tagsError) throw tagsError;
+    }
+
+    // 4. 생성/업데이트된 일기 정보를 조회하여 반환
+    const resultDiary = await getDiaryById(diaryId, diaryData.profileId);
+    return resultDiary;
+    
+  } catch (error) {
+    console.error("일기 생성/업데이트 중 오류:", error);
+    throw error;
+  }
+};

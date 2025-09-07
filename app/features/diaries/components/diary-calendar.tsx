@@ -46,7 +46,7 @@ export function DiaryCalendar({
 
   // 특정 날짜에 일기가 있는지 확인하는 함수
   const hasEntry = (date: Date) => {
-    const dateString = date.toISOString().split("T")[0]; // YYYY-MM-DD 형태로 변환
+    const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`; // YYYY-MM-DD 형태로 변환
     return diaryDateSet.has(dateString);
   };
 

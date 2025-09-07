@@ -30,6 +30,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { SteppedDiaryForm } from "../components/stepped-diary-form";
+import { createDiary } from "../queries";
 
 // --- 타입 정의 ---
 interface EmotionTag {
@@ -65,17 +66,34 @@ export default function NewDiaryPage() {
     setIsLoading(true); // 로딩 상태 시작
 
     try {
-      // TODO: 실제 서버 API를 호출하여 일기 데이터를 저장하는 로직 구현
-      console.log("최종 일기 데이터 저장:", data);
+      // 실제 일기 데이터 저장
+      const profileId = "b0e0e902-3488-4c10-9621-fffde048923c"; // 현재 하드코딩된 profileId 사용
+      
+      const diaryData = {
+        profileId,
+        date: data.date,
+        shortContent: data.shortContent,
+        situation: data.situation,
+        reaction: data.reaction,
+        physicalSensation: data.physicalSensation,
+        desiredReaction: data.desiredReaction,
+        gratitudeMoment: data.gratitudeMoment,
+        selfKindWords: data.selfKindWords,
+        imageUrl: data.imageFile ? undefined : undefined, // 이미지 업로드는 추후 구현
+        emotionTagIds: data.emotionTags?.map(tag => tag.id) || [],
+      };
 
-      // 임시로 1초 대기 (실제로는 API 호출 시간을 시뮬레이션)
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log("일기 데이터 저장 중:", diaryData);
+      
+      const createdDiary = await createDiary(diaryData);
+      console.log("일기 저장 완료:", createdDiary);
 
       // 저장이 성공하면, 일기 목록 페이지로 사용자를 이동시킵니다.
       navigate("/diary");
     } catch (error) {
       console.error("일기 저장 중 에러 발생:", error);
       // TODO: 사용자에게 에러가 발생했음을 알리는 UI 처리 (예: 토스트 메시지)
+      alert("일기 저장 중 오류가 발생했습니다. 다시 시도해주세요.");
     } finally {
       setIsLoading(false); // 작업이 성공하든 실패하든 로딩 상태 종료
     }
