@@ -111,7 +111,9 @@ export function useDiaryFilters(
     (date: Date | undefined) => {
       setSelectedDate(date);
       updateUrlParams({
-        date: date?.toISOString().split("T")[0],
+        date: date ? 
+          `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}` 
+          : undefined,
       });
     },
     [updateUrlParams]
