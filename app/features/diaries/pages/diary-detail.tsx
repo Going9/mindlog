@@ -126,7 +126,7 @@ export default function DiaryDetailPage({ loaderData }: Route.ComponentProps) {
             </Link>
           </Button>
           <Button asChild>
-            <Link to={`/diary/edit/${params.id}`}>
+            <Link to={`/diary/${params.id}/edit`}>
               <EditIcon className="w-4 h-4 mr-2" />
               {isComplete ? "수정" : "계속 쓰기"}
             </Link>
@@ -210,7 +210,7 @@ export default function DiaryDetailPage({ loaderData }: Route.ComponentProps) {
               아직 작성된 내용이 없습니다.
             </p>
             <Button asChild>
-              <Link to={`/diary/edit/${params.id}`}>
+              <Link to={`/diary/${params.id}/edit`}>
                 <EditIcon className="w-4 h-4 mr-2" />
                 일기 작성하기
               </Link>

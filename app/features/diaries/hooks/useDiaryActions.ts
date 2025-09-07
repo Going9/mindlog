@@ -5,9 +5,8 @@ export function useDiaryActions() {
   const navigate = useNavigate();
 
   const handleEdit = useCallback((id: number) => {
-    console.log("Edit entry:", id);
-    // TODO: Navigate to edit page
-  }, []);
+    navigate(`/diary/${id}/edit`);
+  }, [navigate]);
 
   const handleDelete = useCallback((id: number) => {
     console.log("Delete entry:", id);
