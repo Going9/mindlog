@@ -1,12 +1,11 @@
-import { Link } from "react-router";
-import { Button } from "~/common/components/ui/button";
-import { PlusIcon } from "lucide-react";
+import { ConditionalDiaryButton } from "./conditional-diary-button";
 
 type DiaryListHeaderProps = {
   totalDiaries: number;
+  profileId: string;
 };
 
-export function DiaryListHeader({ totalDiaries }: DiaryListHeaderProps) {
+export function DiaryListHeader({ totalDiaries, profileId }: DiaryListHeaderProps) {
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
       <div>
@@ -15,13 +14,12 @@ export function DiaryListHeader({ totalDiaries }: DiaryListHeaderProps) {
           {totalDiaries}개의 일기가 있습니다
         </p>
       </div>
-      {/* Desktop New Diary Button */}
-      <Button asChild size="lg" className="hidden sm:flex">
-        <Link to="/diary/new">
-          <PlusIcon className="w-4 h-4 mr-2" />
-          새 일기 쓰기
-        </Link>
-      </Button>
+      {/* Desktop Conditional Diary Button */}
+      <ConditionalDiaryButton
+        profileId={profileId}
+        className="hidden sm:flex"
+        size="lg"
+      />
     </div>
   );
 }

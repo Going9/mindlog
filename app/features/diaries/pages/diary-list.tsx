@@ -128,7 +128,10 @@ export default function DiaryListPage({ loaderData }: Route.ComponentProps) {
       </Breadcrumb>
 
       {/* Header */}
-      <DiaryListHeader totalDiaries={diaries.length} />
+      <DiaryListHeader 
+        totalDiaries={diaries.length} 
+        profileId="b0e0e902-3488-4c10-9621-fffde048923c"
+      />
 
       {/* Main Content */}
       <div className='grid grid-cols-1 lg:grid-cols-4 gap-8'>
@@ -137,6 +140,7 @@ export default function DiaryListPage({ loaderData }: Route.ComponentProps) {
           calendarDates={calendarDates} // 날짜 배열 사용
           selectedDate={filterState.selectedDate}
           onDateSelect={filterActions.handleDateSelect}
+          profileId="b0e0e902-3488-4c10-9621-fffde048923c"
         />
 
         {/* Entries Section */}

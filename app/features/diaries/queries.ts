@@ -325,6 +325,26 @@ function calculateCompletedSteps(diary: any): number {
   ).length;
 }
 
+// 오늘 날짜의 일기 존재 여부 및 ID 확인
+export const getTodayDiary = async (profileId: string) => {
+  const today = new Date();
+  const dateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  
+  const { data, error } = await client
+    .from("diaries")
+    .select('id')
+    .eq("profile_id", profileId)
+    .eq("date", dateString)
+    .eq("is_deleted", false)
+    .single();
+
+  if (error && error.code !== 'PGRST116') { // PGRST116 is "No rows returned"
+    throw error;
+  }
+
+  return data ? data.id : null;
+};
+
 // 새 일기 생성 또는 업데이트 함수
 export const createDiary = async (diaryData: CreateDiaryData) => {
   try {
