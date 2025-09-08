@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Link, useNavigation } from "react-router";
 import {
   Breadcrumb,
@@ -86,7 +86,20 @@ export default function DiaryListPage({ loaderData }: Route.ComponentProps) {
   const { diaries, emotionTags, calendarDates, pagination, filters } =
     loaderData;
   const navigation = useNavigation();
-  const isLoading = navigation.state === "loading";
+  const [initialLoading, setInitialLoading] = useState(true);
+  
+  // 초기 로딩 상태 관리
+  useEffect(() => {
+    // 페이지 로드 완료 후 초기 로딩 상태 해제
+    const timer = setTimeout(() => {
+      setInitialLoading(false);
+    }, 200); // 200ms 후에 해제하여 로딩 효과를 보여줌
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
+  // 네비게이션 로딩 또는 초기 로딩 중인지 확인
+  const isLoading = navigation.state === "loading" || initialLoading;
 
   // Custom hooks for state management
   const [filterState, filterActions] = useDiaryFilters(filters, emotionTags);
