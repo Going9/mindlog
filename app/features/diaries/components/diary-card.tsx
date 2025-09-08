@@ -26,7 +26,15 @@
  *   모두 부모로부터 받은 핸들러 함수를 호출하도록 연결되어 있습니다.
  */
 
-import { Link } from "react-router";
+import {
+  CheckIcon,
+  EditIcon,
+  EyeIcon,
+  MoreHorizontalIcon,
+  TrashIcon,
+} from "lucide-react";
+import { Badge } from "~/common/components/ui/badge";
+import { Button } from "~/common/components/ui/button";
 import {
   Card,
   CardContent,
@@ -35,22 +43,12 @@ import {
   CardHeader,
   CardTitle,
 } from "~/common/components/ui/card";
-import { Button } from "~/common/components/ui/button";
-import { Badge } from "~/common/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "~/common/components/ui/dropdown-menu";
-import {
-  CalendarIcon,
-  CheckIcon,
-  MoreHorizontalIcon,
-  EditIcon,
-  EyeIcon,
-  TrashIcon,
-} from "lucide-react";
 import { cn } from "~/lib/utils"; // 여러 개의 CSS 클래스를 조건부로 합쳐주는 유틸리티 함수
 
 // --- 타입 정의 ---

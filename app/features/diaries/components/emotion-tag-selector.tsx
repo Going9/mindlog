@@ -25,7 +25,7 @@
  *   - `createCustomTag`: 사용자가 입력한 이름과 카테고리로 새로운 태그 객체를 만들어 `customTags` 상태에 추가하고, 동시에 선택된 태그 목록에도 추가합니다.
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "~/common/components/ui/button";
 import { Input } from "~/common/components/ui/input";
 import { Label } from "~/common/components/ui/label";
@@ -53,34 +53,42 @@ interface EmotionTag {
 interface EmotionTagSelectorProps {
   selectedTags: EmotionTag[]; // 현재 선택된 태그 목록
   onTagsChange: (tags: EmotionTag[]) => void; // 태그 목록이 변경될 때 부모에게 알리는 함수
+  profileId: string; // 사용자 프로필 ID
 }
 
-// 임시 기본 감정 태그 데이터 (실제로는 DB에서 가져와야 함)
-const DEFAULT_EMOTION_TAGS: EmotionTag[] = [
-  { id: 1, name: "기쁨", color: "#10B981", category: "positive", isDefault: true },
-  { id: 2, name: "행복", color: "#3B82F6", category: "positive", isDefault: true },
-  { id: 3, name: "감사", color: "#8B5CF6", category: "positive", isDefault: true },
-  { id: 4, name: "설렘", color: "#F59E0B", category: "positive", isDefault: true },
-  { id: 5, name: "슬픔", color: "#6B7280", category: "negative", isDefault: true },
-  { id: 6, name: "분노", color: "#EF4444", category: "negative", isDefault: true },
-  { id: 7, name: "불안", color: "#F97316", category: "negative", isDefault: true },
-  { id: 8, name: "걱정", color: "#84CC16", category: "negative", isDefault: true },
-  { id: 9, name: "평온", color: "#06B6D4", category: "neutral", isDefault: true },
-  { id: 10, name: "무관심", color: "#64748B", category: "neutral", isDefault: true },
-];
 
 export function EmotionTagSelector({
   selectedTags,
   onTagsChange,
+  profileId,
 }: EmotionTagSelectorProps) {
   // --- 자체 상태 관리 ---
-  const [customTags, setCustomTags] = useState<EmotionTag[]>([]); // 사용자가 직접 만든 태그 목록
+  const [allTags, setAllTags] = useState<EmotionTag[]>([]); // 데이터베이스에서 가져온 모든 태그 목록
   const [newTagName, setNewTagName] = useState(""); // 새로 만들 태그의 이름 입력값
   const [newTagCategory, setNewTagCategory] = useState<"positive" | "negative" | "neutral">("neutral"); // 새로 만들 태그의 카테고리
   const [isAddingTag, setIsAddingTag] = useState(false); // 태그 추가 UI를 보여줄지 여부
+  const [isLoading, setIsLoading] = useState(true); // 태그 로딩 상태
+  const [isCreatingTag, setIsCreatingTag] = useState(false); // 커스텀 태그 생성 중 상태
 
-  // 기본 태그와 커스텀 태그를 합친 전체 태그 목록
-  const allTags = [...DEFAULT_EMOTION_TAGS, ...customTags];
+  // 컴포넌트 마운트 시 기본 감정 태그 설정 (임시 해결책)
+  useEffect(() => {
+    // 임시로 기본 태그만 사용
+    const defaultTags = [
+      { id: 1, name: "기쁨", color: "#10B981", category: "positive" as const, isDefault: true },
+      { id: 2, name: "행복", color: "#3B82F6", category: "positive" as const, isDefault: true },
+      { id: 3, name: "감사", color: "#8B5CF6", category: "positive" as const, isDefault: true },
+      { id: 4, name: "설렘", color: "#F59E0B", category: "positive" as const, isDefault: true },
+      { id: 5, name: "슬픔", color: "#6B7280", category: "negative" as const, isDefault: true },
+      { id: 6, name: "분노", color: "#EF4444", category: "negative" as const, isDefault: true },
+      { id: 7, name: "불안", color: "#F97316", category: "negative" as const, isDefault: true },
+      { id: 8, name: "걱정", color: "#84CC16", category: "negative" as const, isDefault: true },
+      { id: 9, name: "평온", color: "#06B6D4", category: "neutral" as const, isDefault: true },
+      { id: 10, name: "무관심", color: "#64748B", category: "neutral" as const, isDefault: true },
+    ];
+    
+    setAllTags(defaultTags);
+    setIsLoading(false);
+  }, [profileId]);
 
   // --- 이벤트 핸들러 ---
   const toggleTag = (tag: EmotionTag) => {
@@ -92,27 +100,9 @@ export function EmotionTagSelector({
     }
   };
 
-  const createCustomTag = () => {
-    if (!newTagName.trim()) return;
-    const getCategoryColor = (category: "positive" | "negative" | "neutral") => {
-      switch (category) {
-        case "positive": return "#10B981";
-        case "negative": return "#EF4444";
-        default: return "#6B7280";
-      }
-    };
-    const newTag: EmotionTag = {
-      id: Date.now(),
-      name: newTagName.trim(),
-      color: getCategoryColor(newTagCategory),
-      category: newTagCategory,
-      isDefault: false,
-    };
-    setCustomTags([...customTags, newTag]);
-    onTagsChange([...selectedTags, newTag]);
-    setNewTagName("");
-    setNewTagCategory("neutral");
-    setIsAddingTag(false);
+  const createCustomTag = async () => {
+    // 임시로 커스텀 태그 기능 비활성화
+    alert("현재 커스텀 태그 기능이 일시적으로 비활성화되어 있습니다. 기본 태그를 사용해주세요.");
   };
 
   // --- 헬퍼 함수 ---
@@ -133,6 +123,16 @@ export function EmotionTagSelector({
     negative: allTags.filter(tag => tag.category === "negative"),
     neutral: allTags.filter(tag => tag.category === "neutral"),
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex justify-center items-center py-8">
+          <div className="text-muted-foreground">감정 태그를 불러오는 중...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className='space-y-4'>
@@ -197,8 +197,27 @@ export function EmotionTagSelector({
               </Select>
             </div>
             <div className='flex gap-2'>
-              <Button size='sm' onClick={createCustomTag} disabled={!newTagName.trim()} className='flex-1'>추가</Button>
-              <Button size='sm' variant='outline' onClick={() => { setIsAddingTag(false); setNewTagName(""); setNewTagCategory("neutral"); }} className='flex-1'>취소</Button>
+              <Button 
+                size='sm' 
+                onClick={createCustomTag} 
+                disabled={!newTagName.trim() || isCreatingTag} 
+                className='flex-1'
+              >
+                {isCreatingTag ? "생성 중..." : "추가"}
+              </Button>
+              <Button 
+                size='sm' 
+                variant='outline' 
+                onClick={() => { 
+                  setIsAddingTag(false); 
+                  setNewTagName(""); 
+                  setNewTagCategory("neutral"); 
+                }} 
+                disabled={isCreatingTag}
+                className='flex-1'
+              >
+                취소
+              </Button>
             </div>
           </div>
         ) : (

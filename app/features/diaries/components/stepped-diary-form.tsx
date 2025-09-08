@@ -93,6 +93,7 @@ interface SteppedDiaryFormProps {
   onSave: (data: Partial<DiaryFormData>, step: number) => void; // 중간 저장 시 호출될 함수
   isLoading?: boolean; // 로딩 상태
   isEditing?: boolean; // 수정 모드 여부
+  profileId: string; // 사용자 프로필 ID
 }
 
 // 폼의 각 단계를 정의하는 배열
@@ -140,6 +141,7 @@ export function SteppedDiaryForm({
   onSave,
   isLoading = false,
   isEditing = false,
+  profileId,
 }: SteppedDiaryFormProps) {
   // --- 상태 관리 ---
   const [currentStep, setCurrentStep] = useState(1); // 현재 단계
@@ -229,6 +231,7 @@ export function SteppedDiaryForm({
           <EmotionTagSelector
             selectedTags={formData.emotionTags || []}
             onTagsChange={tags => handleInputChange("emotionTags", tags)}
+            profileId={profileId}
           />
         );
       case 2:

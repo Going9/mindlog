@@ -116,12 +116,15 @@ export default function NewDiaryPage() {
 
   // 화면에는 SteppedDiaryForm 컴포넌트를 렌더링합니다.
   // 로직을 담은 함수들과 상태를 props로 내려줍니다.
+  const profileId = "b0e0e902-3488-4c10-9621-fffde048923c"; // 현재 하드코딩된 profileId 사용
+
   return (
     <SteppedDiaryForm
       onSubmit={handleSubmit}
       onSave={handleSaveStep}
       isLoading={isLoading}
       isEditing={false} // 새 일기 작성이므로 isEditing은 false
+      profileId={profileId}
     />
   );
 }

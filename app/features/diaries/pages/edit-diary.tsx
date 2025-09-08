@@ -160,6 +160,8 @@ export default function EditDiaryPage() {
 
   // 화면에는 SteppedDiaryForm 컴포넌트를 렌더링합니다.
   // 로직을 담은 함수들과 상태를 props로 내려줍니다.
+  const profileId = "b0e0e902-3488-4c10-9621-fffde048923c"; // 현재 하드코딩된 profileId 사용
+  
   return (
     <SteppedDiaryForm
       onSubmit={handleSubmit}
@@ -167,6 +169,7 @@ export default function EditDiaryPage() {
       isLoading={isLoading}
       isEditing={true} // 일기 수정이므로 isEditing은 true
       initialData={initialData} // 기존 일기 데이터 전달
+      profileId={profileId}
     />
   );
 }
