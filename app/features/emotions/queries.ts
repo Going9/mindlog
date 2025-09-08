@@ -131,3 +131,43 @@ export const createCustomEmotionTag = async (
 
   return newTag;
 };
+
+// 커스텀 감정 태그 삭제 함수
+export const deleteCustomEmotionTag = async (
+  profileId: string,
+  tagId: number
+) => {
+  // 먼저 해당 태그가 사용자의 커스텀 태그인지 확인
+  const [existingTag] = await db
+    .select({
+      id: emotionTags.id,
+      isDefault: emotionTags.isDefault,
+      profileId: emotionTags.profileId,
+    })
+    .from(emotionTags)
+    .where(eq(emotionTags.id, tagId))
+    .limit(1);
+
+  if (!existingTag) {
+    throw new Error("존재하지 않는 태그입니다.");
+  }
+
+  if (existingTag.isDefault) {
+    throw new Error("기본 태그는 삭제할 수 없습니다.");
+  }
+
+  if (existingTag.profileId !== profileId) {
+    throw new Error("다른 사용자의 태그는 삭제할 수 없습니다.");
+  }
+
+  // 태그 삭제
+  const [deletedTag] = await db
+    .delete(emotionTags)
+    .where(eq(emotionTags.id, tagId))
+    .returning({
+      id: emotionTags.id,
+      name: emotionTags.name,
+    });
+
+  return deletedTag;
+};
