@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 import { useEffect, useState } from "react";
 import { Button } from "~/common/components/ui/button";
+import { LoadingSpinner } from "~/common/components/ui/loading";
 import { PlusIcon, EditIcon } from "lucide-react";
 import { getTodayDiary } from "../queries";
 
@@ -37,8 +38,7 @@ export function ConditionalDiaryButton({
   if (isLoading) {
     return (
       <Button disabled size={size} className={className}>
-        <div className="w-4 h-4 mr-2 animate-spin rounded-full border-2 border-background border-t-foreground" />
-        확인 중...
+        <LoadingSpinner size="sm" text="확인 중..." />
       </Button>
     );
   }

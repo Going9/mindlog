@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Link } from "react-router";
+import { Link, useNavigation } from "react-router";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -8,6 +8,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "~/common/components/ui/breadcrumb";
+import { DiaryListSkeleton } from "~/common/components/ui/loading";
 import { getEmotionTags } from "../../emotions/queries";
 import { DiaryCard } from "../components/diary-card";
 import { DiaryFilters } from "../components/diary-filters";
@@ -84,6 +85,8 @@ export const loader = async ({ request }: { request: Request }) => {
 export default function DiaryListPage({ loaderData }: Route.ComponentProps) {
   const { diaries, emotionTags, calendarDates, pagination, filters } =
     loaderData;
+  const navigation = useNavigation();
+  const isLoading = navigation.state === "loading";
 
   // Custom hooks for state management
   const [filterState, filterActions] = useDiaryFilters(filters, emotionTags);
@@ -161,10 +164,13 @@ export default function DiaryListPage({ loaderData }: Route.ComponentProps) {
             onClearFilters={filterActions.clearFilters}
             totalEntries={diaries.length}
             filteredEntries={filteredEntries.length}
+            isLoading={isLoading}
           />
 
           {/* Entries Grid */}
-          {filteredEntries.length === 0 ? (
+          {isLoading ? (
+            <DiaryListSkeleton count={6} />
+          ) : filteredEntries.length === 0 ? (
             <EmptyState
               type={
                 filterState.selectedDate

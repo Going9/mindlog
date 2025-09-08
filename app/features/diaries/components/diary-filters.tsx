@@ -45,6 +45,7 @@ interface DiaryFiltersProps {
   onClearFilters: () => void;
   totalEntries: number;
   filteredEntries: number;
+  isLoading?: boolean;
 }
 
 const COMPLETION_LABELS = {
@@ -80,6 +81,7 @@ export function DiaryFilters(props: DiaryFiltersProps) {
     onClearFilters,
     totalEntries,
     filteredEntries,
+    isLoading = false,
   } = props;
 
   const hasActiveFilters = Boolean(
@@ -108,10 +110,12 @@ export function DiaryFilters(props: DiaryFiltersProps) {
         <SearchInput 
           value={searchQuery}
           onChange={onSearchChange}
+          disabled={isLoading}
         />
         <SortSelector
           value={sortBy}
           onChange={onSortChange}
+          disabled={isLoading}
         />
       </div>
 
@@ -120,10 +124,12 @@ export function DiaryFilters(props: DiaryFiltersProps) {
           selectedEmotion={selectedEmotionFilter}
           availableEmotions={availableEmotions}
           onChange={handleEmotionFilterChange}
+          disabled={isLoading}
         />
         <CompletionFilter
           value={completionFilter}
           onChange={onCompletionFilterChange}
+          disabled={isLoading}
         />
         {hasActiveFilters && (
           <ClearFiltersButton onClick={onClearFilters} />
@@ -152,7 +158,7 @@ export function DiaryFilters(props: DiaryFiltersProps) {
 }
 
 // 서브 컴포넌트들
-function SearchInput({ value, onChange }: { value: string; onChange: (query: string) => void }) {
+function SearchInput({ value, onChange, disabled = false }: { value: string; onChange: (query: string) => void; disabled?: boolean }) {
   return (
     <div className="relative flex-1 max-w-sm">
       <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -161,14 +167,15 @@ function SearchInput({ value, onChange }: { value: string; onChange: (query: str
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="pl-10"
+        disabled={disabled}
       />
     </div>
   );
 }
 
-function SortSelector({ value, onChange }: { value: string; onChange: (sort: string) => void }) {
+function SortSelector({ value, onChange, disabled = false }: { value: string; onChange: (sort: string) => void; disabled?: boolean }) {
   return (
-    <Select value={value} onValueChange={onChange}>
+    <Select value={value} onValueChange={onChange} disabled={disabled}>
       <SelectTrigger className="w-full sm:w-[180px]">
         <div className="flex items-center gap-2">
           {value.includes("desc") ? (
@@ -193,16 +200,19 @@ function SortSelector({ value, onChange }: { value: string; onChange: (sort: str
 function EmotionFilter({ 
   selectedEmotion, 
   availableEmotions, 
-  onChange 
+  onChange,
+  disabled = false
 }: { 
   selectedEmotion?: EmotionTag; 
   availableEmotions: EmotionTag[]; 
   onChange: (value: string) => void;
+  disabled?: boolean;
 }) {
   return (
     <Select
       value={selectedEmotion?.id.toString() || "all"}
       onValueChange={onChange}
+      disabled={disabled}
     >
       <SelectTrigger className="w-full sm:w-[160px]">
         <SelectValue placeholder="감정별 보기" />
@@ -225,9 +235,9 @@ function EmotionFilter({
   );
 }
 
-function CompletionFilter({ value, onChange }: { value: string; onChange: (completion: string) => void }) {
+function CompletionFilter({ value, onChange, disabled = false }: { value: string; onChange: (completion: string) => void; disabled?: boolean }) {
   return (
-    <Select value={value} onValueChange={onChange}>
+    <Select value={value} onValueChange={onChange} disabled={disabled}>
       <SelectTrigger className="w-full sm:w-[140px]">
         <SelectValue />
       </SelectTrigger>
