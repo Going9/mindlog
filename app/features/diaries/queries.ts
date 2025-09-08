@@ -345,6 +345,30 @@ export const getTodayDiary = async (profileId: string) => {
   return data ? data.id : null;
 };
 
+// 일기 삭제 (soft delete)
+export const deleteDiary = async (diaryId: number, profileId: string) => {
+  try {
+    const now = new Date().toISOString();
+    const { error } = await client
+      .from("diaries")
+      .update({ 
+        is_deleted: true, 
+        deleted_at: now,
+        updated_at: now 
+      })
+      .eq("id", diaryId)
+      .eq("profile_id", profileId)
+      .eq("is_deleted", false);
+
+    if (error) throw error;
+    
+    return { success: true };
+  } catch (error) {
+    console.error("일기 삭제 중 오류:", error);
+    throw error;
+  }
+};
+
 // 새 일기 생성 또는 업데이트 함수
 export const createDiary = async (diaryData: CreateDiaryData) => {
   try {

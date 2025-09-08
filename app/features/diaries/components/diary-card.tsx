@@ -30,6 +30,7 @@ import {
   CheckIcon,
   EditIcon,
   EyeIcon,
+  Loader2Icon,
   MoreHorizontalIcon,
   TrashIcon,
 } from "lucide-react";
@@ -81,9 +82,10 @@ interface DiaryCardProps {
   onEdit: (id: number) => void; // 수정 버튼 클릭 시 호출될 함수
   onDelete: (id: number) => void; // 삭제 버튼 클릭 시 호출될 함수
   onView: (id: number) => void; // 보기 버튼 클릭 시 호출될 함수
+  isDeleting?: boolean; // 삭제 중인지 여부
 }
 
-export function DiaryCard({ entry, onEdit, onDelete, onView }: DiaryCardProps) {
+export function DiaryCard({ entry, onEdit, onDelete, onView, isDeleting }: DiaryCardProps) {
   // props로 받은 entry 객체에서 필요한 값들을 구조 분해 할당으로 추출합니다.
   const {
     id,
@@ -101,7 +103,10 @@ export function DiaryCard({ entry, onEdit, onDelete, onView }: DiaryCardProps) {
     totalSteps > 0 ? (completedSteps / totalSteps) * 100 : 0;
 
   return (
-    <Card className='hover:shadow-md transition-shadow duration-200 flex flex-col h-full'>
+    <Card className={cn(
+      'hover:shadow-md transition-all duration-200 flex flex-col h-full',
+      isDeleting && 'opacity-50 pointer-events-none'
+    )}>
       <CardHeader className='pb-3'>
         <div className='flex items-start justify-between'>
           <div className='flex items-center gap-3'>
@@ -136,9 +141,14 @@ export function DiaryCard({ entry, onEdit, onDelete, onView }: DiaryCardProps) {
               <DropdownMenuItem
                 onClick={() => onDelete(id)}
                 className='text-destructive focus:text-destructive'
+                disabled={isDeleting}
               >
-                <TrashIcon className='w-4 h-4 mr-2' />
-                삭제
+                {isDeleting ? (
+                  <Loader2Icon className='w-4 h-4 mr-2 animate-spin' />
+                ) : (
+                  <TrashIcon className='w-4 h-4 mr-2' />
+                )}
+                {isDeleting ? '삭제 중...' : '삭제'}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

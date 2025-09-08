@@ -1,5 +1,6 @@
+import { forwardRef, useRef, useImperativeHandle } from "react";
 import { DiaryCalendar } from "./diary-calendar";
-import { ConditionalDiaryButton } from "./conditional-diary-button";
+import { ConditionalDiaryButton, type ConditionalDiaryButtonRef } from "./conditional-diary-button";
 
 type DiarySidebarProps = {
   calendarDates: string[]; // 날짜 문자열 배열
@@ -8,12 +9,24 @@ type DiarySidebarProps = {
   profileId: string;
 };
 
-export function DiarySidebar({
+export interface DiarySidebarRef {
+  refreshDiaryButton: () => void;
+}
+
+export const DiarySidebar = forwardRef<DiarySidebarRef, DiarySidebarProps>(({
   calendarDates,
   selectedDate,
   onDateSelect,
   profileId,
-}: DiarySidebarProps) {
+}, ref) => {
+  const diaryButtonRef = useRef<ConditionalDiaryButtonRef>(null);
+
+  useImperativeHandle(ref, () => ({
+    refreshDiaryButton: () => {
+      diaryButtonRef.current?.refresh();
+    }
+  }), []);
+
   return (
     <div className="lg:col-span-1">
       <div className="sticky top-8 space-y-4">
@@ -24,6 +37,7 @@ export function DiarySidebar({
         />
         {/* Mobile Conditional Diary Button */}
         <ConditionalDiaryButton
+          ref={diaryButtonRef}
           profileId={profileId}
           className="w-full sm:hidden"
           size="lg"
@@ -31,4 +45,4 @@ export function DiarySidebar({
       </div>
     </div>
   );
-}
+});

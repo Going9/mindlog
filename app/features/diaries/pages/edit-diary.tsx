@@ -120,8 +120,9 @@ export default function EditDiaryPage() {
       const updatedDiary = await createDiary(diaryData); // createDiary는 upsert 방식으로 작동
       console.log("일기 업데이트 완료:", updatedDiary);
 
-      // 저장이 성공하면, 일기 목록 페이지로 사용자를 이동시킵니다.
-      navigate("/diary");
+      // 저장이 성공하면, 해당 날짜로 필터링된 일기 목록 페이지로 사용자를 이동시킵니다.
+      const dateString = data.date.toISOString().split('T')[0]; // YYYY-MM-DD 형식으로 변환
+      navigate(`/diary?date=${dateString}&page=1`);
     } catch (error) {
       console.error("일기 업데이트 중 에러 발생:", error);
       alert("일기 저장 중 오류가 발생했습니다. 다시 시도해주세요.");

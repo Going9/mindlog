@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, forwardRef, useImperativeHandle } from "react";
 import { Button } from "~/common/components/ui/button";
 import { LoadingSpinner } from "~/common/components/ui/loading";
 import { PlusIcon, EditIcon } from "lucide-react";
@@ -11,29 +11,38 @@ type ConditionalDiaryButtonProps = {
   size?: "default" | "sm" | "lg" | "icon" | null | undefined;
 };
 
-export function ConditionalDiaryButton({ 
+export interface ConditionalDiaryButtonRef {
+  refresh: () => void;
+}
+
+export const ConditionalDiaryButton = forwardRef<ConditionalDiaryButtonRef, ConditionalDiaryButtonProps>(({ 
   profileId, 
   className = "", 
   size = "lg" 
-}: ConditionalDiaryButtonProps) {
+}, ref) => {
   const [todayDiaryId, setTodayDiaryId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const checkTodayDiary = async () => {
-      try {
-        const diaryId = await getTodayDiary(profileId);
-        setTodayDiaryId(diaryId);
-      } catch (error) {
-        console.error("오늘 일기 확인 중 오류:", error);
-        setTodayDiaryId(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkTodayDiary();
+  const checkTodayDiary = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const diaryId = await getTodayDiary(profileId);
+      setTodayDiaryId(diaryId);
+    } catch (error) {
+      console.error("오늘 일기 확인 중 오류:", error);
+      setTodayDiaryId(null);
+    } finally {
+      setIsLoading(false);
+    }
   }, [profileId]);
+
+  useEffect(() => {
+    checkTodayDiary();
+  }, [checkTodayDiary]);
+
+  useImperativeHandle(ref, () => ({
+    refresh: checkTodayDiary
+  }), [checkTodayDiary]);
 
   if (isLoading) {
     return (
@@ -64,4 +73,4 @@ export function ConditionalDiaryButton({
       </Link>
     </Button>
   );
-}
+});

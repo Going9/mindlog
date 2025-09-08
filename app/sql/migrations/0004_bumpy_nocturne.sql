@@ -1,0 +1,2 @@
+ALTER TABLE "diaries" DROP CONSTRAINT "diaries_profile_id_date_unique";--> statement-breakpoint
+ALTER TABLE "diaries" ADD CONSTRAINT "diaries_profile_id_date_is_deleted_unique" UNIQUE("profile_id","date","is_deleted");

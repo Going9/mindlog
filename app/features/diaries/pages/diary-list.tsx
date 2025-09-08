@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigation } from "react-router";
 import {
   Breadcrumb,
@@ -12,9 +12,9 @@ import { DiaryListSkeleton } from "~/common/components/ui/loading";
 import { getEmotionTags } from "../../emotions/queries";
 import { DiaryCard } from "../components/diary-card";
 import { DiaryFilters } from "../components/diary-filters";
-import { DiaryListHeader } from "../components/diary-list-header";
+import { DiaryListHeader, type DiaryListHeaderRef } from "../components/diary-list-header";
 import { DiaryPagination } from "../components/diary-pagination";
-import { DiarySidebar } from "../components/diary-sidebar";
+import { DiarySidebar, type DiarySidebarRef } from "../components/diary-sidebar";
 import { EmptyState } from "../components/empty-state";
 import { useDiaryActions } from "../hooks/useDiaryActions";
 import { useDiaryFilters } from "../hooks/useDiaryFilters";
@@ -87,6 +87,8 @@ export default function DiaryListPage({ loaderData }: Route.ComponentProps) {
     loaderData;
   const navigation = useNavigation();
   const [initialLoading, setInitialLoading] = useState(true);
+  const headerRef = useRef<DiaryListHeaderRef>(null);
+  const sidebarRef = useRef<DiarySidebarRef>(null);
   
   // 초기 로딩 상태 관리
   useEffect(() => {
@@ -103,7 +105,14 @@ export default function DiaryListPage({ loaderData }: Route.ComponentProps) {
 
   // Custom hooks for state management
   const [filterState, filterActions] = useDiaryFilters(filters, emotionTags);
-  const { handleEdit, handleDelete, handleView } = useDiaryActions();
+  
+  const handleDiaryDeleted = useCallback(() => {
+    // 오늘 일기 버튼들 새로고침
+    headerRef.current?.refreshDiaryButton();
+    sidebarRef.current?.refreshDiaryButton();
+  }, []);
+  
+  const { handleEdit, handleDelete, handleView, isDeleting } = useDiaryActions(handleDiaryDeleted);
   const { goToPreviousPage, goToNextPage, canGoToPrevious, canGoToNext } =
     usePagination(pagination);
 
@@ -145,6 +154,7 @@ export default function DiaryListPage({ loaderData }: Route.ComponentProps) {
 
       {/* Header */}
       <DiaryListHeader 
+        ref={headerRef}
         totalDiaries={diaries.length} 
         profileId="b0e0e902-3488-4c10-9621-fffde048923c"
       />
@@ -153,6 +163,7 @@ export default function DiaryListPage({ loaderData }: Route.ComponentProps) {
       <div className='grid grid-cols-1 lg:grid-cols-4 gap-8'>
         {/* Calendar Sidebar */}
         <DiarySidebar
+          ref={sidebarRef}
           calendarDates={calendarDates} // 날짜 배열 사용
           selectedDate={filterState.selectedDate}
           onDateSelect={filterActions.handleDateSelect}
@@ -205,6 +216,7 @@ export default function DiaryListPage({ loaderData }: Route.ComponentProps) {
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onView={handleView}
+                    isDeleting={isDeleting === entry.id}
                   />
                 ))}
               </div>

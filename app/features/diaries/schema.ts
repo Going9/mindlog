@@ -37,7 +37,10 @@ import {
   boolean,   // 참/거짓(true/false) 타입
   date,      // 날짜 타입
   unique,    // 고유 제약조건을 설정하는 함수
+  index,     // 인덱스를 설정하는 함수
+  uniqueIndex, // 고유 인덱스를 설정하는 함수
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { profiles } from "../users/schema"; // users 기능 폴더에 정의된 profiles 테이블 스키마
 import { emotionTags } from "../emotions/schema"; // emotions 기능 폴더에 정의된 emotionTags 테이블 스키마
 
@@ -64,6 +67,7 @@ export const diaries = pgTable(
     selfKindWords: text("self_kind_words"), // 자신에게 하고 싶은 말
     imageUrl: text("image_url"), // 첨부 이미지의 URL
     isDeleted: boolean("is_deleted").default(false).notNull(), // 삭제 여부 (소프트 삭제를 위함)
+    deletedAt: timestamp("deleted_at", { withTimezone: true }), // 삭제된 시간 (삭제 시에만 설정)
 
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow() // 생성 시 자동으로 현재 시간 저장
@@ -75,8 +79,11 @@ export const diaries = pgTable(
   },
   // 테이블 레벨 제약 조건 정의
   table => ({
-    // 한 명의 사용자는 같은 날짜에 하나의 일기만 작성할 수 있도록 고유 제약 조건 설정
-    uniqueProfileDate: unique().on(table.profileId, table.date),
+    // 활성 일기(is_deleted = false)에 대해서만 고유성 보장하는 부분 인덱스
+    // 삭제된 일기들은 제약 조건에서 제외되어 여러 개 존재할 수 있음
+    uniqueProfileDateActive: uniqueIndex("unique_profile_date_active")
+      .on(table.profileId, table.date)
+      .where(sql`${table.isDeleted} = false`),
   })
 );
 

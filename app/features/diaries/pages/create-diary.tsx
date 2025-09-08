@@ -35,8 +35,9 @@ export default function CreateDiaryPage() {
       // 성공 메시지
       alert('일기가 저장되었습니다!');
       
-      // 목록으로 돌아가기
-      navigate('/diary');
+      // 해당 날짜로 필터링된 목록으로 이동
+      const dateString = formData.date; // 이미 YYYY-MM-DD 형식
+      navigate(`/diary?date=${dateString}&page=1`);
     } catch (error) {
       console.error('저장 실패:', error);
       alert('저장 중 오류가 발생했습니다.');
