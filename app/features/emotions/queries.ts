@@ -13,8 +13,10 @@ export const getEmotionTags = async (profileId: string) => {
       usageCount: emotionTags.usageCount,
     })
     .from(emotionTags)
-    .where(or(eq(emotionTags.profileId, profileId), eq(emotionTags.isDefault, true)));
-  
+    .where(
+      or(eq(emotionTags.profileId, profileId), eq(emotionTags.isDefault, true))
+    );
+
   return tags;
 };
 
@@ -30,7 +32,7 @@ export const getDefaultEmotionTags = async () => {
     })
     .from(emotionTags)
     .where(eq(emotionTags.isDefault, true));
-  
+
   return defaultTags;
 };
 
@@ -46,23 +48,24 @@ export const getUserCustomEmotionTags = async (profileId: string) => {
     })
     .from(emotionTags)
     .where(eq(emotionTags.profileId, profileId));
-  
+
   return customTags;
 };
 
 // 중복 태그 이름 체크 함수
-export const checkDuplicateTagName = async (profileId: string, name: string) => {
+export const checkDuplicateTagName = async (
+  profileId: string,
+  name: string
+) => {
   const trimmedName = name.trim().toLowerCase();
-  
+
   // 사용자의 커스텀 태그 중에 중복이 있는지 확인
   const existingCustomTag = await db
     .select({ id: emotionTags.id })
     .from(emotionTags)
-    .where(
-      eq(emotionTags.profileId, profileId)
-    )
+    .where(eq(emotionTags.profileId, profileId))
     .limit(1);
-  
+
   if (existingCustomTag.length > 0) {
     // 실제 이름 비교는 클라이언트에서 처리하거나, SQL에서 LOWER 함수 사용 필요
     const userTags = await db
@@ -71,11 +74,13 @@ export const checkDuplicateTagName = async (profileId: string, name: string) => 
       })
       .from(emotionTags)
       .where(eq(emotionTags.profileId, profileId));
-    
-    const isDuplicate = userTags.some(tag => tag.name.toLowerCase() === trimmedName);
+
+    const isDuplicate = userTags.some(
+      tag => tag.name.toLowerCase() === trimmedName
+    );
     if (isDuplicate) return true;
   }
-  
+
   // 기본 태그 중에 중복이 있는지 확인
   const defaultTags = await db
     .select({
@@ -83,9 +88,11 @@ export const checkDuplicateTagName = async (profileId: string, name: string) => 
     })
     .from(emotionTags)
     .where(eq(emotionTags.isDefault, true));
-  
-  const isDefaultDuplicate = defaultTags.some(tag => tag.name.toLowerCase() === trimmedName);
-  
+
+  const isDefaultDuplicate = defaultTags.some(
+    tag => tag.name.toLowerCase() === trimmedName
+  );
+
   return isDefaultDuplicate;
 };
 
@@ -97,18 +104,18 @@ export const createCustomEmotionTag = async (
   category: "positive" | "negative" | "neutral"
 ) => {
   const trimmedName = name.trim();
-  
+
   // 빈 이름 체크
   if (!trimmedName) {
     throw new Error("태그 이름을 입력해주세요.");
   }
-  
+
   // 중복 체크
   const isDuplicate = await checkDuplicateTagName(profileId, trimmedName);
   if (isDuplicate) {
     throw new Error("이미 존재하는 태그 이름입니다.");
   }
-  
+
   // 새 커스텀 태그 생성
   const [newTag] = await db
     .insert(emotionTags)
