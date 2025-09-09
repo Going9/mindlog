@@ -1,51 +1,70 @@
-import { useEffect, useState } from 'react';
-import { supabase } from '~/lib/supabase';
+import type { LoaderFunctionArgs } from 'react-router';
+import { redirect } from 'react-router';
+import { createSupabaseServerClient } from '~/lib/supabase';
+import { useEffect } from 'react';
+import { getSupabaseClient } from '~/lib/supabase';
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  const url = new URL(request.url);
+  const code = url.searchParams.get('code');
+  
+  if (code) {
+    const { supabase: serverSupabase, response } = createSupabaseServerClient(request);
+    
+    const { error } = await serverSupabase.auth.exchangeCodeForSession(code);
+    
+    if (error) {
+      console.error('OAuth callback error:', error);
+      return redirect('/login', {
+        headers: response.headers,
+      });
+    }
+    
+    return redirect('/', {
+      headers: response.headers,
+    });
+  }
+  
+  // code가 없으면 클라이언트에서 처리
+  return null;
+}
 
 export default function AuthCallbackPage() {
-  const [isProcessing, setIsProcessing] = useState(true);
-
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        // URL에서 hash fragment 처리
-        const hashFragment = window.location.hash;
-        if (hashFragment) {
-          const { data, error } = await supabase.auth.getSession();
-          
-          if (error) {
-            console.error('Auth callback error:', error);
-            window.location.href = '/login';
-            return;
-          }
+        const supabase = getSupabaseClient();
+        // 보안상 getUser()로 사용자 정보 검증
+        const { data: { user }, error } = await supabase.auth.getUser();
+        
+        if (error) {
+          console.error('Auth callback error:', error);
+          window.location.href = '/login';
+          return;
+        }
 
-          if (data.session) {
-            // 로그인 성공 시 홈으로 리다이렉트
-            window.location.href = '/';
-          } else {
-            // 세션이 없으면 로그인 페이지로
-            window.location.href = '/login';
-          }
+        if (user) {
+          window.location.href = '/';
         } else {
-          // hash가 없으면 로그인 페이지로
           window.location.href = '/login';
         }
       } catch (error) {
         console.error('Auth callback error:', error);
         window.location.href = '/login';
-      } finally {
-        setIsProcessing(false);
       }
     };
 
-    // 약간의 지연을 주어 React Router가 완전히 초기화될 때까지 기다림
-    const timer = setTimeout(handleAuthCallback, 100);
+    // URL에서 hash fragment나 code 파라미터 확인
+    const urlParams = new URLSearchParams(window.location.search);
+    const hashFragment = window.location.hash;
     
-    return () => clearTimeout(timer);
+    if (urlParams.get('code') || hashFragment) {
+      const timer = setTimeout(handleAuthCallback, 100);
+      return () => clearTimeout(timer);
+    } else {
+      window.location.href = '/login';
+    }
   }, []);
-
-  if (!isProcessing) {
-    return null;
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center">

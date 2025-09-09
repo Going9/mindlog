@@ -23,9 +23,12 @@ import { getDiaries, getDiaryDatesForCalendar } from "../queries";
 import type { DiaryEntry } from "../types/diary";
 import type { Route } from "./+types/diary-list";
 import { diaries } from "../schema";
+import { requireAuth } from "~/lib/auth.server";
+import { useAuthContext } from "~/features/auth";
 
 export const loader = async ({ request }: { request: Request }) => {
-  const profileId = "b0e0e902-3488-4c10-9621-fffde048923c";
+  const { user } = await requireAuth(request);
+  const profileId = user.id;
   const url = new URL(request.url);
 
   // 서버사이드 파라미터 파싱
@@ -89,6 +92,7 @@ export default function DiaryListPage({ loaderData }: Route.ComponentProps) {
   const [initialLoading, setInitialLoading] = useState(true);
   const headerRef = useRef<DiaryListHeaderRef>(null);
   const sidebarRef = useRef<DiarySidebarRef>(null);
+  const { user } = useAuthContext();
   
   // 초기 로딩 상태 관리
   useEffect(() => {
@@ -156,7 +160,7 @@ export default function DiaryListPage({ loaderData }: Route.ComponentProps) {
       <DiaryListHeader 
         ref={headerRef}
         totalDiaries={diaries.length} 
-        profileId="b0e0e902-3488-4c10-9621-fffde048923c"
+        profileId={user?.id || ''}
       />
 
       {/* Main Content */}
@@ -167,7 +171,7 @@ export default function DiaryListPage({ loaderData }: Route.ComponentProps) {
           calendarDates={calendarDates} // 날짜 배열 사용
           selectedDate={filterState.selectedDate}
           onDateSelect={filterActions.handleDateSelect}
-          profileId="b0e0e902-3488-4c10-9621-fffde048923c"
+          profileId={user?.id || ''}
         />
 
         {/* Entries Section */}

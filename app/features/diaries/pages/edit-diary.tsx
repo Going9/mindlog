@@ -20,6 +20,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
 import { SteppedDiaryForm } from "../components/stepped-diary-form";
 import { createDiary, getDiaryById } from "../queries";
+import { useAuthContext } from "~/features/auth";
 
 // --- 타입 정의 ---
 interface EmotionTag {
@@ -48,6 +49,7 @@ export default function EditDiaryPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuthContext();
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [initialData, setInitialData] = useState<DiaryFormData | null>(null);
 
@@ -61,7 +63,7 @@ export default function EditDiaryPage() {
 
       try {
         setIsDataLoading(true);
-        const profileId = "b0e0e902-3488-4c10-9621-fffde048923c"; // 현재 하드코딩된 profileId 사용
+        const profileId = user?.id;
         const diaryData = await getDiaryById(parseInt(id), profileId);
         
         if (!diaryData) {
@@ -99,7 +101,7 @@ export default function EditDiaryPage() {
     setIsLoading(true);
 
     try {
-      const profileId = "b0e0e902-3488-4c10-9621-fffde048923c";
+      const profileId = user?.id;
       
       const diaryData = {
         profileId,
@@ -161,7 +163,7 @@ export default function EditDiaryPage() {
 
   // 화면에는 SteppedDiaryForm 컴포넌트를 렌더링합니다.
   // 로직을 담은 함수들과 상태를 props로 내려줍니다.
-  const profileId = "b0e0e902-3488-4c10-9621-fffde048923c"; // 현재 하드코딩된 profileId 사용
+  const profileId = user?.id || '';
   
   return (
     <SteppedDiaryForm

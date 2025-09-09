@@ -1,9 +1,10 @@
 import { Button } from '~/common/components/ui/button';
-import { supabase } from '~/lib/supabase';
+import { getSupabaseClient } from '~/lib/supabase';
 
 export function SocialLoginButtons() {
   const handleGoogleLogin = async () => {
     try {
+      const supabase = getSupabaseClient();
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -18,6 +19,7 @@ export function SocialLoginButtons() {
 
   const handleKakaoLogin = async () => {
     try {
+      const supabase = getSupabaseClient();
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'kakao',
         options: {

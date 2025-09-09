@@ -31,6 +31,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { SteppedDiaryForm } from "../components/stepped-diary-form";
 import { createDiary } from "../queries";
+import { useAuthContext } from "~/features/auth";
 
 // --- 타입 정의 ---
 interface EmotionTag {
@@ -60,6 +61,8 @@ export default function NewDiaryPage() {
   const navigate = useNavigate();
   // API 호출과 같은 비동기 작업이 진행 중인지 여부를 관리하는 상태
   const [isLoading, setIsLoading] = useState(false);
+  // 인증된 사용자 정보
+  const { user } = useAuthContext();
 
   // 폼이 최종적으로 제출될 때 실행될 함수
   const handleSubmit = async (data: DiaryFormData) => {
@@ -67,7 +70,7 @@ export default function NewDiaryPage() {
 
     try {
       // 실제 일기 데이터 저장
-      const profileId = "b0e0e902-3488-4c10-9621-fffde048923c"; // 현재 하드코딩된 profileId 사용
+      const profileId = user?.id;
       
       const diaryData = {
         profileId,
@@ -117,15 +120,13 @@ export default function NewDiaryPage() {
 
   // 화면에는 SteppedDiaryForm 컴포넌트를 렌더링합니다.
   // 로직을 담은 함수들과 상태를 props로 내려줍니다.
-  const profileId = "b0e0e902-3488-4c10-9621-fffde048923c"; // 현재 하드코딩된 profileId 사용
-
   return (
     <SteppedDiaryForm
       onSubmit={handleSubmit}
       onSave={handleSaveStep}
       isLoading={isLoading}
       isEditing={false} // 새 일기 작성이므로 isEditing은 false
-      profileId={profileId}
+      profileId={user?.id || ''}
     />
   );
 }

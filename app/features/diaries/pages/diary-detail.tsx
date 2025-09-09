@@ -29,9 +29,11 @@ import {
 import { cn } from "~/lib/utils";
 import { getDiaryById } from "../queries";
 import type { Route } from "./+types/diary-detail";
+import { requireAuth } from "~/lib/auth.server";
 
-export const loader = async ({ params }: { params: { id: string } }) => {
-  const profileId = "b0e0e902-3488-4c10-9621-fffde048923c";
+export const loader = async ({ params, request }: { params: { id: string }, request: Request }) => {
+  const { user } = await requireAuth(request);
+  const profileId = user.id;
   const diaryId = parseInt(params.id);
   
   if (isNaN(diaryId)) {

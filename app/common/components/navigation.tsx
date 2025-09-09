@@ -39,6 +39,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "./ui/sheet";
+import { useAuthContext } from "~/features/auth";
 
 const menus = [
   {
@@ -81,13 +82,12 @@ const menus = [
 ];
 
 export default function Navigation({
-  isLoggedIn,
   hasNotifications,
 }: {
-  isLoggedIn: boolean;
   hasNotifications: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, isAuthenticated, signOut } = useAuthContext();
 
   const MobileMenu = () => (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -126,7 +126,7 @@ export default function Navigation({
 
           <Separator className='my-4' />
 
-          {isLoggedIn ? (
+          {isAuthenticated ? (
             <div className='space-y-3'>
               <Link
                 to='/notifications'
@@ -164,25 +164,22 @@ export default function Navigation({
                 <span>설정</span>
               </Link>
               <Separator className='my-2' />
-              <Link
-                to='/auth/logout'
-                className='flex items-center gap-3 py-2 text-red-600'
-                onClick={() => setIsOpen(false)}
+              <button
+                onClick={async () => {
+                  await signOut();
+                  setIsOpen(false);
+                }}
+                className='flex items-center gap-3 py-2 text-red-600 w-full text-left'
               >
                 <LogOutIcon className='size-4' />
                 <span>로그아웃</span>
-              </Link>
+              </button>
             </div>
           ) : (
             <div className='space-y-3'>
               <Button asChild variant='secondary' className='w-full'>
-                <Link to='/auth/login' onClick={() => setIsOpen(false)}>
+                <Link to='/login' onClick={() => setIsOpen(false)}>
                   로그인
-                </Link>
-              </Button>
-              <Button asChild className='w-full'>
-                <Link to='/auth/register' onClick={() => setIsOpen(false)}>
-                  회원가입
                 </Link>
               </Button>
             </div>
@@ -253,7 +250,7 @@ export default function Navigation({
 
       {/* Desktop Menu */}
       <div className='hidden md:flex items-center gap-4'>
-        {isLoggedIn ? (
+        {isAuthenticated ? (
           <>
             <Button size='icon' variant='ghost' asChild className='relative'>
               <Link to='/notifications'>
@@ -265,16 +262,24 @@ export default function Navigation({
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Avatar>
-                  <AvatarImage src='https://github.com/serranoarevalo.png' />
-                  <AvatarFallback>U</AvatarFallback>
+                <Avatar className="cursor-pointer">
+                  <AvatarImage src={user?.user_metadata?.avatar_url || ''} />
+                  <AvatarFallback>
+                    {user?.user_metadata?.full_name?.[0] || 
+                     user?.user_metadata?.name?.[0] || 
+                     user?.email?.[0]?.toUpperCase() || 'U'}
+                  </AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent className='w-56'>
                 <DropdownMenuLabel className='flex flex-col'>
-                  <span className='font-medium'>사용자</span>
+                  <span className='font-medium'>
+                    {user?.user_metadata?.full_name || 
+                     user?.user_metadata?.name || 
+                     user?.email?.split('@')[0] || '사용자'}
+                  </span>
                   <span className='text-xs text-muted-foreground'>
-                    @username
+                    {user?.email || ''}
                   </span>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -299,11 +304,12 @@ export default function Navigation({
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild className='cursor-pointer'>
-                  <Link to='/auth/logout'>
-                    <LogOutIcon className='size-4 mr-2' />
-                    로그아웃
-                  </Link>
+                <DropdownMenuItem 
+                  className='cursor-pointer'
+                  onClick={async () => await signOut()}
+                >
+                  <LogOutIcon className='size-4 mr-2' />
+                  로그아웃
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -311,10 +317,7 @@ export default function Navigation({
         ) : (
           <>
             <Button asChild variant='secondary'>
-              <Link to='/auth/login'>로그인</Link>
-            </Button>
-            <Button asChild>
-              <Link to='/auth/register'>회원가입</Link>
+              <Link to='/login'>로그인</Link>
             </Button>
           </>
         )}
