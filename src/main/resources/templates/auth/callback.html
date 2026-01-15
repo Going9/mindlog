@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인 처리 중 - Mindlog</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+        }
+        
+        .callback-container {
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 2rem;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: #e6f1ff;
+        }
+        
+        p {
+            color: #8892b0;
+            font-size: 0.95rem;
+        }
+        
+        .error-container {
+            display: none;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 400px;
+        }
+        
+        .error-container h2 {
+            color: #fca5a5;
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+        }
+        
+        .error-container p {
+            color: #fca5a5;
+            margin-bottom: 1.5rem;
+        }
+        
+        .retry-btn {
+            display: inline-block;
+            padding: 0.75rem 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .retry-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="callback-container">
+        <div id="loading">
+            <div class="spinner"></div>
+            <h1>로그인 처리 중...</h1>
+            <p>잠시만 기다려주세요.</p>
+        </div>
+        
+        <div id="error" class="error-container">
+            <h2>로그인 실패</h2>
+            <p id="error-message">오류가 발생했습니다.</p>
+            <a href="/auth/login" class="retry-btn">다시 시도</a>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script th:inline="javascript">
+        (function() {
+            /*<![CDATA[*/
+            const SUPABASE_URL = /*[[${supabaseUrl}]]*/ '';
+            const SUPABASE_ANON_KEY = /*[[${supabaseAnonKey}]]*/ '';
+            /*]]>*/
+            
+            const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            
+            function showError(message) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error-message').textContent = message;
+            }
+            
+            async function handleCallback() {
+                try {
+                    // URL 해시에서 토큰 추출 및 세션 설정
+                    const { data: { session }, error } = await supabaseClient.auth.getSession();
+                    
+                    if (error) {
+                        showError('세션을 가져오는데 실패했습니다: ' + error.message);
+                        return;
+                    }
+                    
+                    if (session) {
+                        // 세션이 있으면 JWT를 로컬 스토리지에 저장
+                        localStorage.setItem('supabase_access_token', session.access_token);
+                        localStorage.setItem('supabase_refresh_token', session.refresh_token);
+                        
+                        // 메인 페이지로 리다이렉트
+                        window.location.href = '/';
+                    } else {
+                        // 해시에서 세션 정보 확인 (OAuth 리다이렉트 후)
+                        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+                        const accessToken = hashParams.get('access_token');
+                        
+                        if (accessToken) {
+                            // 해시에서 토큰이 있으면 세션 설정
+                            const { data, error: setError } = await supabaseClient.auth.setSession({
+                                access_token: accessToken,
+                                refresh_token: hashParams.get('refresh_token')
+                            });
+                            
+                            if (setError) {
+                                showError('세션 설정에 실패했습니다: ' + setError.message);
+                                return;
+                            }
+                            
+                            localStorage.setItem('supabase_access_token', accessToken);
+                            localStorage.setItem('supabase_refresh_token', hashParams.get('refresh_token'));
+                            
+                            window.location.href = '/';
+                        } else {
+                            // 세션도 없고 해시에도 토큰이 없으면 에러
+                            showError('인증 정보를 찾을 수 없습니다.');
+                        }
+                    }
+                } catch (err) {
+                    showError('오류가 발생했습니다: ' + err.message);
+                }
+            }
+            
+            // 페이지 로드 시 콜백 처리
+            handleCallback();
+        })();
+    </script>
+</body>
+</html>
