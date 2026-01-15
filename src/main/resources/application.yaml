@@ -24,15 +24,31 @@ spring:
       ddl-auto: validate
     properties:
       hibernate:
-        format_sql: true
-        show_sql: true
+        format_sql: false
+        show_sql: false  # P6Spy로 대체
         default_batch_fetch_size: 100
 
-# 프로젝트 전용 커스텀 설정 (다음 단계인 인증에서 사용)
+  # Thymeleaf 설정
+  thymeleaf:
+    cache: false  # 개발 중에는 캐시 비활성화
+    mode: HTML
+
+# 프로젝트 전용 커스텀 설정
 mindlog:
   supabase:
+    url: ${SUPABASE_URL}
     anon-key: ${SUPABASE_ANON_KEY}
 
+# 로깅 설정
 logging:
   level:
-    org.hibernate.SQL: debug
+    root: INFO
+    com.mindlog: INFO
+    com.mindlog.global.logging: INFO
+    # Hibernate SQL 로깅 비활성화 (P6Spy로 대체)
+    org.hibernate.SQL: OFF
+    org.hibernate.orm.jdbc.bind: OFF
+    # Spring Security 로깅
+    org.springframework.security: WARN
+    # P6Spy SQL 로깅
+    p6spy: INFO

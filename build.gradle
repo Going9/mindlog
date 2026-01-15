@@ -28,6 +28,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'  // Thymeleaf 템플릿 엔진
 	implementation 'org.jspecify:jspecify:1.0.0'
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'org.postgresql:postgresql'
@@ -41,6 +42,12 @@ dependencies {
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+
+	// 로깅 관련 의존성
+	implementation 'net.logstash.logback:logstash-logback-encoder:8.0'  // JSON 구조화 로깅
+	implementation 'com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.10.0'  // SQL 파라미터 바인딩 로깅
+	implementation 'org.springframework:spring-aop'  // AOP (성능 로깅용)
+	implementation 'org.aspectj:aspectjweaver'  // AspectJ weaver
 }
 
 tasks.named('test') {
