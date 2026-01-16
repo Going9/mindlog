@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<body>
+    <th:block th:fragment="scripts(supabaseUrl, supabaseAnonKey)">
+
+
+
+        <!-- Supabase & Turbo 초기화 -->
+        <script th:inline="javascript">
+            (function () {
+                /*<![CDATA[*/
+                const SUPABASE_URL = /*[[${supabaseUrl != null ? supabaseUrl : @environment.getProperty('mindlog.supabase.url')}]]*/ '';
+                const SUPABASE_ANON_KEY = /*[[${supabaseAnonKey != null ? supabaseAnonKey : @environment.getProperty('mindlog.supabase.anon-key')}]]*/ '';
+                /*]]>*/
+
+                // Turbo 초기화 스크립트에 Supabase 정보 전달
+                if (typeof window.initSupabaseForTurbo === 'function') {
+                    window.initSupabaseForTurbo(SUPABASE_URL, SUPABASE_ANON_KEY);
+                }
+            })();
+        </script>
+
+        <!-- 페이지별 추가 스크립트는 여기에 -->
+    </th:block>
+</body>
+
+</html>
