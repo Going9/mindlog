@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 커스텀 유틸리티 클래스 */
+@layer utilities {
+  /* 기존 디자인 시스템 유지 - 그라데이션 배경 */
+  .bg-gradient-mindlog {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  }
+  
+  /* 기존 디자인 시스템 유지 - 텍스트 그라데이션 */
+  .text-gradient-mindlog {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  /* 기존 디자인 시스템 유지 - 버튼 그라데이션 */
+  .bg-gradient-button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+}

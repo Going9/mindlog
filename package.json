@@ -1,0 +1,13 @@
+{
+  "name": "mindlog",
+  "version": "0.0.1-SNAPSHOT",
+  "description": "Emotion Diary with Hotwire Native",
+  "scripts": {
+    "build-css": "tailwindcss -i ./src/main/resources/css/input.css -o ./src/main/resources/static/css/output.css --minify",
+    "watch-css": "tailwindcss -i ./src/main/resources/css/input.css -o ./src/main/resources/static/css/output.css --watch"
+  },
+  "devDependencies": {
+    "preline": "^2.0.3",
+    "tailwindcss": "^3.4.1"
+  }
+}
