@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:with="supabaseUrl=${@environment.getProperty('mindlog.supabase.url')}, 
+               supabaseAnonKey=${@environment.getProperty('mindlog.supabase.anon-key')}">
+
+<head th:replace="~{fragments/head :: head('일기 보기', diary.shortContent)}">
+</head>
+
+<body class="bg-gradient-mindlog min-h-screen">
+    <div th:replace="~{fragments/navbar :: navbar(${supabaseUrl}, ${supabaseAnonKey})}"></div>
+
+    <main class="max-w-3xl mx-auto p-4 py-10">
+        <header class="mb-10 text-center">
+            <a th:href="@{/diaries}"
+                class="text-sm text-mindlog-text-secondary hover:text-mindlog-text-primary inline-flex items-center gap-1 mb-8">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                목록으로 돌아가기
+            </a>
+
+            <time class="block text-mindlog-purple-400 font-medium mb-3"
+                th:text="${#temporals.format(diary.date, 'yyyy년 MM월 dd일')}">2026년 01월 16일</time>
+            <h1 class="text-3xl md:text-4xl font-semibold text-gradient-mindlog mb-4" th:text="${diary.shortContent}">
+                오늘의 일기 제목
+            </h1>
+        </header>
+
+        <div class="space-y-8">
+            <!-- 이미지 -->
+            <section th:if="${diary.imageUrl != null}"
+                class="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-4 overflow-hidden">
+                <img th:src="${diary.imageUrl}" alt="일기 이미지"
+                    class="w-full h-auto rounded-xl object-cover max-h-[500px]">
+            </section>
+
+            <!-- 상황 -->
+            <section th:if="${diary.situation != null}"
+                class="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-8">
+                <h3 class="text-sm font-medium text-mindlog-text-secondary mb-4 uppercase tracking-wider">어떤 상황이었나요?
+                </h3>
+                <p class="text-mindlog-text-primary leading-relaxed whitespace-pre-wrap" th:text="${diary.situation}">
+                </p>
+            </section>
+
+            <!-- 생각/반응 & 신체 감각 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <section th:if="${diary.reaction != null}"
+                    class="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-8">
+                    <h3 class="text-sm font-medium text-mindlog-text-secondary mb-4 uppercase tracking-wider">그 때 들었던 생각
+                    </h3>
+                    <p class="text-mindlog-text-primary leading-relaxed whitespace-pre-wrap"
+                        th:text="${diary.reaction}"></p>
+                </section>
+                <section th:if="${diary.physicalSensation != null}"
+                    class="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-8">
+                    <h3 class="text-sm font-medium text-mindlog-text-secondary mb-4 uppercase tracking-wider">몸의 느낌</h3>
+                    <p class="text-mindlog-text-primary leading-relaxed whitespace-pre-wrap"
+                        th:text="${diary.physicalSensation}"></p>
+                </section>
+            </div>
+
+            <!-- 적응적 사고 -->
+            <section th:if="${diary.desiredReaction != null}"
+                class="bg-mindlog-purple-500/10 backdrop-blur-lg border border-mindlog-purple-500/20 rounded-2xl p-8">
+                <h3 class="text-sm font-medium text-mindlog-purple-400 mb-4 uppercase tracking-wider">나중에 돌아본 균형 잡힌 생각
+                </h3>
+                <p class="text-mindlog-text-primary leading-relaxed whitespace-pre-wrap"
+                    th:text="${diary.desiredReaction}"></p>
+            </section>
+
+            <!-- 감사와 위로 -->
+            <div th:if="${diary.gratitudeMoment != null || diary.selfKindWords != null}" class="grid grid-cols-1 gap-8">
+                <div class="flex flex-col md:flex-row gap-8">
+                    <section th:if="${diary.gratitudeMoment != null}"
+                        class="flex-grow bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-8">
+                        <h3 class="text-sm font-medium text-mindlog-text-secondary mb-4 uppercase tracking-wider">감사한 순간
+                        </h3>
+                        <p class="text-mindlog-text-primary leading-relaxed whitespace-pre-wrap"
+                            th:text="${diary.gratitudeMoment}"></p>
+                    </section>
+                    <section th:if="${diary.selfKindWords != null}"
+                        class="flex-grow bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-8">
+                        <h3 class="text-sm font-medium text-mindlog-text-secondary mb-4 uppercase tracking-wider">나에게 쓰는
+                            편지</h3>
+                        <p class="text-mindlog-text-primary leading-relaxed whitespace-pre-wrap"
+                            th:text="${diary.selfKindWords}"></p>
+                    </section>
+                </div>
+            </div>
+
+            <!-- 하단 도구 -->
+            <footer class="pt-10 flex justify-center gap-4">
+                <button type="button" id="delete-diary-btn" th:data-diary-id="${diary.id}"
+                    class="px-6 py-2.5 bg-red-500/10 text-red-400 text-sm font-medium rounded-xl hover:bg-red-500/20 transition-all focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-transparent">
+                    삭제하기
+                </button>
+            </footer>
+        </div>
+    </main>
+
+    <div th:replace="~{fragments/scripts :: scripts(${supabaseUrl}, ${supabaseAnonKey})}"></div>
+
+    <script th:inline="javascript">
+        (function () {
+            const initDeleteBtn = () => {
+                const deleteBtn = document.getElementById('delete-diary-btn');
+                if (deleteBtn && !deleteBtn.dataset.listenerAdded) {
+                    deleteBtn.addEventListener('click', async function () {
+                        if (confirm('정말로 이 일기를 삭제하시겠습니까?')) {
+                            const id = this.getAttribute('data-diary-id');
+                            try {
+                                const response = await fetch(`/diaries/${id}`, {
+                                    method: 'DELETE'
+                                });
+                                if (response.ok) {
+                                    window.location.href = '/diaries';
+                                } else {
+                                    alert('삭제에 실패했습니다.');
+                                }
+                            } catch (err) {
+                                console.error('Delete error:', err);
+                                alert('오류가 발생했습니다.');
+                            }
+                        }
+                    });
+                    deleteBtn.dataset.listenerAdded = 'true';
+                }
+            };
+
+            document.addEventListener('turbo:load', initDeleteBtn);
+            // 초기 로드 시에도 실행
+            initDeleteBtn();
+        })();
+    </script>
+</body>
+
+</html>
