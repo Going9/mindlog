@@ -40,7 +40,8 @@ public class JwtTokenProvider {
             Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
             return true;
         } catch (Exception e) {
-            // 실무에서는 로그를 남겨 상세 에러를 추적하는 것이 좋습니다.
+            // 에러 메시지를 출력하면 원인이 명확해집니다 (SignatureException, ExpiredJwtException 등)
+            System.out.println("JWT 검증 실패 원인: " + e.getMessage());
             return false;
         }
     }

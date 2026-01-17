@@ -32,16 +32,30 @@ public class SupabaseJwtFilter extends OncePerRequestFilter {
                     Collections.emptyList()
             );
             SecurityContextHolder.getContext().setAuthentication(authentication);
+            System.out.println("인증 성공: " + profileId);
+        } else {
+            System.out.println("인증 실패: 토큰이 없거나 유효하지 않음");
         }
 
         filterChain.doFilter(request, response);
     }
 
     private String resolveToken(HttpServletRequest request) {
+        // 1. Check Header
         String bearerToken = request.getHeader("Authorization");
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
         }
+
+        // 2. Check Cookie
+        if (request.getCookies() != null) {
+            for (jakarta.servlet.http.Cookie cookie : request.getCookies()) {
+                if ("mindlog_access_token".equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        
         return null;
     }
 }

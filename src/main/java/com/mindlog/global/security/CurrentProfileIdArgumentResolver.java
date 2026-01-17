@@ -38,9 +38,9 @@ public class CurrentProfileIdArgumentResolver implements HandlerMethodArgumentRe
 
         Object principal = authentication.getPrincipal();
 
-        // 1. 이미 UUID 타입인 경우 (SupabaseJwtFilter 등에서 직접 설정한 경우)
-        if (principal instanceof UUID uuid) {
-            return uuid;
+        if (principal instanceof Jwt jwt) {
+            String subject = jwt.getSubject(); // Supabase의 유저 ID(UUID)
+            return UUID.fromString(subject);
         }
 
         // 2. Jwt 객체인 경우 (OAuth2 Resource Server 기본 동작)
