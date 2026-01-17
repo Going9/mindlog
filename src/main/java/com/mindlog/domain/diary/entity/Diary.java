@@ -96,6 +96,26 @@ public class Diary extends BaseTimeEntity {
         this.isDeleted = false;
     }
 
+    public void update(
+            @Nullable String shortContent,
+            @Nullable String situation,
+            @Nullable String reaction,
+            @Nullable String physicalSensation,
+            @Nullable String desiredReaction,
+            @Nullable String gratitudeMoment,
+            @Nullable String selfKindWords,
+            @Nullable String imageUrl
+    ) {
+        this.shortContent = shortContent;
+        this.situation = situation;
+        this.reaction = reaction;
+        this.physicalSensation = physicalSensation;
+        this.desiredReaction = desiredReaction;
+        this.gratitudeMoment = gratitudeMoment;
+        this.selfKindWords = selfKindWords;
+        this.imageUrl = imageUrl;
+    }
+
     public void softDelete() {
         this.isDeleted = true;
     }

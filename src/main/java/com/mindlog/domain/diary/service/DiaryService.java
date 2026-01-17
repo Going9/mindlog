@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,11 +20,32 @@ public class DiaryService {
 
     private final DiaryRepository diaryRepository;
 
+    public List<DiaryResponse> getMonthlyDiaries(UUID profileId, int year, int month) {
+        YearMonth yearMonth = YearMonth.of(year, month);
+        LocalDate start = yearMonth.atDay(1);
+        LocalDate end = yearMonth.atEndOfMonth();
+
+        return diaryRepository.findByProfileIdAndDateBetweenOrderByDateAsc(profileId, start, end).stream()
+                .map(DiaryResponse::from)
+                .toList();
+    }
+
+    public DiaryResponse getDiary(UUID profileId, Long id) {
+        Diary diary = diaryRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Diary not found"));
+
+        if (!diary.getProfileId().equals(profileId)) {
+            throw new IllegalArgumentException("Unauthorized access");
+        }
+
+        return DiaryResponse.from(diary);
+    }
+
     @Transactional
-    public DiaryResponse createDiary(UUID profileId, DiaryRequest request) {
-        // 이미 같은 날짜에 일기가 있는지 확인 (옵션)
+    public Long createDiary(UUID profileId, DiaryRequest request) {
+        // Ensure only one diary per day
         if (diaryRepository.existsByProfileIdAndDate(profileId, request.date())) {
-            throw new IllegalStateException("해당 날짜에 이미 일기가 존재합니다.");
+            throw new IllegalStateException("Diary already exists for this date");
         }
 
         Diary diary = Diary.builder()
@@ -38,35 +61,37 @@ public class DiaryService {
                 .imageUrl(request.imageUrl())
                 .build();
 
-        Diary savedDiary = diaryRepository.save(diary);
-        return DiaryResponse.from(savedDiary);
-    }
-
-    public List<DiaryResponse> getDiaries(UUID profileId) {
-        return diaryRepository.findByProfileIdOrderByDateDesc(profileId)
-                .stream()
-                .map(DiaryResponse::from)
-                .toList();
-    }
-
-    public DiaryResponse getDiary(UUID profileId, Long diaryId) {
-        Diary diary = diaryRepository.findById(diaryId)
-                .orElseThrow(() -> new IllegalArgumentException("일기를 찾을 수 없습니다."));
-
-        if (!diary.getProfileId().equals(profileId)) {
-            throw new SecurityException("자신의 일기만 조회할 수 있습니다.");
-        }
-
-        return DiaryResponse.from(diary);
+        return diaryRepository.save(diary).getId();
     }
 
     @Transactional
-    public void deleteDiary(UUID profileId, Long diaryId) {
-        Diary diary = diaryRepository.findById(diaryId)
-                .orElseThrow(() -> new IllegalArgumentException("일기를 찾을 수 없습니다."));
+    public void updateDiary(UUID profileId, Long id, DiaryRequest request) {
+        Diary diary = diaryRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Diary not found"));
 
         if (!diary.getProfileId().equals(profileId)) {
-            throw new SecurityException("자신의 일기만 삭제할 수 있습니다.");
+            throw new IllegalArgumentException("Unauthorized access");
+        }
+        
+        diary.update(
+                request.shortContent(),
+                request.situation(),
+                request.reaction(),
+                request.physicalSensation(),
+                request.desiredReaction(),
+                request.gratitudeMoment(),
+                request.selfKindWords(),
+                request.imageUrl()
+        );
+    }
+
+    @Transactional
+    public void deleteDiary(UUID profileId, Long id) {
+        Diary diary = diaryRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Diary not found"));
+
+        if (!diary.getProfileId().equals(profileId)) {
+            throw new IllegalArgumentException("Unauthorized access");
         }
 
         diary.softDelete();

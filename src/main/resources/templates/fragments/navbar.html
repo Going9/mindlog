@@ -20,10 +20,12 @@
                             내 일기
                         </a>
                         <a th:href="@{/diaries/new}"
+                            data-turbo="false"
                             class="text-sm font-medium text-mindlog-text-primary hover:text-white transition-colors">
                             일기 쓰기
                         </a>
                         <a th:href="@{/auth/logout}"
+                            data-turbo="false"
                             class="px-4 py-2 rounded-lg text-sm font-medium text-mindlog-text-primary hover:text-white hover:bg-white/10 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-transparent">
                             로그아웃
                         </a>
@@ -31,6 +33,7 @@
 
                     <div id="navbar-logged-out" class="hidden">
                         <a th:href="@{/auth/login}"
+                            data-turbo="false"
                             class="px-4 py-2 rounded-lg text-sm font-medium bg-gradient-button text-white hover:opacity-90 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-mindlog-purple-400 focus:ring-offset-2 focus:ring-offset-transparent">
                             로그인
                         </a>

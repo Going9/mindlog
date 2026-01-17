@@ -1,26 +1,24 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:with="supabaseUrl=${@environment.getProperty('mindlog.supabase.url')}, 
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      th:fragment="base(title, content, scripts, description)"
+      th:with="supabaseUrl=${@environment.getProperty('mindlog.supabase.url')},
                supabaseAnonKey=${@environment.getProperty('mindlog.supabase.anon-key')}">
 
 <head th:replace="~{fragments/head :: head(${title}, ${description})}">
 </head>
 
 <body class="bg-gradient-mindlog min-h-screen" data-controller="preline">
-    <!-- 네비게이션 바 -->
-    <div th:replace="~{fragments/navbar :: navbar(${supabaseUrl}, ${supabaseAnonKey})}"></div>
+<div th:replace="~{fragments/navbar :: navbar(${supabaseUrl}, ${supabaseAnonKey})}"></div>
 
-    <!-- 메인 컨텐츠 -->
-    <main>
-        <th:block th:replace="${content}">
-            <!-- 페이지별 컨텐츠가 여기에 삽입됨 -->
-        </th:block>
-    </main>
-
-    <!-- 스크립트 -->
-    <div th:replace="~{fragments/scripts :: scripts(${supabaseUrl}, ${supabaseAnonKey})}"></div>
-    <th:block th:replace="${scripts}">
-        <!-- 페이지별 추가 스크립트 -->
+<main>
+    <th:block th:replace="${content}">
     </th:block>
-</body>
+</main>
 
+<div th:replace="~{fragments/scripts :: scripts(${supabaseUrl}, ${supabaseAnonKey})}"></div>
+
+<th:block th:replace="${scripts}">
+</th:block>
+</body>
 </html>

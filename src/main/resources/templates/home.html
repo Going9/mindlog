@@ -1,213 +1,61 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: base(~{::title}, ~{::section}, ~{::#specific-scripts}, 'Mindlog - 당신의 감정일기')}">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mindlog</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600&display=swap');
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Noto Sans KR', sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-        }
-        
-        .container {
-            text-align: center;
-            padding: 2rem;
-            max-width: 500px;
-        }
-        
-        .logo h1 {
-            font-size: 3rem;
-            font-weight: 600;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 1rem;
-        }
-        
-        .logo p {
-            color: #8892b0;
-            font-size: 1.1rem;
-            margin-bottom: 2rem;
-        }
-        
-        .card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 2rem;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        }
-        
-        .user-info {
-            margin-bottom: 1.5rem;
-        }
-        
-        .user-info .avatar {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            margin: 0 auto 1rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-        }
-        
-        .user-info .name {
-            font-size: 1.25rem;
-            font-weight: 500;
-            color: #e6f1ff;
-            margin-bottom: 0.25rem;
-        }
-        
-        .user-info .email {
-            color: #8892b0;
-            font-size: 0.9rem;
-        }
-        
-        .success-badge {
-            display: inline-block;
-            background: rgba(34, 197, 94, 0.2);
-            color: #4ade80;
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            margin-bottom: 1.5rem;
-        }
-        
-        .btn {
-            display: inline-block;
-            padding: 0.75rem 2rem;
-            border-radius: 10px;
-            font-size: 1rem;
-            font-weight: 500;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            border: none;
-            font-family: inherit;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #fff;
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-        }
-        
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.1);
-            color: #e6f1ff;
-            margin-left: 0.5rem;
-        }
-        
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.15);
-        }
-        
-        .guest-message {
-            color: #8892b0;
-            margin-bottom: 1.5rem;
-        }
-        
-        #logged-in {
-            display: none;
-        }
-        
-        #logged-out {
-            display: none;
-        }
-    </style>
 </head>
 <body>
-    <div class="container">
-        <div class="logo">
-            <h1>Mindlog</h1>
-            <p>당신의 감정일기</p>
-        </div>
-        
-        <div id="logged-in" class="card">
-            <div class="success-badge">✓ 로그인 성공</div>
-            <div class="user-info">
-                <div class="avatar" id="user-avatar">👤</div>
-                <div class="name" id="user-name">사용자</div>
-                <div class="email" id="user-email">email@example.com</div>
-            </div>
-            <a href="/auth/logout" class="btn btn-secondary">로그아웃</a>
-        </div>
-        
-        <div id="logged-out" class="card">
-            <p class="guest-message">소셜 계정으로 간편하게 시작하세요</p>
-            <a href="/auth/login" class="btn btn-primary">로그인</a>
-        </div>
+<section class="container mx-auto"> <div class="container mt-20">
+    <div class="logo text-center mb-10">
+        <h1 class="text-5xl font-bold text-gradient-mindlog mb-4">Mindlog</h1>
+        <p class="text-mindlog-text-secondary text-lg">당신의 감정일기</p>
     </div>
-    
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <div id="logged-in" class="card hidden bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-8 text-center max-w-md mx-auto">
+        <div class="success-badge text-green-400 mb-6">✓ 로그인 성공</div>
+        <div class="user-info mb-8">
+            <div class="avatar w-20 h-20 rounded-full mx-auto mb-4 bg-gradient-to-tr from-purple-500 to-blue-500 flex items-center justify-center text-3xl" id="user-avatar">👤</div>
+            <div class="name text-xl font-semibold text-white" id="user-name">사용자</div>
+            <div class="email text-mindlog-text-secondary" id="user-email">email@example.com</div>
+        </div>
+        <a href="/auth/logout" class="btn bg-white/10 text-white px-6 py-2 rounded-lg hover:bg-white/20 transition-all">로그아웃</a>
+    </div>
+
+    <div id="logged-out" class="card hidden bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-8 text-center max-w-md mx-auto">
+        <p class="guest-message text-mindlog-text-secondary mb-8">소셜 계정으로 간편하게 시작하세요</p>
+        <a href="/auth/login" class="btn bg-gradient-to-r from-purple-600 to-blue-600 text-white px-10 py-3 rounded-xl font-semibold hover:scale-105 transition-all inline-block">로그인</a>
+    </div>
+</div>
+</section>
+
+<div id="specific-scripts">
     <script th:inline="javascript">
         (function() {
-            /*<![CDATA[*/
-            const SUPABASE_URL = /*[[${supabaseUrl}]]*/ '';
-            const SUPABASE_ANON_KEY = /*[[${supabaseAnonKey}]]*/ '';
-            /*]]>*/
-            
-            const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            
             async function checkAuth() {
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                
+                // turbo-init.js가 만든 클라이언트를 기다림
+                const client = window.supabaseClient;
+                if (!client) { setTimeout(checkAuth, 50); return; }
+
+                const { data: { session } } = await client.auth.getSession();
+                const loggedInDiv = document.getElementById('logged-in');
+                const loggedOutDiv = document.getElementById('logged-out');
+
                 if (session && session.user) {
-                    // 로그인 상태
-                    document.getElementById('logged-in').style.display = 'block';
-                    document.getElementById('logged-out').style.display = 'none';
-                    
+                    loggedInDiv.classList.remove('hidden');
                     const user = session.user;
                     const metadata = user.user_metadata || {};
-                    
-                    // 사용자 정보 표시
                     document.getElementById('user-name').textContent = metadata.full_name || metadata.name || '사용자';
                     document.getElementById('user-email').textContent = user.email || '';
-                    
-                    // 아바타 설정
-                    if (metadata.avatar_url || metadata.picture) {
-                        document.getElementById('user-avatar').innerHTML = 
-                            `<img src="${metadata.avatar_url || metadata.picture}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
-                    } else {
-                        const initial = (metadata.full_name || metadata.name || user.email || '?')[0].toUpperCase();
-                        document.getElementById('user-avatar').textContent = initial;
+                    if (metadata.avatar_url) {
+                        document.getElementById('user-avatar').innerHTML = `<img src="${metadata.avatar_url}" class="w-full h-full rounded-full object-cover">`;
                     }
-                    
-                    // 토큰 저장
-                    localStorage.setItem('supabase_access_token', session.access_token);
-                    localStorage.setItem('supabase_refresh_token', session.refresh_token);
                 } else {
-                    // 비로그인 상태
-                    document.getElementById('logged-in').style.display = 'none';
-                    document.getElementById('logged-out').style.display = 'block';
+                    loggedOutDiv.classList.remove('hidden');
                 }
             }
-            
             checkAuth();
         })();
     </script>
+</div>
 </body>
 </html>

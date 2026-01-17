@@ -10,35 +10,27 @@
 
   <title th:text="${title != null ? title + ' - Mindlog' : 'Mindlog'}">Mindlog</title>
 
-  <!-- Tailwind CSS -->
   <link th:href="@{/css/output.css}" rel="stylesheet">
 
-  <!-- Google Fonts - Noto Sans KR -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
 
-  <!-- Supabase Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <!-- Hotwire Turbo -->
-  <script src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@8/dist/turbo.es2017-umd.js"></script>
+  <script th:src="@{/js/turbo-init.js}"></script>
 
-  <!-- Preline UI -->
+  <script src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@8/dist/turbo.es2017-umd.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/preline@2/dist/preline.min.js" defer></script>
 
-  <!-- Stimulus & Import Map -->
   <script type="importmap">
-      {
-        "imports": {
-          "@hotwired/stimulus": "https://unpkg.com/@hotwired/stimulus/dist/stimulus.js"
-        }
+    {
+      "imports": {
+        "@hotwired/stimulus": "https://unpkg.com/@hotwired/stimulus/dist/stimulus.js"
       }
-    </script>
+    }
+  </script>
   <script type="module" th:src="@{/js/stimulus-init.js}"></script>
-
-  <!-- Custom Scripts -->
-  <script th:src="@{/js/turbo-init.js}"></script>
 </head>
 
 </html>
