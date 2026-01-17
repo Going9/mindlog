@@ -40,3 +40,8 @@ out/
 ### Logs ###
 logs/
 *.log
+### Node ###
+node_modules/
+
+### Agent ###
+.agent/

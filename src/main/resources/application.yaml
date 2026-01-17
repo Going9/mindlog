@@ -16,6 +16,13 @@ spring:
     hikari:
       maximum-pool-size: 20
       minimum-idle: 10
+  
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: https://jwaycvcwulsneslozzhf.supabase.co/auth/v1/.well-known/jwks.json
+          issuer-uri: https://jwaycvcwulsneslozzhf.supabase.co/auth/v1
 
   # JPA 및 Hibernate 설정
   jpa:

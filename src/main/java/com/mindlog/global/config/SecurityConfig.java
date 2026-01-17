@@ -2,15 +2,27 @@ package com.mindlog.global.config;
 
 import com.mindlog.global.security.JwtTokenProvider;
 import com.mindlog.global.security.SupabaseJwtFilter;
+import jakarta.servlet.http.Cookie;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2Error;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtValidators;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
+import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -44,10 +56,37 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
 
-                // JWT 필터를 인증 필터 이전에 배치
-                .addFilterBefore(new SupabaseJwtFilter(tokenProvider), UsernamePasswordAuthenticationFilter.class);
+
+                // 직접 만든 필터 대신 OAuth2 Resource Server 기능 활성화
+                // 이렇게 하면 jwk-set-uri를 통해 자동으로 ES256 토큰을 검증합니다.
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
 
         return http.build();
+    }
+
+    /**
+     * BearerTokenResolver를 Bean으로 등록하여 확실하게 주입되도록 합니다.
+     */
+    @Bean
+    public BearerTokenResolver bearerTokenResolver() {
+        DefaultBearerTokenResolver resolver = new DefaultBearerTokenResolver();
+        return request -> {
+            // 1. 헤더에서 토큰 확인
+            String token = resolver.resolve(request);
+            if (token != null) return token;
+
+            // 2. 쿠키에서 토큰 확인 및 로그 출력 (디버깅용)
+            if (request.getCookies() != null) {
+                for (jakarta.servlet.http.Cookie cookie : request.getCookies()) {
+                    if ("mindlog_access_token".equals(cookie.getName())) {
+                        System.out.println("쿠키에서 토큰을 찾았습니다: " + cookie.getName());
+                        return cookie.getValue();
+                    }
+                }
+            }
+            System.out.println("요청에서 토큰을 찾을 수 없습니다.");
+            return null;
+        };
     }
 
     /**

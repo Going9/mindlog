@@ -23,19 +23,7 @@ CREATE TABLE profiles (
     CONSTRAINT profiles_pkey PRIMARY KEY (id)
 );
 
--- ============================================
--- Table: users
--- ============================================
-CREATE TABLE users (
-    id UUID NOT NULL,
-    email VARCHAR,
-    name VARCHAR,
-    provider auth_provider NOT NULL,
-    provider_id VARCHAR NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT users_pkey PRIMARY KEY (id)
-);
+
 
 -- ============================================
 -- Table: diaries
@@ -133,7 +121,7 @@ CREATE INDEX idx_notification_settings_is_enabled ON notification_settings(is_en
 -- Comments
 -- ============================================
 COMMENT ON TABLE profiles IS '사용자 프로필 정보';
-COMMENT ON TABLE users IS 'OAuth 인증 사용자 정보';
+
 COMMENT ON TABLE diaries IS '감정 일기';
 COMMENT ON TABLE emotion_tags IS '감정 태그 (기본 태그와 커스텀 태그)';
 COMMENT ON TABLE diary_tags IS '일기와 감정 태그의 연결 테이블';
