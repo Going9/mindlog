@@ -1,4 +1,4 @@
 @NullMarked
-package com.mindlog.global.controller;
+package com.mindlog.domain.auth.service;
 
 import org.jspecify.annotations.NullMarked;

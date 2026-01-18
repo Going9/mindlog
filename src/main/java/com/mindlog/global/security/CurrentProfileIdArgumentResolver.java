@@ -4,7 +4,6 @@ import org.jspecify.annotations.NullMarked;
 import org.springframework.core.MethodParameter;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
@@ -19,6 +18,7 @@ public class CurrentProfileIdArgumentResolver implements HandlerMethodArgumentRe
 
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
+        // @CurrentProfileId 어노테이션이 있고 + 타입이 UUID인 경우만 동작
         return parameter.hasParameterAnnotation(CurrentProfileId.class) &&
                 parameter.getParameterType().equals(UUID.class);
     }
@@ -32,26 +32,24 @@ public class CurrentProfileIdArgumentResolver implements HandlerMethodArgumentRe
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (authentication == null) {
-            throw new IllegalStateException("인증 정보가 없습니다.");
+        // 1. 인증 정보 확인
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new IllegalStateException("인증 정보가 없습니다. (로그인이 필요합니다)");
         }
 
         Object principal = authentication.getPrincipal();
 
-        if (principal instanceof Jwt jwt) {
-            String subject = jwt.getSubject(); // Supabase의 유저 ID(UUID)
-            return UUID.fromString(subject);
-        }
-
-        // 2. Jwt 객체인 경우 (OAuth2 Resource Server 기본 동작)
-        if (principal instanceof Jwt jwt) {
-            String subject = jwt.getSubject();
-            if (subject == null) {
-                throw new IllegalStateException("JWT에 'sub' 클레임이 존재하지 않습니다.");
+        // 2. Principal이 String(UUID 문자열)인지 확인
+        // AuthController에서 UsernamePasswordAuthenticationToken의 첫 번째 인자로 넣은 값이 여기에 들어옵니다.
+        if (principal instanceof String userIdStr) {
+            try {
+                return UUID.fromString(userIdStr); // String -> UUID 변환
+            } catch (IllegalArgumentException e) {
+                throw new IllegalStateException("Principal이 유효한 UUID 형식이 아닙니다: " + userIdStr);
             }
-            return UUID.fromString(subject);
         }
 
+        // 3. 만약 타입이 String이 아니라면 에러 (디버깅용)
         throw new IllegalStateException(
                 "지원하지 않는 Principal 타입입니다. 현재 타입: " + principal.getClass().getName()
         );

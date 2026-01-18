@@ -16,13 +16,20 @@ spring:
     hikari:
       maximum-pool-size: 20
       minimum-idle: 10
-  
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: https://jwaycvcwulsneslozzhf.supabase.co/auth/v1/.well-known/jwks.json
-          issuer-uri: https://jwaycvcwulsneslozzhf.supabase.co/auth/v1
+
+  # 세션 저장소 방식을 JDBC로 설정
+  session:
+    store-type: jdbc
+    jdbc:
+      initialize-schema: always # 서버 실행 시 세션 테이블(SPRING_SESSION)이 없으면 자동 생성
+      table-name: SPRING_SESSION
+    timeout: 2592000s # 세션 유지 기간: 30일 (Hotwire Native 모바일 환경 최적화)
+    cookie:
+      name: SESSION
+      http-only: true   # 자바스크립트가 쿠키 못 건드리게 (보안)
+      secure: false     # localhost(HTTP)에서도 쿠키 저장 허용
+      same-site: lax    # 리다이렉트 시에도 쿠키 전송 허용
+      path: /           # 모든 경로에서 쿠키 사용
 
   # JPA 및 Hibernate 설정
   jpa:
@@ -45,6 +52,9 @@ mindlog:
   supabase:
     url: ${SUPABASE_URL}
     anon-key: ${SUPABASE_ANON_KEY}
+
+  serverIp: ${SERVER_IP}
+  serverPort: ${SERVER_PORT}
 
 # 로깅 설정
 logging:

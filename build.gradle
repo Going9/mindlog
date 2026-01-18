@@ -39,13 +39,17 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	implementation 'io.github.cdimascio:dotenv-java:3.0.0'
-	// JWT 파싱 및 검증을 위한 라이브러리
-	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
-	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
-	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
-	implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
 
-	// 로깅 관련 의존성
+	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
+	implementation 'nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect'
+
+	// Source: https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
+	implementation("com.fasterxml.jackson.core:jackson-databind:2.20.1")
+
+	// Spring Session JDBC 추가
+	implementation 'org.springframework.session:spring-session-jdbc'
+
+	// 로깅 관련 의존성SessionConfig
 	implementation 'net.logstash.logback:logstash-logback-encoder:8.0'  // JSON 구조화 로깅
 	implementation 'com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.10.0'  // SQL 파라미터 바인딩 로깅
 	implementation 'org.springframework:spring-aop'  // AOP (성능 로깅용)

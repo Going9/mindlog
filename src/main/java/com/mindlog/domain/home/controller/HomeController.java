@@ -1,4 +1,4 @@
-package com.mindlog.global.controller;
+package com.mindlog.domain.home.controller;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
