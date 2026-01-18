@@ -1,94 +1,115 @@
 <!DOCTYPE html>
-<html lang="ko"
-      xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{layout/base}">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/base}">
 
 <head>
     <title>일기 수정</title>
 </head>
 
 <body>
-<div layout:fragment="content" class="max-w-3xl mx-auto p-4 py-10">
-    <header class="mb-10">
-        <a th:href="@{/diaries/{id}(id=${diaryId})}"
-           class="text-sm text-mindlog-text-secondary hover:text-mindlog-text-primary inline-flex items-center gap-1 mb-4">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
-            뒤로 가기
-        </a>
-        <h1 class="text-3xl font-semibold text-gradient-mindlog">일기 수정</h1>
-    </header>
+    <div layout:fragment="content" class="max-w-3xl mx-auto px-4 py-10 sm:px-6 lg:px-8">
+        <div
+            class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 sm:p-10 dark:bg-gray-800 dark:border-gray-700">
+            <header class="mb-10 text-center">
+                <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-200">
+                    일기 수정
+                </h1>
+            </header>
 
-    <form th:action="@{/diaries/{id}/update(id=${diaryId})}" th:method="post" th:object="${diaryRequest}" class="space-y-8">
-        <div class="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-6">
-            <label class="block text-sm font-medium text-mindlog-text-primary mb-4">기록 날짜</label>
-            <input type="date" th:field="*{date}"
-                   class="w-full bg-white/5 border-white/10 rounded-xl px-4 py-3 text-mindlog-text-primary focus:border-mindlog-purple-400 focus:ring-mindlog-purple-400 transition-all">
-        </div>
+            <form th:action="@{/diaries/{id}/update(id=${diaryId})}" th:method="post" th:object="${diaryRequest}">
+                <div class="space-y-6">
+                    <!-- Date -->
+                    <div>
+                        <label for="date" class="block text-sm font-medium mb-2 text-stone-700 dark:text-white">기록
+                            날짜</label>
+                        <input type="date" th:field="*{date}" id="date"
+                            class="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none bg-gray-50/50 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400 dark:focus:ring-gray-600">
+                    </div>
 
-        <div class="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-6">
-            <label for="shortContent" class="block text-sm font-medium text-mindlog-text-primary mb-2">오늘의 한 줄 요약</label>
-            <input type="text" id="shortContent" th:field="*{shortContent}" placeholder="어떤 하루였나요?"
-                   class="w-full bg-white/5 border-white/10 rounded-xl px-4 py-3 text-mindlog-text-primary placeholder:text-gray-500 focus:border-mindlog-purple-400 focus:ring-mindlog-purple-400 transition-all">
-        </div>
+                    <!-- Short Content -->
+                    <div>
+                        <label for="shortContent"
+                            class="block text-sm font-medium mb-2 text-stone-700 dark:text-white">오늘의 한 줄 요약</label>
+                        <input type="text" id="shortContent" th:field="*{shortContent}" placeholder="어떤 하루였나요?"
+                            class="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none bg-gray-50/50 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400 dark:focus:ring-gray-600">
+                    </div>
 
-        <div class="space-y-6">
-            <h3 class="text-lg font-medium text-mindlog-text-primary px-2">상세 기록</h3>
+                    <div class="border-t border-gray-200 my-8 dark:border-gray-700"></div>
 
-            <div class="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-6">
-                <label for="situation" class="block text-sm font-medium text-mindlog-text-primary mb-2">어떤 상황이었나요? (상황)</label>
-                <textarea id="situation" th:field="*{situation}" rows="3" placeholder="객관적인 상황을 적어보세요."
-                          class="w-full bg-white/5 border-white/10 rounded-xl px-4 py-3 text-mindlog-text-primary placeholder:text-gray-500 focus:border-mindlog-purple-400 focus:ring-mindlog-purple-400 transition-all"></textarea>
-            </div>
+                    <!-- Detail Section -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">상세 기록</h3>
 
-            <div class="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-6">
-                <label for="reaction" class="block text-sm font-medium text-mindlog-text-primary mb-2">그 때 어떤 생각이 들었나요? (반응)</label>
-                <textarea id="reaction" th:field="*{reaction}" rows="3" placeholder="머릿속에 스쳐 지나간 생각들을 적어보세요."
-                          class="w-full bg-white/5 border-white/10 rounded-xl px-4 py-3 text-mindlog-text-primary placeholder:text-gray-500 focus:border-mindlog-purple-400 focus:ring-mindlog-purple-400 transition-all"></textarea>
-            </div>
+                        <div class="space-y-6">
+                            <div>
+                                <label for="situation"
+                                    class="block text-sm font-medium mb-2 text-stone-700 dark:text-white">어떤 상황이었나요?
+                                    (상황)</label>
+                                <textarea id="situation" th:field="*{situation}" rows="3" placeholder="객관적인 상황을 적어보세요."
+                                    class="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none bg-gray-50/50 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400 dark:focus:ring-gray-600"></textarea>
+                            </div>
 
-            <div class="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-6">
-                <label for="physicalSensation" class="block text-sm font-medium text-mindlog-text-primary mb-2">몸의 느낌은 어땠나요? (신체 감각)</label>
-                <textarea id="physicalSensation" th:field="*{physicalSensation}" rows="2"
-                          placeholder="가슴이 답답하거나 손이 떨리는 등의 감각을 적어보세요."
-                          class="w-full bg-white/5 border-white/10 rounded-xl px-4 py-3 text-mindlog-text-primary placeholder:text-gray-500 focus:border-mindlog-purple-400 focus:ring-mindlog-purple-400 transition-all"></textarea>
-            </div>
+                            <div>
+                                <label for="reaction"
+                                    class="block text-sm font-medium mb-2 text-stone-700 dark:text-white">그 때 어떤 생각이
+                                    들었나요? (반응)</label>
+                                <textarea id="reaction" th:field="*{reaction}" rows="3"
+                                    placeholder="머릿속에 스쳐 지나간 생각들을 적어보세요."
+                                    class="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none bg-gray-50/50 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400 dark:focus:ring-gray-600"></textarea>
+                            </div>
 
-            <div class="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-6">
-                <label for="desiredReaction" class="block text-sm font-medium text-mindlog-text-primary mb-2">어떻게 생각하면 더 도움이 될까요? (적응적 생각)</label>
-                <textarea id="desiredReaction" th:field="*{desiredReaction}" rows="3"
-                          placeholder="상황을 조금 다르게 바라본다면 어떨까요?"
-                          class="w-full bg-white/5 border-white/10 rounded-xl px-4 py-3 text-mindlog-text-primary placeholder:text-gray-500 focus:border-mindlog-purple-400 focus:ring-mindlog-purple-400 transition-all"></textarea>
-            </div>
+                            <div>
+                                <label for="physicalSensation"
+                                    class="block text-sm font-medium mb-2 text-stone-700 dark:text-white">몸의 느낌은 어땠나요?
+                                    (신체 감각)</label>
+                                <textarea id="physicalSensation" th:field="*{physicalSensation}" rows="2"
+                                    placeholder="가슴이 답답하거나 손이 떨리는 등의 감각을 적어보세요."
+                                    class="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none bg-gray-50/50 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400 dark:focus:ring-gray-600"></textarea>
+                            </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-6">
-                    <label for="gratitudeMoment" class="block text-sm font-medium text-mindlog-text-primary mb-2">오늘의 감사한 순간</label>
-                    <textarea id="gratitudeMoment" th:field="*{gratitudeMoment}" rows="3"
-                              placeholder="작은 감사함을 찾아보세요."
-                              class="w-full bg-white/5 border-white/10 rounded-xl px-4 py-3 text-mindlog-text-primary placeholder:text-gray-500 focus:border-mindlog-purple-400 focus:ring-mindlog-purple-400 transition-all"></textarea>
+                            <div class="bg-emerald-50/30 p-4 rounded-xl border border-emerald-100">
+                                <label for="desiredReaction"
+                                    class="block text-sm font-medium mb-2 text-emerald-800 dark:text-white">어떻게 생각하면 더
+                                    도움이 될까요? (적응적 생각)</label>
+                                <textarea id="desiredReaction" th:field="*{desiredReaction}" rows="3"
+                                    placeholder="상황을 조금 다르게 바라본다면 어떨까요?"
+                                    class="py-3 px-4 block w-full border-emerald-200 rounded-lg text-sm focus:border-emerald-500 focus:ring-emerald-500 disabled:opacity-50 disabled:pointer-events-none bg-white dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400 dark:focus:ring-gray-600"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="gratitudeMoment"
+                                class="block text-sm font-medium mb-2 text-stone-700 dark:text-white">오늘의 감사한 순간</label>
+                            <textarea id="gratitudeMoment" th:field="*{gratitudeMoment}" rows="3"
+                                placeholder="작은 감사함을 찾아보세요."
+                                class="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none bg-gray-50/50 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400 dark:focus:ring-gray-600"></textarea>
+                        </div>
+                        <div>
+                            <label for="selfKindWords"
+                                class="block text-sm font-medium mb-2 text-stone-700 dark:text-white">나에게 해주고 싶은 친절한
+                                말</label>
+                            <textarea id="selfKindWords" th:field="*{selfKindWords}" rows="3"
+                                placeholder="자기 자신을 다독여주세요."
+                                class="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none bg-gray-50/50 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400 dark:focus:ring-gray-600"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 flex justify-end gap-x-2">
+                        <a th:href="@{/diaries/{id}(id=${diaryId})}"
+                            class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-slate-900 dark:border-gray-700 dark:text-white dark:hover:bg-gray-800 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600">
+                            취소
+                        </a>
+                        <button type="submit"
+                            class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-stone-800 text-white hover:bg-stone-900 disabled:opacity-50 disabled:pointer-events-none dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600">
+                            수정 완료
+                        </button>
+                    </div>
                 </div>
-                <div class="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-6">
-                    <label for="selfKindWords" class="block text-sm font-medium text-mindlog-text-primary mb-2">나에게 해주고 싶은 친절한 말</label>
-                    <textarea id="selfKindWords" th:field="*{selfKindWords}" rows="3" placeholder="자기 자신을 다독여주세요."
-                              class="w-full bg-white/5 border-white/10 rounded-xl px-4 py-3 text-mindlog-text-primary placeholder:text-gray-500 focus:border-mindlog-purple-400 focus:ring-mindlog-purple-400 transition-all"></textarea>
-                </div>
-            </div>
+            </form>
         </div>
-
-        <div class="flex gap-4 pt-4">
-            <button type="submit"
-                    class="flex-grow inline-flex items-center justify-center px-6 py-4 bg-gradient-button text-white font-semibold rounded-xl hover:opacity-90 transition-all hover:-translate-y-0.5 shadow-xl shadow-mindlog-purple-500/20">
-                수정 완료
-            </button>
-            <a th:href="@{/diaries/{id}(id=${diaryId})}"
-               class="inline-flex items-center justify-center px-8 py-4 bg-white/10 text-mindlog-text-primary font-semibold rounded-xl hover:bg-white/15 transition-all">
-                취소
-            </a>
-        </div>
-    </form>
-</div>
+    </div>
 </body>
+
 </html>
