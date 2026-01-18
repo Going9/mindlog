@@ -1,61 +1,71 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout/base :: base(~{::title}, ~{::section}, ~{::#specific-scripts}, 'Mindlog - 당신의 감정일기')}">
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+
 <head>
-    <title>Mindlog</title>
+    <title>홈</title>
 </head>
+
 <body>
-<section class="container mx-auto"> <div class="container mt-20">
-    <div class="logo text-center mb-10">
-        <h1 class="text-5xl font-bold text-gradient-mindlog mb-4">Mindlog</h1>
-        <p class="text-mindlog-text-secondary text-lg">당신의 감정일기</p>
-    </div>
+<div layout:fragment="content">
+    <section class="container mx-auto px-4">
+        <div class="container mt-20">
+            <div class="logo text-center mb-10">
+                <h1 class="text-5xl font-bold text-gradient-mindlog mb-4">Mindlog</h1>
+                <p class="text-mindlog-text-secondary text-lg">당신의 감정일기</p>
+            </div>
 
-    <div id="logged-in" class="card hidden bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-8 text-center max-w-md mx-auto">
-        <div class="success-badge text-green-400 mb-6">✓ 로그인 성공</div>
-        <div class="user-info mb-8">
-            <div class="avatar w-20 h-20 rounded-full mx-auto mb-4 bg-gradient-to-tr from-purple-500 to-blue-500 flex items-center justify-center text-3xl" id="user-avatar">👤</div>
-            <div class="name text-xl font-semibold text-white" id="user-name">사용자</div>
-            <div class="email text-mindlog-text-secondary" id="user-email">email@example.com</div>
+            <div id="logged-in" class="hidden bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-8 text-center max-w-md mx-auto shadow-2xl">
+                <div class="text-green-400 mb-6 text-xl font-medium">✓ 로그인되었습니다</div>
+                <div class="mb-8">
+                    <p class="text-white text-lg mb-2">오늘의 감정을 기록해보세요.</p>
+                    <a th:href="@{/diaries}" class="text-mindlog-purple-400 hover:text-white underline transition-colors font-medium">내 일기장으로 이동 &rarr;</a>
+                </div>
+                <a th:href="@{/auth/logout}" data-turbo="false" class="inline-block bg-white/10 text-white px-6 py-2 rounded-lg hover:bg-white/20 transition-all border border-white/10">로그아웃</a>
+            </div>
+
+            <div id="logged-out" class="hidden bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-8 text-center max-w-md mx-auto shadow-2xl">
+                <p class="text-mindlog-text-secondary mb-8 text-lg">소셜 계정으로 간편하게 시작하세요</p>
+                <a th:href="@{/auth/login}" data-turbo="false" class="inline-block bg-gradient-to-r from-purple-600 to-blue-600 text-white px-10 py-3 rounded-xl font-semibold hover:scale-105 transition-all shadow-lg hover:shadow-purple-500/30">
+                    로그인 / 회원가입
+                </a>
+            </div>
         </div>
-        <a href="/auth/logout" class="btn bg-white/10 text-white px-6 py-2 rounded-lg hover:bg-white/20 transition-all">로그아웃</a>
-    </div>
-
-    <div id="logged-out" class="card hidden bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-8 text-center max-w-md mx-auto">
-        <p class="guest-message text-mindlog-text-secondary mb-8">소셜 계정으로 간편하게 시작하세요</p>
-        <a href="/auth/login" class="btn bg-gradient-to-r from-purple-600 to-blue-600 text-white px-10 py-3 rounded-xl font-semibold hover:scale-105 transition-all inline-block">로그인</a>
-    </div>
+    </section>
 </div>
-</section>
 
-<div id="specific-scripts">
-    <script th:inline="javascript">
-        (function() {
-            async function checkAuth() {
-                // turbo-init.js가 만든 클라이언트를 기다림
-                const client = window.supabaseClient;
-                if (!client) { setTimeout(checkAuth, 50); return; }
+<th:block layout:fragment="scripts">
+    <script>
+        // 간단한 로그인 상태 체크 (실제 서비스에서는 서버 렌더링이 더 좋지만, 현재 구조상 호환)
+        document.addEventListener("DOMContentLoaded", function() {
+            // 세션 쿠키 이름 등 실제 환경에 맞게 조정 필요
+            // 여기서는 간단히 UI 요소가 있는지 여부나, 서버에서 내려준 값을 활용할 수도 있음
+            // 예시: Navbar의 로그인/로그아웃 버튼 상태로 추론하거나, 서버에서 th:if로 렌더링하는 것을 추천.
 
-                const { data: { session } } = await client.auth.getSession();
-                const loggedInDiv = document.getElementById('logged-in');
-                const loggedOutDiv = document.getElementById('logged-out');
+            // 임시: 모든 케이스를 커버하기 위해 JS로 처리 (서버 사이드 렌더링(SSR) 권장)
+            // 현재 구조에서는 Thymeleaf sec:authorize를 Navbar에서 쓰고 있으므로
+            // 여기 Home 본문도 서버에서 th:if="${#authentication.name != 'anonymousUser'}" 로 처리하는게 가장 깔끔합니다.
 
-                if (session && session.user) {
-                    loggedInDiv.classList.remove('hidden');
-                    const user = session.user;
-                    const metadata = user.user_metadata || {};
-                    document.getElementById('user-name').textContent = metadata.full_name || metadata.name || '사용자';
-                    document.getElementById('user-email').textContent = user.email || '';
-                    if (metadata.avatar_url) {
-                        document.getElementById('user-avatar').innerHTML = `<img src="${metadata.avatar_url}" class="w-full h-full rounded-full object-cover">`;
-                    }
-                } else {
-                    loggedOutDiv.classList.remove('hidden');
-                }
+            // 일단 JS 방식 유지 (기존 코드 존중)
+            const isLoggedIn = document.cookie.includes('JSESSIONID'); // 또는 토큰 쿠키
+            // *더 정확한 방법*: 서버에서 로그인 여부를 class로 내려주는 것.
+
+            // (서버 렌더링이 안 된 경우를 대비한 JS 백업 로직)
+            const loggedInEl = document.getElementById('logged-in');
+            const loggedOutEl = document.getElementById('logged-out');
+
+            // Navbar에 '로그아웃' 버튼이 보이면 로그인 상태로 간주
+            const navbarLogoutBtn = document.querySelector('a[href*="/auth/logout"]');
+
+            if (navbarLogoutBtn) {
+                loggedInEl.classList.remove('hidden');
+            } else {
+                loggedOutEl.classList.remove('hidden');
             }
-            checkAuth();
-        })();
+        });
     </script>
-</div>
+</th:block>
 </body>
 </html>

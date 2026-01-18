@@ -40,8 +40,9 @@
 <script th:inline="javascript">
     (function() {
         /*<![CDATA[*/
-        const SUPABASE_URL = /*[[${supabaseUrl}]]*/ '';
-        const SUPABASE_ANON_KEY = /*[[${supabaseAnonKey}]]*/ '';
+        // [수정] URL 가져오는 방식을 scripts.html과 통일하여 안전성 확보
+        const SUPABASE_URL = /*[[${@environment.getProperty('mindlog.supabase.url')}]]*/ '';
+        const SUPABASE_ANON_KEY = /*[[${@environment.getProperty('mindlog.supabase.anon-key')}]]*/ '';
         /*]]>*/
 
         // 1. 강제 종료 타이머 (어떤 상황에서도 1.5초 뒤에는 이동)

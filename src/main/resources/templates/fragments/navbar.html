@@ -1,128 +1,49 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 
 <body>
-    <th:block th:fragment="navbar(supabaseUrl, supabaseAnonKey)">
-        <nav class="bg-transparent border-b border-white/10">
-            <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
-                <a th:href="@{/}"
-                    class="flex items-center space-x-3 rtl:space-x-reverse focus:outline-none focus:ring-2 focus:ring-white/50 rounded-lg">
+<th:block th:fragment="navbar(supabaseUrl, supabaseAnonKey)">
+    <nav class="bg-transparent border-b border-white/10">
+        <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
+            <a th:href="@{/}"
+               class="flex items-center space-x-3 rtl:space-x-reverse focus:outline-none focus:ring-2 focus:ring-white/50 rounded-lg">
                     <span class="self-center text-2xl font-semibold whitespace-nowrap text-gradient-mindlog">
                         Mindlog
                     </span>
-                </a>
+            </a>
 
-                <div class="flex items-center space-x-3 rtl:space-x-reverse">
-                    <!-- 로그인 상태에 따라 다른 버튼 표시 -->
-                    <div id="navbar-logged-in" class="hidden flex items-center space-x-4">
-                        <a th:href="@{/diaries}"
-                            class="text-sm font-medium text-mindlog-text-primary hover:text-white transition-colors">
-                            내 일기
-                        </a>
-                        <a th:href="@{/diaries/new}"
-                            data-turbo="false"
-                            class="text-sm font-medium text-mindlog-text-primary hover:text-white transition-colors">
-                            일기 쓰기
-                        </a>
-                        <a th:href="@{/auth/logout}"
-                            data-turbo="false"
-                            class="px-4 py-2 rounded-lg text-sm font-medium text-mindlog-text-primary hover:text-white hover:bg-white/10 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-transparent">
-                            로그아웃
-                        </a>
-                    </div>
+            <div class="flex items-center space-x-3 rtl:space-x-reverse">
 
-                    <div id="navbar-logged-out" class="hidden">
-                        <a th:href="@{/auth/login}"
-                            data-turbo="false"
-                            class="px-4 py-2 rounded-lg text-sm font-medium bg-gradient-button text-white hover:opacity-90 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-mindlog-purple-400 focus:ring-offset-2 focus:ring-offset-transparent">
-                            로그인
-                        </a>
-                    </div>
+                <div sec:authorize="isAuthenticated()" class="flex items-center space-x-4">
+                    <a th:href="@{/diaries}"
+                       data-turbo-prefetch="false"
+                       class="text-sm font-medium text-mindlog-text-primary hover:text-white transition-colors">
+                        내 일기
+                    </a>
+                    <a th:href="@{/diaries/new}"
+                       data-turbo-prefetch="false"
+                       class="text-sm font-medium text-mindlog-text-primary hover:text-white transition-colors">
+                        일기 쓰기
+                    </a>
+                    <a th:href="@{/auth/logout}"
+                       data-turbo="false"
+                       class="px-4 py-2 rounded-lg text-sm font-medium text-mindlog-text-primary hover:text-white hover:bg-white/10 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-transparent">
+                        로그아웃
+                    </a>
                 </div>
+
+                <div sec:authorize="!isAuthenticated()">
+                    <a th:href="@{/auth/login}"
+                       data-turbo="false"
+                       class="px-4 py-2 rounded-lg text-sm font-medium bg-gradient-button text-white hover:opacity-90 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-mindlog-purple-400 focus:ring-offset-2 focus:ring-offset-transparent">
+                        로그인
+                    </a>
+                </div>
+
             </div>
-        </nav>
-
-        <script th:inline="javascript">
-            // 네비게이션 바 인증 상태 업데이트
-            (function () {
-                'use strict';
-
-                /*<![CDATA[*/
-                const SUPABASE_URL = /*[[${supabaseUrl != null ? supabaseUrl : @environment.getProperty('mindlog.supabase.url')}]]*/ '';
-                const SUPABASE_ANON_KEY = /*[[${supabaseAnonKey != null ? supabaseAnonKey : @environment.getProperty('mindlog.supabase.anon-key')}]]*/ '';
-                /*]]>*/
-
-                // 전역 Supabase 클라이언트가 준비될 때까지 대기
-                function waitForSupabase() {
-                    if (window.supabaseClient) {
-                        initNavbarAuth();
-                    } else {
-                        setTimeout(waitForSupabase, 50);
-                    }
-                }
-
-                function initNavbarAuth() {
-                    const supabaseClient = window.supabaseClient;
-
-                    async function updateNavbarAuth() {
-                        try {
-                            const { data: { session } } = await supabaseClient.auth.getSession();
-                            const loggedIn = document.getElementById('navbar-logged-in');
-                            const loggedOut = document.getElementById('navbar-logged-out');
-
-                            if (session) {
-                                if (loggedIn) {
-                                    loggedIn.classList.remove('hidden');
-                                    loggedIn.style.display = 'flex';
-                                }
-                                if (loggedOut) {
-                                    loggedOut.classList.add('hidden');
-                                    loggedOut.style.display = 'none';
-                                }
-                            } else {
-                                if (loggedIn) {
-                                    loggedIn.classList.add('hidden');
-                                    loggedIn.style.display = 'none';
-                                }
-                                if (loggedOut) {
-                                    loggedOut.classList.remove('hidden');
-                                    loggedOut.style.display = 'block';
-                                }
-                            }
-                        } catch (error) {
-                            console.warn('Navbar auth check failed:', error);
-                            // 에러 시 비로그인 상태로 표시
-                            const loggedIn = document.getElementById('navbar-logged-in');
-                            const loggedOut = document.getElementById('navbar-logged-out');
-                            if (loggedIn) {
-                                loggedIn.classList.add('hidden');
-                                loggedIn.style.display = 'none';
-                            }
-                            if (loggedOut) {
-                                loggedOut.classList.remove('hidden');
-                                loggedOut.style.display = 'block';
-                            }
-                        }
-                    }
-
-                    // 페이지 로드 시 확인
-                    updateNavbarAuth();
-
-                    // Turbo 이벤트 후에도 확인
-                    if (typeof window.Turbo !== 'undefined') {
-                        document.addEventListener('turbo:load', updateNavbarAuth);
-                    }
-                }
-
-                // 페이지 로드 시 Supabase 대기 시작
-                if (document.readyState === 'loading') {
-                    document.addEventListener('DOMContentLoaded', waitForSupabase);
-                } else {
-                    waitForSupabase();
-                }
-            })();
-        </script>
-    </th:block>
+        </div>
+    </nav>
+</th:block>
 </body>
-
 </html>

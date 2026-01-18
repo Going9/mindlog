@@ -1,96 +1,69 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:with="supabaseUrl=${@environment.getProperty('mindlog.supabase.url')}, 
-               supabaseAnonKey=${@environment.getProperty('mindlog.supabase.anon-key')}">
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
 
-<head th:replace="~{fragments/head :: head('내 일기', '당신의 감정 타임라인')}">
+<head>
+    <title>내 일기</title>
 </head>
 
-<body class="bg-gradient-mindlog min-h-screen">
-    <div th:replace="~{fragments/navbar :: navbar(${supabaseUrl}, ${supabaseAnonKey})}"></div>
-
-    <main class="max-w-4xl mx-auto p-4 py-10">
-        <header class="flex justify-between items-center mb-10">
-            <div>
-                <h1 class="text-3xl font-semibold text-gradient-mindlog">내 일기</h1>
-                <p class="text-mindlog-text-secondary mt-1">당신의 감정 기록들</p>
-            </div>
-            <a th:href="@{/diaries/new}"
-                class="inline-flex items-center gap-x-2 px-4 py-2.5 bg-gradient-button text-white text-sm font-medium rounded-xl hover:opacity-90 transition-all focus:outline-none focus:ring-2 focus:ring-mindlog-purple-400 focus:ring-offset-2 focus:ring-offset-transparent shadow-lg shadow-mindlog-purple-500/20">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
-                새 일기 쓰기
-            </a>
-        </header>
-
-        <!-- 일기 목록이 없는 경우 -->
-        <div th:if="${#lists.isEmpty(diaries)}"
-            class="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-12 text-center">
-            <div
-                class="mb-4 inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/5 text-mindlog-text-secondary">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
-            </div>
-            <p class="text-mindlog-text-primary text-lg font-medium">아직 작성된 일기가 없습니다.</p>
-            <p class="text-mindlog-text-secondary text-sm mt-1">오늘의 감정을 첫 번째 일기로 기록해보세요.</p>
+<body>
+<div layout:fragment="content" class="max-w-4xl mx-auto p-4 py-10">
+    <header class="flex justify-between items-center mb-10">
+        <div>
+            <h1 class="text-3xl font-semibold text-gradient-mindlog">내 일기</h1>
+            <p class="text-mindlog-text-secondary mt-1">당신의 감정 기록들</p>
         </div>
+        <a th:href="@{/diaries/new}"
+           data-turbo-prefetch="false"
+           class="inline-flex items-center gap-x-2 px-4 py-2.5 bg-gradient-button text-white text-sm font-medium rounded-xl hover:opacity-90 transition-all focus:outline-none focus:ring-2 focus:ring-mindlog-purple-400 focus:ring-offset-2 focus:ring-offset-transparent shadow-lg shadow-mindlog-purple-500/20">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            새 일기 쓰기
+        </a>
+    </header>
 
-        <!-- 일기 목록 -->
-        <div class="space-y-6">
-            <div th:each="diary : ${diaries}"
-                class="group relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-6 hover:bg-white/[0.08] transition-all hover:shadow-2xl hover:shadow-black/20">
-                <div class="flex flex-col md:flex-row gap-6">
-                    <div class="md:w-32 flex-shrink-0">
-                        <time class="block text-2xl font-bold text-mindlog-text-primary"
-                            th:text="${#temporals.format(diary.date, 'dd')}">16</time>
-                        <span class="text-sm text-mindlog-text-secondary uppercase tracking-wider"
-                            th:text="${#temporals.format(diary.date, 'MMMM yyyy')}">JANUARY 2026</span>
+    <div th:if="${#lists.isEmpty(diaries)}" class="text-center py-20 bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl">
+        <svg class="w-16 h-16 mx-auto text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+        </svg>
+        <p class="text-lg text-mindlog-text-primary mb-2">아직 작성된 일기가 없습니다</p>
+        <p class="text-mindlog-text-secondary">첫 번째 감정 일기를 기록해보세요.</p>
+    </div>
+
+    <div class="space-y-6">
+        <div th:each="diary : ${diaries}" class="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-300">
+            <div class="flex flex-col md:flex-row gap-6">
+                <div class="md:w-32 flex-shrink-0">
+                    <time class="block text-2xl font-bold text-mindlog-text-primary"
+                          th:datetime="${#temporals.format(diary.date, 'yyyy-MM-dd')}"
+                          th:text="${#temporals.format(diary.date, 'dd')}">16</time>
+
+                    <span class="text-sm text-mindlog-text-secondary uppercase tracking-wider"
+                          th:text="${#temporals.format(diary.date, 'MMMM yyyy')}">JANUARY 2026</span>
+                </div>
+
+                <div class="flex-grow">
+                    <div class="flex flex-col sm:flex-row gap-4 mb-3">
+                        <h2 class="text-xl font-semibold text-mindlog-text-primary" th:text="${diary.shortContent}">오늘의 요약</h2>
                     </div>
 
-                    <div class="flex-grow">
-                        <div class="flex flex-col sm:flex-row gap-4 mb-3">
-                            <div th:if="${diary.imageUrl != null}"
-                                class="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden border border-white/10">
-                                <img th:src="${diary.imageUrl}" alt="썸네일" class="w-full h-full object-cover">
-                            </div>
-                            <div>
-                                <h2 class="text-xl font-medium text-mindlog-text-primary mb-2"
-                                    th:text="${diary.shortContent}">
-                                    오늘의 짧은 요약
-                                </h2>
-                                <p class="text-mindlog-text-secondary text-sm line-clamp-2"
-                                    th:text="${diary.situation}">
-                                    상황 설명이 여기에 들어갑니다...
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="flex flex-wrap gap-2 mb-2">
-                            <!-- 여기에 나중에 감정 태그가 들어갈 예정 -->
-                            <span
-                                class="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-mindlog-text-secondary">#기분좋음</span>
-                        </div>
-
-                        <div class="mt-6 flex items-center justify-between">
-                            <a th:href="@{/diaries/{id}(id=${diary.id})}"
-                                class="text-sm text-mindlog-purple-400 hover:text-mindlog-purple-300 font-medium inline-flex items-center gap-1 group/link">
-                                자세히 보기
-                                <svg class="w-4 h-4 transform group-hover/link:translate-x-1 transition-transform"
-                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9 5l7 7-7 7" />
-                                </svg>
-                            </a>
-                        </div>
+                    <div class="mt-6 flex items-center justify-between">
+                        <a th:href="@{/diaries/{id}(id=${diary.id})}"
+                           data-turbo-prefetch="false"
+                           class="text-sm font-medium text-mindlog-purple-400 hover:text-white transition-colors inline-flex items-center gap-1">
+                            자세히 보기
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                            </svg>
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
-    </main>
-
-    <div th:replace="~{fragments/scripts :: scripts(${supabaseUrl}, ${supabaseAnonKey})}"></div>
+    </div>
+</div>
 </body>
-
 </html>
