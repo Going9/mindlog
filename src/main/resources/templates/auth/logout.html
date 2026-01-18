@@ -40,12 +40,11 @@
 <script th:inline="javascript">
     (function() {
         /*<![CDATA[*/
-        // [수정] URL 가져오는 방식을 scripts.html과 통일하여 안전성 확보
         const SUPABASE_URL = /*[[${@environment.getProperty('mindlog.supabase.url')}]]*/ '';
         const SUPABASE_ANON_KEY = /*[[${@environment.getProperty('mindlog.supabase.anon-key')}]]*/ '';
         /*]]>*/
 
-        // 1. 강제 종료 타이머 (어떤 상황에서도 1.5초 뒤에는 이동)
+        // 1. 강제 종료 타이머 (1.5초 뒤 강제 이동)
         const forceRedirect = setTimeout(() => {
             console.warn("로그아웃 작업이 지연되어 강제 이동합니다.");
             performLocalCleanup();
@@ -53,17 +52,23 @@
 
         function performLocalCleanup() {
             clearTimeout(forceRedirect);
-            // 모든 로컬 데이터 삭제
+
+            // 1. 로컬 스토리지 삭제
             localStorage.removeItem('supabase_access_token');
             localStorage.removeItem('supabase_refresh_token');
+
+            // 2. 쿠키 삭제 (만료일 과거로 설정하여 삭제)
+            // [수정] SESSION 쿠키 삭제 추가 (Spring Session)
             document.cookie = "mindlog_access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
-            // 로그인 페이지로 이동
+            document.cookie = "SESSION=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+            document.cookie = "JSESSIONID=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;"; // 혹시 몰라 구버전도 삭제
+
+            // 3. 로그인 페이지로 이동
             window.location.replace('/auth/login');
         }
 
         async function handleLogout() {
             try {
-                // 2. 함수가 있는지 확인
                 if (typeof window.initSupabaseForTurbo !== 'function') {
                     setTimeout(handleLogout, 50);
                     return;
@@ -77,10 +82,9 @@
                     return;
                 }
 
-                // 3. 서버 세션 종료 시도 (실패해도 무관)
+                // Supabase 세션 종료 시도 (실패해도 무관)
                 await client.auth.signOut().catch(e => console.warn("SignOut failed", e));
 
-                // 4. 로컬 정리 및 이동
                 performLocalCleanup();
             } catch (err) {
                 console.error('Logout error:', err);
