@@ -1,29 +1,36 @@
 <!DOCTYPE html>
-<html lang="ko"
-      xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
 <head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title layout:title-pattern="$CONTENT_TITLE - Mindlog">Mindlog</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Mindlog</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" th:href="@{/css/output.css}">
+
+    <meta name="_csrf" th:content="${_csrf?.token}" th:if="${_csrf}"/>
+    <meta name="_csrf_header" th:content="${_csrf?.headerName}" th:if="${_csrf}"/>
 </head>
 
-<body class="bg-stone-50 min-h-screen text-stone-800 antialiased"
-      th:classappend="${isNative} ? 'is-native' : 'is-web'"
-      data-controller="preline">
+<body class="bg-stone-50 text-stone-800 antialiased min-h-screen"
+      th:classappend="${isNative} ? 'is-native' : 'is-web'">
 
-<nav th:unless="${isNative}"
-     th:replace="~{fragments/navbar :: navbar}">
-</nav>
+<nav th:unless="${isNative}" th:replace="~{fragments/navbar :: navbar}"></nav>
 
-<main layout:fragment="content" class="container mx-auto px-4 py-6">
+<main layout:fragment="content" class="container mx-auto px-4 py-6 max-w-4xl">
 </main>
 
+<div class="h-20" th:if="${isNative}"></div>
+
 <div th:replace="~{fragments/scripts :: scripts(
-        ${@environment.getProperty('mindlog.supabase.url')},
-        ${@environment.getProperty('mindlog.supabase.anon-key')}
-    )}"></div>
+            ${@environment.getProperty('mindlog.supabase.url')},
+            ${@environment.getProperty('mindlog.supabase.anon-key')}
+        )}"></div>
 
-<th:block layout:fragment="scripts"></th:block>
-
+<script src="/js/preline.js"></script>
+<th:block layout:fragment="script"></th:block>
 </body>
 </html>
