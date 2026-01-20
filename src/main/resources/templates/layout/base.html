@@ -1,24 +1,29 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" th:with="supabaseUrl=${@environment.getProperty('mindlog.supabase.url')},
-               supabaseAnonKey=${@environment.getProperty('mindlog.supabase.anon-key')}">
-
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
 <head>
     <th:block th:replace="~{fragments/head :: head}"></th:block>
-
     <title layout:title-pattern="$CONTENT_TITLE - Mindlog">Mindlog</title>
 </head>
 
-<body class="bg-stone-50 min-h-screen text-stone-800" data-controller="preline">
+<body class="bg-stone-50 min-h-screen text-stone-800 antialiased"
+      th:classappend="${isNative} ? 'is-native' : 'is-web'"
+      data-controller="preline">
 
-    <div th:replace="~{fragments/navbar :: navbar(${supabaseUrl}, ${supabaseAnonKey})}"></div>
+<nav th:unless="${isNative}"
+     th:replace="~{fragments/navbar :: navbar}">
+</nav>
 
-    <main layout:fragment="content">
-    </main>
+<main layout:fragment="content" class="container mx-auto px-4 py-6">
+</main>
 
-    <div th:replace="~{fragments/scripts :: scripts(${supabaseUrl}, ${supabaseAnonKey})}"></div>
+<div th:replace="~{fragments/scripts :: scripts(
+        ${@environment.getProperty('mindlog.supabase.url')},
+        ${@environment.getProperty('mindlog.supabase.anon-key')}
+    )}"></div>
 
-    <th:block layout:fragment="scripts"></th:block>
+<th:block layout:fragment="scripts"></th:block>
 
 </body>
-
 </html>

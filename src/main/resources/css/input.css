@@ -2,23 +2,63 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 커스텀 유틸리티 클래스 */
+@layer base {
+  :root {
+    --safe-area-inset-bottom: env(safe-area-inset-bottom);
+  }
+
+  body {
+    @apply bg-stone-50 text-stone-800 antialiased;
+    /* [Safe Area] 하단 고정 요소가 있을 경우를 대비해 바디에 기본 여백 부여 */
+    padding-bottom: var(--safe-area-inset-bottom);
+  }
+
+  /* 앱 환경에서만 적용되는 글로벌 스타일 */
+  .is-native {
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+}
+
+@layer components {
+  /* [Design Guideline 4] Mindlog Card System */
+  .mindlog-card {
+    @apply bg-white border border-stone-200 shadow-sm rounded-2xl p-5 transition-all hover:shadow-md;
+  }
+
+  /* [Design Guideline 4] Mindlog Buttons */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-x-2 px-4 py-3 text-sm font-semibold rounded-xl border border-transparent bg-stone-800 text-white hover:bg-stone-900 disabled:opacity-50 disabled:pointer-events-none transition-all;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-x-2 px-4 py-3 text-sm font-semibold rounded-xl border border-stone-200 bg-white text-stone-800 shadow-sm hover:bg-stone-50 disabled:opacity-50 disabled:pointer-events-none transition-all;
+  }
+
+  /* [iOS Optimization] 자동 줌 방지를 위해 text-base(16px) 이상 권장 */
+  .form-input {
+    @apply block w-full border-stone-200 rounded-xl text-base px-4 py-3 focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .form-label {
+    @apply block text-sm font-medium mb-2 text-stone-700;
+  }
+}
+
 @layer utilities {
-  /* 기존 디자인 시스템 유지 - 그라데이션 배경 */
-  .bg-gradient-mindlog {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  /* 하단 고정 버튼 레이아웃용 */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
   }
-  
-  /* 기존 디자인 시스템 유지 - 텍스트 그라데이션 */
-  .text-gradient-mindlog {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+
+  /* 앱 환경에서 특정 요소를 강제로 숨기고 싶을 때 */
+  .is-native .web-only {
+    display: none !important;
   }
-  
-  /* 기존 디자인 시스템 유지 - 버튼 그라데이션 */
-  .bg-gradient-button {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  }
+}
+
+/* input.css 혹은 해당 레이아웃 컨테이너 */
+.container {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
