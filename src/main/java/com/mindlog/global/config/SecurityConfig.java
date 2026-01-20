@@ -37,9 +37,10 @@ public class SecurityConfig {
                 // 4. 로그아웃 설정
                 .logout(logout -> logout
                         .logoutUrl("/auth/logout")
-                        .logoutSuccessUrl("/auth/login")
-                        .invalidateHttpSession(true)
-                        .deleteCookies("SESSION") // 우리가 설정한 쿠키 이름 삭제
+                        .logoutSuccessUrl("/auth/login")                // 로그아웃하면 로그인 페이지로 이동
+                        .invalidateHttpSession(true)                    // 서버 세션 무효화
+                        .deleteCookies("SESSION")  // 우리가 설정한 쿠키 이름 삭제
+                        .clearAuthentication(true)                      // 인증 정보 확실히 삭제
                         .permitAll()
                 );
 
