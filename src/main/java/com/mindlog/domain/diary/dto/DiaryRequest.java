@@ -1,6 +1,8 @@
 package com.mindlog.domain.diary.dto;
 
 import java.time.LocalDate;
+import java.util.List;
+
 import org.jspecify.annotations.Nullable;
 
 public record DiaryRequest(
@@ -12,5 +14,6 @@ public record DiaryRequest(
     @Nullable String desiredReaction,
     @Nullable String gratitudeMoment,
     @Nullable String selfKindWords,
-    @Nullable String imageUrl
+    @Nullable String imageUrl,
+    @Nullable List<Long> tagIds
 ) {}
