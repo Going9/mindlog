@@ -3,6 +3,8 @@ package com.mindlog.domain.diary.controller;
 import com.mindlog.domain.diary.dto.DiaryRequest;
 import com.mindlog.domain.diary.dto.DiaryResponse;
 import com.mindlog.domain.diary.service.DiaryService;
+import com.mindlog.domain.tag.entity.EmotionTag;
+import com.mindlog.domain.tag.service.TagService;
 import com.mindlog.global.security.CurrentProfileId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -10,7 +12,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
 
 import java.time.LocalDate;
 import java.util.List;
@@ -22,6 +23,7 @@ import java.util.UUID;
 public class DiaryController {
 
     private final DiaryService diaryService;
+    private final TagService tagService;
 
     @GetMapping
     public String index(
@@ -35,6 +37,7 @@ public class DiaryController {
         int m = (month != null) ? month : now.getMonthValue();
 
         List<DiaryResponse> diaries = diaryService.getMonthlyDiaries(profileId, y, m);
+
         model.addAttribute("diaries", diaries);
         model.addAttribute("year", y);
         model.addAttribute("month", m);
@@ -57,7 +60,16 @@ public class DiaryController {
     public String form(Model model) {
         model.addAttribute("date", LocalDate.now());
         model.addAttribute("diaryRequest", new DiaryRequest(
-            LocalDate.now(), null, null, null, null, null, null, null, null
+                LocalDate.now(),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
         ));
         return "diaries/form";
     }
@@ -79,20 +91,29 @@ public class DiaryController {
             Model model
     ) {
         DiaryResponse diary = diaryService.getDiary(profileId, id);
-        // Map response to request for the form
+
+        // 기존 태그 객체 리스트에서 -> ID 리스트로 변환
+        List<Long> existingTagIds = diary.tags().stream()
+                .map(EmotionTag::getId)
+                .toList();
+
         DiaryRequest request = new DiaryRequest(
-            diary.date(),
-            diary.shortContent(),
-            diary.situation(),
-            diary.reaction(),
-            diary.physicalSensation(),
-            diary.desiredReaction(),
-            diary.gratitudeMoment(),
-            diary.selfKindWords(),
-            diary.imageUrl()
+                diary.date(),
+                diary.shortContent(),
+                diary.situation(),
+                diary.reaction(),
+                diary.physicalSensation(),
+                diary.desiredReaction(),
+                diary.gratitudeMoment(),
+                diary.selfKindWords(),
+                diary.imageUrl(),
+                existingTagIds
         );
+
         model.addAttribute("diaryRequest", request);
-        model.addAttribute("diaryId", id); // For update URL
+        model.addAttribute("diaryId", id);
+        model.addAttribute("tags", tagService.getAllTags(profileId));
+
         return "diaries/edit";
     }
 

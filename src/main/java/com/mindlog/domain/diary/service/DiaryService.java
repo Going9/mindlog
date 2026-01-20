@@ -15,7 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,8 +33,36 @@ public class DiaryService {
         LocalDate start = yearMonth.atDay(1);
         LocalDate end = yearMonth.atEndOfMonth();
 
-        return diaryRepository.findByProfileIdAndDateBetweenOrderByDateAsc(profileId, start, end).stream()
-                .map(DiaryResponse::from)
+        // 1. 이번 달 일기들을 모두 가져옴
+        List<Diary> diaries = diaryRepository.findByProfileIdAndDateBetweenOrderByDateAsc(profileId, start, end);
+
+        if (diaries.isEmpty()) {
+            return List.of();
+        }
+
+        // 2. 일기들의 ID만 리스트로 추출
+        List<Long> diaryIds = diaries.stream()
+                .map(Diary::getId)
+                .toList();
+
+        // 3. 이 일기들에 붙은 모든 태그를 '한 방에' 조회 (쿼리 1번)
+        List<DiaryTag> diaryTags = diaryTagRepository.findAllByDiaryIdIn(diaryIds);
+
+        // 4. 태그들을 "일기장 ID" 별로 그룹화 (Map<Long, List<EmotionTag>>)
+        // 결과 예시: { 1번일기: [기쁨, 슬픔], 2번일기: [불안] ... }
+        Map<Long, List<EmotionTag>> tagsByDiaryId = diaryTags.stream()
+                .collect(Collectors.groupingBy(
+                        DiaryTag::getDiaryId,
+                        Collectors.mapping(DiaryTag::getEmotionTag, Collectors.toList())
+                ));
+
+        // 5. 일기와 태그를 합쳐서 응답 생성
+        return diaries.stream()
+                .map(diary -> {
+                    // 이 일기에 해당하는 태그 리스트를 꺼냄 (없으면 빈 리스트)
+                    List<EmotionTag> tags = tagsByDiaryId.getOrDefault(diary.getId(), List.of());
+                    return DiaryResponse.from(diary, tags);
+                })
                 .toList();
     }
 
@@ -44,7 +74,13 @@ public class DiaryService {
             throw new IllegalArgumentException("Unauthorized access");
         }
 
-        return DiaryResponse.from(diary);
+        // 1. 해당 일기에 붙은 태그 목록 조회 (중계 테이블 -> 감정 태그 추출)
+        List<EmotionTag> tags = diaryTagRepository.findByDiaryId(id).stream()
+                .map(DiaryTag::getEmotionTag)
+                .toList();
+
+        // 2. from 메서드에 tags 리스트도 같이 전달
+        return DiaryResponse.from(diary, tags);
     }
 
     @Transactional
