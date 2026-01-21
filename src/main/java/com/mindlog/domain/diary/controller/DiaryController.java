@@ -64,6 +64,27 @@ public class DiaryController {
     return "diaries/detail";
   }
 
+  // [통합] 새 일기 폼
+  @GetMapping("/new")
+  public String getForm(@CurrentProfileId UUID profileId, Model model) {
+    // 1. 빈 요청 객체 (ID 없음)
+    model.addAttribute("diaryRequest", new DiaryRequest(
+        LocalDate.now(),
+        null, null, null, null, null, null, null, null, null
+    ));
+
+    // 2. 태그 목록
+    List<TagResponse> tags = tagService.getAllTags(profileId).stream()
+        .map(TagResponse::from)
+        .toList();
+    model.addAttribute("tags", tags);
+
+    // 3. diaryId는 null로 두어 form.html에서 생성 모드임을 알림
+    model.addAttribute("diaryId", null);
+
+    return "diaries/form";
+  }
+
   @PostMapping
   public String create(
       @CurrentProfileId UUID profileId,
@@ -74,6 +95,7 @@ public class DiaryController {
     return "redirect:/diaries/" + id;
   }
 
+  // [통합] 일기 수정 폼 (RESTful URL 유지)
   @GetMapping("/{id}/edit")
   public String editForm(
       @CurrentProfileId UUID profileId,
@@ -82,10 +104,12 @@ public class DiaryController {
   ) {
     DiaryResponse diary = diaryService.getDiary(profileId, id);
 
+    // 1. 기존 태그 ID 추출
     List<Long> existingTagIds = diary.tags().stream()
         .map(EmotionTag::getId)
         .toList();
 
+    // 2. Response -> Request 변환 (폼 바인딩용)
     DiaryRequest request = new DiaryRequest(
         diary.date(),
         diary.shortContent(),
@@ -100,15 +124,18 @@ public class DiaryController {
     );
 
     model.addAttribute("diaryRequest", request);
+
+    // 3. 수정 모드임을 알리기 위해 ID 전달
     model.addAttribute("diaryId", id);
 
-    // [수정] 여기서도 TagResponse로 변환해서 넘겨야 일관성이 유지됩니다.
+    // 4. 태그 목록
     List<TagResponse> tags = tagService.getAllTags(profileId).stream()
         .map(TagResponse::from)
         .toList();
     model.addAttribute("tags", tags);
 
-    return "diaries/edit";
+    // 5. form.html 재사용
+    return "diaries/form";
   }
 
   @PutMapping("/{id}")
@@ -135,39 +162,7 @@ public class DiaryController {
   @ResponseBody
   public ResponseEntity<Long> checkDiaryDate(@CurrentProfileId UUID profileId,
       @RequestParam LocalDate date) {
-    // 해당 날짜에 일기가 있으면 ID 반환, 없으면 null 반환
-    // (Service에 findIdByDate 같은 메서드가 없으면 Optional<Diary>로 찾아서 getId 처리)
     Long diaryId = diaryService.findIdByDate(profileId, date);
     return ResponseEntity.ok(diaryId);
-  }
-
-  // [수정/통합] SSR 최적화가 적용된 폼 조회 메서드
-  @GetMapping("/new")
-  public String getForm(@CurrentProfileId UUID profileId, Model model) {
-    // 1. 빈 폼 객체 (Record는 생성자로 초기화)
-    model.addAttribute("diaryRequest", new DiaryRequest(
-        LocalDate.now(),
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null
-    ));
-
-    // 2. 태그 목록 조회 및 DTO 변환 (TagService가 EmotionTag를 반환한다고 가정)
-    List<TagResponse> tags = tagService.getAllTags(profileId).stream()
-        .map(TagResponse::from) // EmotionTag -> TagResponse 변환
-        .toList();
-    model.addAttribute("tags", tags);
-
-    // 3. 오늘 날짜 일기 존재 여부 체크
-    Long todayDiaryId = diaryService.findIdByDate(profileId, LocalDate.now());
-    model.addAttribute("existingDiaryId", todayDiaryId);
-
-    return "diaries/form";
   }
 }
