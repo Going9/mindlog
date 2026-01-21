@@ -9,14 +9,16 @@ spring:
 
   # 데이터베이스 설정 (환경 변수 주입)
   datasource:
-    url: ${DB_URL}
+    url: ${DB_URL}&stringtype=unspecified
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 20
-      minimum-idle: 10
-
+      #maximum-pool-size: 20
+      maximum-pool-size: 5      # 개발용이니 20개나 필요 없습니다. 5개면 충분!
+      minimum-idle: 1           # 미리 만들어두는 연결을 1개로 줄여서 부팅 속도 향상
+      connection-timeout: 30000 # 30초 대기 (네트워크 느릴 때 튕김 방지)
+      max-lifetime: 1800000     # 30분
   # 세션 저장소 방식을 JDBC로 설정
   session:
     store-type: jdbc
@@ -46,6 +48,11 @@ spring:
   thymeleaf:
     cache: false  # 개발 중에는 캐시 비활성화
     mode: HTML
+
+  mvc:
+    hiddenmethod:
+      filter:
+        enabled: true  # [추가] _method=put 등을 인식하게 해줌
 
 # 프로젝트 전용 커스텀 설정
 mindlog:

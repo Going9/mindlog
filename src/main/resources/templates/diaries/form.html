@@ -1,90 +1,340 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-    layout:decorate="~{layout/base}">
+<html layout:decorate="~{layout/base}" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<th:block layout:fragment="title">일기 쓰기</th:block>
 
-<head>
-    <title>일기 쓰기</title>
-</head>
+<div layout:fragment="content" class="max-w-2xl mx-auto space-y-8">
 
-<body>
-    <div layout:fragment="content" class="max-w-3xl mx-auto p-4 py-10">
-        <header class="mb-10">
-            <a th:href="@{/diaries}"
-                class="text-sm text-stone-500 hover:text-stone-800 inline-flex items-center gap-1 mb-4 transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                </svg>
-                목록으로 돌아가기
-            </a>
-            <h1 class="text-3xl font-bold text-stone-800 tracking-tight">새 일기 기록</h1>
-            <p class="text-stone-500 mt-1">마음의 소리에 귀를 기울여보세요.</p>
-        </header>
+  <div class="text-center space-y-2">
+    <h1 class="text-3xl font-bold text-stone-800">새 일기 작성</h1>
+    <p class="text-stone-500">오늘의 감정을 기록해보세요.</p>
+  </div>
 
-        <form th:action="@{/diaries}" th:method="post" th:object="${diaryRequest}" class="space-y-8">
-            <div class="card">
-                <label class="form-label">기록 날짜</label>
-                <input type="date" th:field="*{date}" class="form-input">
-            </div>
+  <form id="diary-form" th:action="@{/diaries}" th:object="${diaryRequest}" method="post"
+        class="space-y-6" onsubmit="return handleFormSubmit(event)">
 
-            <div class="card">
-                <label for="shortContent" class="form-label">오늘의 한 줄 요약</label>
-                <input type="text" id="shortContent" th:field="*{shortContent}" placeholder="어떤 하루였나요?"
-                    class="form-input">
-            </div>
+    <input type="hidden" id="_method_field" name="_method" value="" disabled>
 
-            <div class="space-y-6">
-                <h3 class="text-lg font-semibold text-stone-800 px-2 mt-8 mb-4">상세 기록</h3>
-
-                <div class="card">
-                    <label for="situation" class="form-label">어떤 상황이었나요? (상황)</label>
-                    <textarea id="situation" th:field="*{situation}" rows="3" placeholder="객관적인 상황을 적어보세요."
-                        class="form-input"></textarea>
-                </div>
-
-                <div class="card">
-                    <label for="reaction" class="form-label">그 때 어떤 생각이 들었나요? (반응)</label>
-                    <textarea id="reaction" th:field="*{reaction}" rows="3" placeholder="머릿속에 스쳐 지나간 생각들을 적어보세요."
-                        class="form-input"></textarea>
-                </div>
-
-                <div class="card">
-                    <label for="physicalSensation" class="form-label">몸의 느낌은 어땠나요? (신체 감각)</label>
-                    <textarea id="physicalSensation" th:field="*{physicalSensation}" rows="2"
-                        placeholder="가슴이 답답하거나 손이 떨리는 등의 감각을 적어보세요." class="form-input"></textarea>
-                </div>
-
-                <div class="card bg-stone-50 border-emerald-100">
-                    <label for="desiredReaction" class="form-label text-emerald-800">어떻게 생각하면 더 도움이 될까요? (적응적
-                        생각)</label>
-                    <textarea id="desiredReaction" th:field="*{desiredReaction}" rows="3"
-                        placeholder="상황을 조금 다르게 바라본다면 어떨까요?"
-                        class="form-input border-emerald-200 focus:border-emerald-500 focus:ring-emerald-500"></textarea>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="card">
-                        <label for="gratitudeMoment" class="form-label">오늘의 감사한 순간</label>
-                        <textarea id="gratitudeMoment" th:field="*{gratitudeMoment}" rows="3"
-                            placeholder="작은 감사함을 찾아보세요." class="form-input"></textarea>
-                    </div>
-                    <div class="card">
-                        <label for="selfKindWords" class="form-label">나에게 해주고 싶은 친절한 말</label>
-                        <textarea id="selfKindWords" th:field="*{selfKindWords}" rows="3" placeholder="자기 자신을 다독여주세요."
-                            class="form-input"></textarea>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex gap-4 pt-4">
-                <button type="submit" class="btn-primary flex-grow text-lg py-4">
-                    일기 저장하기
-                </button>
-                <a th:href="@{/diaries}" class="btn-secondary px-8">
-                    취소
-                </a>
-            </div>
-        </form>
+    <div>
+      <label for="date" class="form-label">날짜</label>
+      <input type="date" id="date" name="date"
+             th:value="${#temporals.format(diaryRequest.date, 'yyyy-MM-dd')}"
+             class="form-input" required>
     </div>
-</body>
 
+    <div>
+      <label for="shortContent" class="form-label">오늘을 한 문장으로 표현한다면?</label>
+      <input type="text" id="shortContent" th:field="*{shortContent}" class="form-input"
+             placeholder="예: 평온하고 감사한 하루" required>
+    </div>
+
+    <div>
+      <label class="form-label mb-3 block">감정 태그</label>
+
+      <div id="tag-list" class="flex flex-wrap gap-2 mb-3 min-h-[40px]">
+        <button th:each="tag : ${tags}"
+                type="button"
+                th:text="${tag.name}"
+                th:data-id="${tag.id}"
+                th:onclick="toggleTag([[${tag.id}]], [[${tag.color}]], this)"
+                class="px-3 py-1.5 rounded-full text-sm font-medium border transition-all duration-200 select-none bg-white shadow-sm"
+                th:style="'border-color:' + ${tag.color} + '; color:' + ${tag.color}">
+        </button>
+      </div>
+
+      <button type="button" onclick="openModal()"
+              class="text-sm text-stone-500 hover:text-stone-800 flex items-center gap-1 py-1 px-2 rounded-lg hover:bg-stone-100 transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+             stroke-linejoin="round">
+          <path d="M5 12h14"/>
+          <path d="M12 5v14"/>
+        </svg>
+        새 태그 만들기
+      </button>
+
+      <div id="selected-tags-container"></div>
+    </div>
+
+    <div class="space-y-6">
+      <div>
+        <label for="situation" class="form-label">어떤 상황이었나요? (사실)</label>
+        <textarea id="situation" th:field="*{situation}" rows="3" class="form-input"
+                  placeholder="객관적인 상황을 적어주세요."></textarea>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label for="reaction" class="form-label">나의 반응 (행동/말)</label>
+          <textarea id="reaction" th:field="*{reaction}" rows="2" class="form-input"></textarea>
+        </div>
+        <div>
+          <label for="desiredReaction" class="form-label">원했던 반응</label>
+          <textarea id="desiredReaction" th:field="*{desiredReaction}" rows="2"
+                    class="form-input"></textarea>
+        </div>
+      </div>
+      <div>
+        <label for="physicalSensation" class="form-label">신체 감각</label>
+        <textarea id="physicalSensation" th:field="*{physicalSensation}" rows="2"
+                  class="form-input"></textarea>
+      </div>
+      <div>
+        <label for="gratitudeMoment" class="form-label">감사한 순간</label>
+        <textarea id="gratitudeMoment" th:field="*{gratitudeMoment}" rows="2"
+                  class="form-input"></textarea>
+      </div>
+      <div>
+        <label for="selfKindWords" class="form-label">나에게 해주고 싶은 말</label>
+        <textarea id="selfKindWords" th:field="*{selfKindWords}" rows="2"
+                  class="form-input"></textarea>
+      </div>
+    </div>
+
+    <div class="pt-6 flex items-center justify-end gap-3">
+      <a th:href="@{/}" class="btn-ghost">취소</a>
+      <button type="submit" class="btn-primary">기록하기</button>
+    </div>
+  </form>
+
+  <div id="tag-modal" class="fixed inset-0 z-50 hidden" aria-modal="true">
+    <div class="fixed inset-0 bg-stone-900/50 backdrop-blur-sm transition-opacity"
+         onclick="closeModal()"></div>
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+      <div class="flex min-h-full items-center justify-center p-4">
+        <div
+            class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-xl transition-all sm:w-full sm:max-w-sm border border-stone-100 p-6">
+          <h3 class="text-lg font-semibold text-stone-900 mb-4">새 감정 태그</h3>
+          <div class="space-y-4">
+            <div>
+              <label class="text-sm font-medium text-stone-700 block mb-1">이름</label>
+              <input type="text" id="new-tag-name" class="form-input" placeholder="예: 뿌듯함">
+            </div>
+            <div>
+              <label class="text-sm font-medium text-stone-700 block mb-1">카테고리</label>
+              <select id="new-tag-category" class="form-input">
+                <option value="POSITIVE">긍정</option>
+                <option value="NEGATIVE">부정</option>
+                <option value="NEUTRAL">중립</option>
+              </select>
+            </div>
+            <div>
+              <div class="flex justify-between items-end mb-3">
+                <label class="text-sm font-medium text-stone-700">색상</label>
+                <span id="color-feedback"
+                      class="text-xs text-stone-500 font-mono">기본값 (#78716C)</span>
+              </div>
+              <input type="hidden" id="selected-color-value" value="#78716C">
+              <div class="flex gap-4 overflow-x-auto py-4 px-2 scrollbar-hide items-center">
+                <th:block
+                    th:each="color : ${ {'#78716C', '#EF4444', '#F97316', '#EAB308', '#22C55E', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899'} }">
+                  <button type="button"
+                          class="color-btn w-12 h-12 rounded-full shadow-md transition-all ring-4 ring-transparent ring-offset-2 hover:scale-110 flex-shrink-0"
+                          th:style="'background-color:' + ${color}"
+                          th:onclick="selectColor(this, [[${color}]])"></button>
+                </th:block>
+                <div class="relative group flex-shrink-0">
+                  <input type="color" id="custom-color-picker"
+                         class="absolute inset-0 opacity-0 cursor-pointer w-12 h-12 z-10"
+                         oninput="updateCustomButton(this)" title="나만의 색상 선택">
+                  <button type="button" id="custom-color-btn"
+                          class="color-btn w-12 h-12 rounded-full bg-white border-2 border-stone-200 flex items-center justify-center ring-4 ring-transparent ring-offset-2 shadow-md transition-all">
+                    <svg id="custom-plus-icon" xmlns="http://www.w3.org/2000/svg" width="24"
+                         height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                         class="text-stone-400">
+                      <path d="M12 5v14M5 12h14"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="mt-6 flex justify-end gap-2">
+            <button type="button" class="btn-ghost" onclick="closeModal()">취소</button>
+            <button type="button" class="btn-primary" onclick="createTag()">만들기</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<th:block layout:fragment="script">
+  <script th:inline="javascript">
+    // [SSR 데이터 주입] Thymeleaf 변수를 JS 상수로 변환
+    const initialExistingId = [[${existingDiaryId}]];
+    const initialDateStr = [[${#temporals.format(diaryRequest.date, 'yyyy-MM-dd')}]];
+
+    let selectedTagIds = new Set();
+
+    // 1. 태그 선택/해제 (UI + Hidden Input)
+    function toggleTag(id, color, btn) {
+      if (selectedTagIds.has(id)) {
+        selectedTagIds.delete(id);
+        btn.style.backgroundColor = 'white';
+        btn.style.color = color;
+        btn.style.borderColor = color;
+        btn.classList.remove('shadow-md', 'scale-105');
+      } else {
+        selectedTagIds.add(id);
+        btn.style.backgroundColor = color;
+        btn.style.color = 'white';
+        btn.style.borderColor = color;
+        btn.classList.add('shadow-md', 'scale-105');
+      }
+      updateHiddenInputs();
+    }
+
+    function updateHiddenInputs() {
+      const container = document.getElementById('selected-tags-container');
+      container.innerHTML = '';
+      selectedTagIds.forEach(id => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'tagIds';
+        input.value = id;
+        container.appendChild(input);
+      });
+    }
+
+    // 2. [핵심] 폼 제출 핸들러 (중복 체크 & PUT 전환)
+    async function handleFormSubmit(event) {
+      event.preventDefault(); // 일단 멈춤
+
+      const dateInput = document.getElementById('date').value;
+      const form = document.getElementById('diary-form');
+      const methodField = document.getElementById('_method_field');
+
+      if (!dateInput) {
+        return alert("날짜를 선택해주세요.");
+      }
+
+      let targetId = null;
+
+      try {
+        // (A) 날짜를 안 바꿨으면? -> 서버에서 준 초기값 사용 (API 호출 절약)
+        if (dateInput === initialDateStr) {
+          targetId = initialExistingId;
+        }
+        // (B) 날짜를 바꿨으면? -> 서버에 물어봐야 함
+        else {
+          const res = await fetch(`/diaries/check?date=${dateInput}`);
+          if (res.ok) {
+            targetId = await res.json();
+          }
+        }
+
+        // 3. 분기 처리
+        if (targetId) {
+          // [수정 모드]
+          if (confirm("해당 날짜에 이미 일기가 있습니다.\n덮어쓰시겠습니까?")) {
+            form.action = '/diaries/' + targetId; // URL 변경
+            methodField.value = 'put';            // PUT 메서드 활성화
+            methodField.disabled = false;
+            form.submit(); // 진짜 제출
+          } else {
+            // 취소 시 날짜 입력창으로 포커스
+            document.getElementById('date').focus();
+          }
+        } else {
+          // [생성 모드]
+          form.action = '/diaries';
+          methodField.disabled = true; // PUT 아님
+          form.submit();
+        }
+
+      } catch (err) {
+        console.error("체크 중 오류:", err);
+        form.submit(); // 오류 나면 그냥 기본 제출 시도
+      }
+    }
+
+    // 3. 모달 및 태그 생성 관련
+    function openModal() {
+      document.getElementById('tag-modal').classList.remove('hidden');
+      const firstBtn = document.querySelector('.color-btn');
+      if (firstBtn) {
+        selectColor(firstBtn, '#78716C');
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('tag-modal').classList.add('hidden');
+      document.getElementById('new-tag-name').value = '';
+    }
+
+    function selectColor(btn, color) {
+      document.querySelectorAll('.color-btn').forEach(b => {
+        b.classList.remove('ring-stone-800', 'scale-110');
+        b.classList.add('ring-transparent');
+      });
+      if (btn) {
+        btn.classList.remove('ring-transparent');
+        btn.classList.add('ring-stone-800', 'scale-110');
+      }
+      document.getElementById('selected-color-value').value = color;
+      const feedback = document.getElementById('color-feedback');
+      feedback.innerText = `선택됨 (${color})`;
+      feedback.style.color = color;
+    }
+
+    function updateCustomButton(input) {
+      const color = input.value;
+      const btn = document.getElementById('custom-color-btn');
+      const icon = document.getElementById('custom-plus-icon');
+      btn.style.backgroundColor = color;
+      btn.style.borderColor = color;
+      if (icon) {
+        icon.style.display = 'none';
+      }
+      selectColor(btn, color);
+    }
+
+    // [개선] 새 태그 생성 (페이지 리로딩 없이 DOM에 바로 추가)
+    async function createTag() {
+      const name = document.getElementById('new-tag-name').value;
+      const category = document.getElementById('new-tag-category').value;
+      const color = document.getElementById('selected-color-value').value || '#78716C';
+
+      if (!name) {
+        return alert("이름을 입력해주세요.");
+      }
+
+      try {
+        const response = await fetch('/api/tags', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({name, color, category})
+        });
+
+        if (response.ok) {
+          const newTag = await response.json();
+          closeModal();
+
+          // [Smart UX] 목록 전체를 다시 불러오지 않고, 버튼 하나만 쏙 추가
+          const container = document.getElementById('tag-list');
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.innerText = newTag.name;
+          btn.className = "px-3 py-1.5 rounded-full text-sm font-medium border transition-all duration-200 select-none bg-white shadow-sm";
+          // Thymeleaf 스타일과 동일하게 세팅
+          btn.style.borderColor = newTag.color;
+          btn.style.color = newTag.color;
+
+          // 클릭 이벤트 연결
+          btn.onclick = () => toggleTag(newTag.id, newTag.color, btn);
+
+          container.appendChild(btn);
+
+          // (선택사항) 방금 만든 태그 바로 자동 선택?
+          // btn.click();
+        } else {
+          alert("태그 생성 실패");
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  </script>
+</th:block>
 </html>
