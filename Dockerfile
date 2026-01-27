@@ -24,7 +24,7 @@ USER mindlog
 
 COPY --from=build /app/build/libs/*.jar app.jar
 
-ENV JAVA_OPTS="-XX:+UseZGC -XX:MaxRAMPercentage=75.0 -Dspring.profiles.active=prod"
+ENV JAVA_OPTS="-XX:+UseZGC -XX:MaxRAMPercentage=75.0 -Dspring.profiles.active=prod -DLOG_PATH=/tmp"
 EXPOSE 8080
 
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
