@@ -1,17 +1,19 @@
-import { Application, Controller } from "https://unpkg.com/@hotwired/stimulus/dist/stimulus.js"
+// [변경] CDN URL 대신 별칭(@hotwired/stimulus) 사용
+import { Application, Controller } from "@hotwired/stimulus"
 
-window.Stimulus = Application.start()
+// Stimulus 애플리케이션 시작
+const application = Application.start()
+window.Stimulus = application // 디버깅을 위해 전역 변수에 할당
 
-Stimulus.register("preline", class extends Controller {
+// Preline UI 컨트롤러 등록
+application.register("preline", class extends Controller {
     connect() {
-        // 요소가 DOM에 연결될 때마다 Preline UI를 다시 깨웁니다.
-        // Turbo 렌더링 안정화를 위해 잠시 대기
+        // Turbo 네비게이션 시 Preline UI 구성 요소들이 깨지지 않도록 재초기화
         setTimeout(() => {
-            // Turbo 캐시와 충돌 방지를 위해 기존 상태 정리
             window.HSStaticMethods?.removeCollection?.();
-
-            // 안전하게 초기화
             window.HSStaticMethods?.autoInit?.();
         }, 100);
     }
 })
+
+console.log("[Mindlog] Stimulus 초기화 완료 (Local Module)");

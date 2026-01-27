@@ -2,32 +2,32 @@
 <html xmlns:th="http://www.thymeleaf.org">
 
 <th:block th:fragment="head">
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="description" content="Mindlog - 당신의 감정일기">
-  <meta name="theme-color" content="#1a1a2e">
-  <meta name="turbo-cache-control" content="no-preview">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="Mindlog - 당신의 감정일기">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="turbo-cache-control" content="no-preview">
 
-  <link th:href="@{/css/output.css}" rel="stylesheet">
+    <link th:href="@{/css/output.css}" rel="stylesheet">
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <script type="importmap">
-    {
-      "imports": {
-        "@hotwired/stimulus": "https://unpkg.com/@hotwired/stimulus/dist/stimulus.js"
-      }
-    }
-  </script>
+    <script type="importmap">
+        {
+          "imports": {
+            "@hotwired/turbo": "/js/libs/turbo.js",
+            "@hotwired/stimulus": "/js/libs/stimulus.js",
+            "preline": "/js/preline.js"
+          }
+        }
+    </script>
 
-  <script src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@8/dist/turbo.es2017-umd.js"></script>
-  <script type="module" th:src="@{/js/stimulus-init.js}"></script>
-  <script th:src="@{/js/turbo-init.js}"></script>
-
-  <script src="https://cdn.jsdelivr.net/npm/preline@2/dist/preline.min.js" defer></script>
+    <script type="module" th:src="@{/js/turbo-init.js}"></script>
+    <script type="module" th:src="@{/js/stimulus-init.js}"></script>
+    <script th:src="@{/js/preline.js}" defer></script>
 </th:block>
 </html>

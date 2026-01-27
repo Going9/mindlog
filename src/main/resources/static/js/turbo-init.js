@@ -1,21 +1,33 @@
-(function () {
-    'use strict';
-    if (window.__MINDLOG_INITIALIZED__) return;
-    window.__MINDLOG_INITIALIZED__ = true;
+import * as Turbo from "@hotwired/turbo"
 
-    // [수정] 더 이상 JS에서 토큰 유무를 감시하지 않음 (서버 세션 사용)
+// 1. 전역 변수에 Turbo 등록 (안드로이드가 찾을 수 있게)
+window.Turbo = Turbo;
 
-    // Turbo가 서버로부터 401(인증 없음) 또는 403(권한 없음) 응답을 받았을 때만 처리
+// 2. Turbo 시작
+Turbo.start();
+
+// 3. [핵심] 브릿지 수동 연결 (타이밍 이슈 해결)
+// 안드로이드 앱 내부에서 실행된 경우에만 작동합니다.
+if (window.Turbo.session.adapter) {
+    window.Turbo.session.adapter.connect();
+    console.log("[Mindlog] Native Bridge Connected Manually");
+} else {
+    // 만약 어댑터가 아직 없다면, 약간 기다렸다가 다시 시도 (안전장치)
+    setTimeout(() => {
+        if (window.Turbo.session.adapter) {
+            window.Turbo.session.adapter.connect();
+            console.log("[Mindlog] Native Bridge Connected (Delayed)");
+        }
+    }, 100);
+}
+
+// 4. 인증 만료 처리 (기존 로직 유지)
+if (!window.__MINDLOG_TURBO_INITIALIZED__) {
+    window.__MINDLOG_TURBO_INITIALIZED__ = true;
     document.addEventListener('turbo:before-fetch-response', (event) => {
         const status = event.detail.fetchResponse.status;
-        const path = window.location.pathname;
-
-        if ((status === 401 || status === 403) && path !== '/auth/login' && path !== '/') {
-            console.warn('[Mindlog] 인증 만료 또는 권한 없음. 로그인 페이지로 이동합니다.');
-            // Turbo 방문이 아니라 완전한 페이지 이동으로 처리하여 세션 정리 유도
+        if ((status === 401 || status === 403) && window.location.pathname !== '/auth/login') {
             window.location.href = '/auth/login?error=session_expired';
         }
     });
-
-    console.log("[Mindlog] Turbo 초기화 완료 (Server-side Session Mode)");
-})();
+}
