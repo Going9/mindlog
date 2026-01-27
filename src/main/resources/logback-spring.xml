@@ -1,142 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <property name="LOG_PATH" value="logs"/>
-    <property name="APP_NAME" value="mindlog"/>
-
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-            <includeMdcKeyName>requestId</includeMdcKeyName>
-            <includeMdcKeyName>profileId</includeMdcKeyName>
-            <includeMdcKeyName>clientIp</includeMdcKeyName>
-            <timeZone>UTC</timeZone>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - [%X{requestId:-no-id}, %X{profileId:-guest}] %msg%n</pattern>
         </encoder>
     </appender>
-
-    <appender name="APP_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_PATH}/app.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_PATH}/archived/app.%d{yyyy-MM-dd}.log.gz</fileNamePattern>
-            <maxHistory>30</maxHistory>
-            <totalSizeCap>3GB</totalSizeCap>
-        </rollingPolicy>
-        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-            <includeMdcKeyName>requestId</includeMdcKeyName>
-            <includeMdcKeyName>profileId</includeMdcKeyName>
-            <includeMdcKeyName>clientIp</includeMdcKeyName>
-            <timeZone>UTC</timeZone>
-        </encoder>
-    </appender>
-
-    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_PATH}/error.log</file>
-        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>ERROR</level>
-        </filter>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_PATH}/archived/error.%d{yyyy-MM-dd}.log.gz</fileNamePattern>
-            <maxHistory>60</maxHistory> <totalSizeCap>2GB</totalSizeCap>
-        </rollingPolicy>
-        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-            <includeMdcKeyName>requestId</includeMdcKeyName>
-            <includeMdcKeyName>profileId</includeMdcKeyName>
-            <includeMdcKeyName>clientIp</includeMdcKeyName>
-            <customFields>{"log_type":"error"}</customFields>
-            <timeZone>UTC</timeZone>
-        </encoder>
-    </appender>
-
-    <appender name="SECURITY_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_PATH}/security.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_PATH}/archived/security.%d{yyyy-MM-dd}.log.gz</fileNamePattern>
-            <maxHistory>90</maxHistory>
-            <totalSizeCap>5GB</totalSizeCap>
-        </rollingPolicy>
-        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-            <includeMdcKeyName>requestId</includeMdcKeyName>
-            <includeMdcKeyName>profileId</includeMdcKeyName>
-            <includeMdcKeyName>clientIp</includeMdcKeyName>
-            <customFields>{"log_type":"security_audit"}</customFields>
-            <timeZone>UTC</timeZone>
-        </encoder>
-    </appender>
-
-    <appender name="PERFORMANCE_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_PATH}/performance.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_PATH}/archived/performance.%d{yyyy-MM-dd}.log.gz</fileNamePattern>
-            <maxHistory>30</maxHistory>
-            <totalSizeCap>2GB</totalSizeCap>
-        </rollingPolicy>
-        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-            <includeMdcKeyName>requestId</includeMdcKeyName>
-            <includeMdcKeyName>profileId</includeMdcKeyName>
-            <customFields>{"log_type":"performance"}</customFields>
-            <timeZone>UTC</timeZone>
-        </encoder>
-    </appender>
-
-    <appender name="SQL_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_PATH}/sql.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_PATH}/archived/sql.%d{yyyy-MM-dd}.log.gz</fileNamePattern>
-            <maxHistory>14</maxHistory>
-            <totalSizeCap>2GB</totalSizeCap>
-        </rollingPolicy>
-        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-            <includeMdcKeyName>requestId</includeMdcKeyName>
-            <customFields>{"log_type":"sql"}</customFields>
-            <timeZone>UTC</timeZone>
-        </encoder>
-    </appender>
-
-    <appender name="ASYNC_APP_FILE" class="ch.qos.logback.classic.AsyncAppender">
-        <appender-ref ref="APP_FILE"/>
-    </appender>
-
-    <appender name="ASYNC_ERROR_FILE" class="ch.qos.logback.classic.AsyncAppender">
-        <appender-ref ref="ERROR_FILE"/>
-    </appender>
-
-    <appender name="ASYNC_SECURITY_FILE" class="ch.qos.logback.classic.AsyncAppender">
-        <appender-ref ref="SECURITY_FILE"/>
-    </appender>
-
-    <appender name="ASYNC_PERFORMANCE_FILE" class="ch.qos.logback.classic.AsyncAppender">
-        <appender-ref ref="PERFORMANCE_FILE"/>
-    </appender>
-
-    <appender name="ASYNC_SQL_FILE" class="ch.qos.logback.classic.AsyncAppender">
-        <appender-ref ref="SQL_FILE"/>
-    </appender>
-
-    <logger name="com.mindlog.global.logging.security" level="INFO" additivity="false">
-        <appender-ref ref="ASYNC_SECURITY_FILE"/>
-        <appender-ref ref="ASYNC_ERROR_FILE"/>
-        <appender-ref ref="CONSOLE"/>
-    </logger>
-
-    <logger name="com.mindlog.global.logging.aspect" level="INFO" additivity="false">
-        <appender-ref ref="ASYNC_PERFORMANCE_FILE"/>
-        <appender-ref ref="CONSOLE"/>
-    </logger>
-
-    <logger name="com.mindlog.global.logging.filter" level="INFO" additivity="false">
-        <appender-ref ref="ASYNC_APP_FILE"/>
-        <appender-ref ref="ASYNC_ERROR_FILE"/>
-        <appender-ref ref="CONSOLE"/>
-    </logger>
-
-    <logger name="p6spy" level="INFO" additivity="false">
-        <appender-ref ref="ASYNC_SQL_FILE"/>
-    </logger>
 
     <root level="INFO">
-        <appender-ref ref="ASYNC_APP_FILE"/>
-        <appender-ref ref="ASYNC_ERROR_FILE"/>
         <appender-ref ref="CONSOLE"/>
     </root>
 
+    <logger name="com.mindlog" level="DEBUG" />
+    <logger name="p6spy" level="INFO" />
+    <logger name="org.springframework.web" level="INFO" />
 </configuration>
