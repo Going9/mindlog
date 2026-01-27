@@ -1,30 +1,35 @@
-# 1단계: 빌드 스테이지
-FROM eclipse-temurin:25-jdk-alpine AS build
+# 1단계: 빌드 스테이지 (Java 25 JDK 사용)
+FROM eclipse-temurin:25-jdk-alpine AS builder
 WORKDIR /app
 COPY gradlew .
 COPY gradle gradle
 COPY build.gradle settings.gradle ./
-RUN ./gradlew dependencies --no-daemon
+# gradlew 실행 권한 부여
+RUN chmod +x ./gradlew
+# 소스 복사 및 빌드
 COPY src src
 RUN ./gradlew clean bootJar --no-daemon
 
-# 2단계: 실행 스테이지
-FROM eclipse-temurin:25-jre-alpine
+# 2단계: 실행 스테이지 (Java 25 JRE 사용)
+FROM eclipse-temurin:25-jre-alpine AS runtime
 WORKDIR /app
 
-# 1. 유저와 그룹 생성
-# 2. 로그 폴더(하위 archived 포함) 미리 생성
-# 3. /app 폴더 전체의 소유권을 mindlog 유저에게 양도
-RUN addgroup -S mindlog && adduser -S mindlog -G mindlog && \
-    mkdir -p /app/logs/archived && \
-    chown -R mindlog:mindlog /app
+# 시스템 유저 생성
+RUN addgroup -S worker && adduser -S worker -G worker
 
-# 이제부터는 mindlog 유저로 작업 (보안 강화)
-USER mindlog
+# 앱이 실행될 /app 폴더 전체의 소유권을 worker 유저에게 부여
+RUN chown -R worker:worker /app
 
-COPY --from=build /app/build/libs/*.jar app.jar
+# 보안을 위해 유저 전환
+USER worker
 
-ENV JAVA_OPTS="-XX:+UseZGC -XX:MaxRAMPercentage=75.0 -Dspring.profiles.active=prod -DLOG_PATH=/tmp"
+# 빌드된 jar 복사 (소유권 유지)
+COPY --from=builder --chown=worker:worker /app/build/libs/*.jar app.jar
+
+# JVM 최적화 및 로그 경로 강제 지정
+ENV JAVA_OPTS="-XX:+UseZGC -XX:MaxRAMPercentage=75.0 -Dspring.profiles.active=prod"
+
 EXPOSE 8080
 
+# 쉘 형식(sh -c)을 사용하여 환경 변수가 제대로 확장되도록 설정
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
