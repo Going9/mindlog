@@ -14,11 +14,10 @@ spring:
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
-      #maximum-pool-size: 20
-      maximum-pool-size: 5      # 개발용이니 20개나 필요 없습니다. 5개면 충분!
-      minimum-idle: 1           # 미리 만들어두는 연결을 1개로 줄여서 부팅 속도 향상
-      connection-timeout: 30000 # 30초 대기 (네트워크 느릴 때 튕김 방지)
-      max-lifetime: 1800000     # 30분
+      maximum-pool-size: 20      
+      minimum-idle: 1           
+      connection-timeout: 30000 
+      max-lifetime: 1800000     
   # 세션 저장소 방식을 JDBC로 설정
   session:
     store-type: jdbc
@@ -37,12 +36,14 @@ spring:
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: validate
+      ddl-auto: none
     properties:
       hibernate:
         format_sql: false
         show_sql: false  # P6Spy로 대체
         default_batch_fetch_size: 100
+        temp:
+          use_jdbc_metadata_defaults: false
 
   # Thymeleaf 설정
   thymeleaf:
