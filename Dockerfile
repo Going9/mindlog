@@ -28,6 +28,7 @@ COPY --from=builder --chown=worker:worker /app/build/libs/*.jar app.jar
 
 # AppCDS 생성 (AOT)
 # 더미 환경 변수를 주입하여 스프링 컨텍스트 로딩만 수행
+# 빌드 시점에도 ZGC 옵션을 명시하여 실행 시점과 환경을 일치
 RUN DB_URL=jdbc:postgresql://localhost:5432/dummy \
     DB_USERNAME=dummy \
     DB_PASSWORD=dummy \
@@ -35,7 +36,8 @@ RUN DB_URL=jdbc:postgresql://localhost:5432/dummy \
     SUPABASE_ANON_KEY=dummy \
     SERVER_IP=127.0.0.1 \
     SERVER_PORT=8080 \
-    java -XX:ArchiveClassesAtExit=app.jsa \
+    java -XX:+UseZGC \
+         -XX:ArchiveClassesAtExit=app.jsa \
          -Dspring.profiles.active=prod \
          -Dspring.context.exit=onRefresh \
          -jar app.jar || true
