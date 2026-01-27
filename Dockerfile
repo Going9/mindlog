@@ -8,7 +8,7 @@ COPY gradle gradle
 COPY build.gradle settings.gradle ./
 RUN chmod +x ./gradlew
 
-# 의존성 먼저 다운로드
+# 의존성 다운로드
 RUN ./gradlew dependencies --no-daemon
 
 # 소스 복사 및 빌드
@@ -19,16 +19,19 @@ RUN ./gradlew clean bootJar --no-daemon
 FROM eclipse-temurin:25-jre-alpine AS runtime
 WORKDIR /app
 
-# [보안] 클라우드타입 권장 비루트 유저 설정 (UID 1000)
+# 시스템 유저 생성 및 앱 폴더 소유권 부여
 RUN addgroup -S worker -g 1000 && \
-    adduser -S worker -u 1000 -G worker -D
+    adduser -S worker -u 1000 -G worker -D && \
+    chown -R worker:worker /app
 
-# 빌드된 jar 복사 및 소유권 변경
+# 빌드된 jar 복사 (소유권 반영)
 COPY --from=builder --chown=worker:worker /app/build/libs/*.jar app.jar
 
+# worker 유저로 전환 후 CDS 생성 작업을 수행
+USER worker
+
 # AppCDS 생성 (AOT)
-# 더미 환경 변수를 주입하여 스프링 컨텍스트 로딩만 수행
-# 빌드 시점에도 ZGC 옵션을 명시하여 실행 시점과 환경을 일치
+# 기본 GC(G1GC)를 사용하므로 별도의 GC 옵션 없이 실행
 RUN DB_URL=jdbc:postgresql://localhost:5432/dummy \
     DB_USERNAME=dummy \
     DB_PASSWORD=dummy \
@@ -36,24 +39,18 @@ RUN DB_URL=jdbc:postgresql://localhost:5432/dummy \
     SUPABASE_ANON_KEY=dummy \
     SERVER_IP=127.0.0.1 \
     SERVER_PORT=8080 \
-    java -XX:+UseZGC \
-         -XX:ArchiveClassesAtExit=app.jsa \
+    java -XX:ArchiveClassesAtExit=app.jsa \
          -Dspring.profiles.active=prod \
          -Dspring.context.exit=onRefresh \
          -jar app.jar || true
 
-# 유저 전환
-USER worker
-
-# [성능] Java 25 가상 스레드 및 저지연 성능을 위한 최적 옵션
-# -XX:+UseZGC: 가상 스레드 최적화 GC
-# -XX:SharedArchiveFile: 빌드 시 생성한 app.jsa를 사용하여 기동 속도 향상
-ENV JAVA_OPTS="-XX:+UseZGC \
-               -XX:MaxRAMPercentage=75.0 \
+# 실행 옵션
+# -XX:+UseZGC를 제거하여 기본 G1GC를 사용
+# -XX:SharedArchiveFile을 통해 위에서 생성한 app.jsa를 적용
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0 \
                -XX:SharedArchiveFile=app.jsa \
                -Dspring.profiles.active=prod"
 
 EXPOSE 8080
 
-# 클라우드타입 환경 변수 확장을 지원하는 실행 방식
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
