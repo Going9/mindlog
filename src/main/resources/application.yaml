@@ -35,6 +35,7 @@ spring:
   # JPA 및 Hibernate 설정
   jpa:
     open-in-view: false
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: none
     properties:
