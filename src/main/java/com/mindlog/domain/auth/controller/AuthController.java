@@ -30,8 +30,6 @@ public class AuthController {
     @Value("${mindlog.serverPort}")
     private String serverPort;
 
-    private static final String REDIRECT_URI = "http://localhost:8080/auth/callback";
-
     @GetMapping("/login")
     public String loginPage() {
         return "auth/login";
