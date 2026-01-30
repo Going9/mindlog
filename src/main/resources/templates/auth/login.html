@@ -42,14 +42,16 @@
 
             <div class="space-y-4">
                 <a th:href="@{/auth/login/google}"
-                   onclick="event.preventDefault(); window.location.assign(this.href); return false;"
+                   data-controller="external-link"
+                   data-action="click->external-link#navigate"
                    class="w-full py-3.5 px-4 inline-flex justify-center items-center gap-x-3 text-sm font-medium rounded-xl border border-stone-200 bg-white text-stone-700 shadow-sm hover:bg-stone-50 hover:border-stone-300 transition-all">
                     <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" class="w-5 h-5" alt="Google">
                     Google로 계속하기
                 </a>
 
                 <a th:href="@{/auth/login/kakao}"
-                   onclick="event.preventDefault(); window.location.assign(this.href); return false;"
+                   data-controller="external-link"
+                   data-action="click->external-link#navigate"
                    class="w-full py-3.5 px-4 inline-flex justify-center items-center gap-x-3 text-sm font-medium rounded-xl border border-transparent bg-[#FEE500] text-[#000000] hover:bg-[#FDD835] transition-all shadow-sm">
                     <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                         <path
