@@ -8,7 +8,7 @@
     <meta name="theme-color" content="#1a1a2e">
     <meta name="turbo-cache-control" content="no-preview">
 
-    <link th:href="@{/css/output.css}" rel="stylesheet">
+    <link th:href="@{/css/output.css(v=${#dates.format(#dates.createNow(), 'yyyyMMddHHmm')})}" rel="stylesheet">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,8 +26,9 @@
         }
     </script>
 
-    <script type="module" th:src="@{/js/turbo-init.js}"></script>
-    <script type="module" th:src="@{/js/stimulus-init.js}"></script>
-    <script th:src="@{/js/preline.js}" defer></script>
+    <script type="module" th:src="@{/js/turbo-init.js(v=${#dates.format(#dates.createNow(), 'yyyyMMddHHmm')})}"></script>
+    <script type="module" th:src="@{/js/stimulus-init.js(v=${#dates.format(#dates.createNow(), 'yyyyMMddHHmm')})}"></script>
+
+    <script th:src="@{/js/preline.js(v=${#dates.format(#dates.createNow(), 'yyyyMMddHHmm')})}" defer></script>
 </th:block>
 </html>
