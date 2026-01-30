@@ -2,6 +2,10 @@ spring:
   application:
     name: mindlog
 
+  # 기본적으로 'local' 프로필을 활성화 (IntelliJ 등에서 바로 실행 시 적용됨)
+  profiles:
+    active: local
+
   # Java 25 가상 스레드 활성화
   threads:
     virtual:
@@ -14,23 +18,18 @@ spring:
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 20      
-      minimum-idle: 1           
-      connection-timeout: 30000 
-      max-lifetime: 1800000     
-  # 세션 저장소 방식을 JDBC로 설정
+      maximum-pool-size: 20
+      minimum-idle: 1
+      connection-timeout: 30000
+      max-lifetime: 1800000
+
+  # 세션 저장소 설정 (공통)
   session:
     store-type: jdbc
     jdbc:
-      initialize-schema: always # 서버 실행 시 세션 테이블(SPRING_SESSION)이 없으면 자동 생성
+      initialize-schema: always
       table-name: SPRING_SESSION
-    timeout: 2592000s # 세션 유지 기간: 30일 (Hotwire Native 모바일 환경 최적화)
-    cookie:
-      name: SESSION
-      http-only: true   # 자바스크립트가 쿠키 못 건드리게 (보안)
-      secure: false     # localhost(HTTP)에서도 쿠키 저장 허용
-      same-site: lax    # 리다이렉트 시에도 쿠키 전송 허용
-      path: /           # 모든 경로에서 쿠키 사용
+    timeout: 2592000s # 30일
 
   # JPA 및 Hibernate 설정
   jpa:
@@ -46,35 +45,29 @@ spring:
         temp:
           use_jdbc_metadata_defaults: false
 
-  # Thymeleaf 설정
+  # Thymeleaf 공통 설정 (캐시는 환경별 분리)
   thymeleaf:
-    cache: false  # 개발 중에는 캐시 비활성화
     mode: HTML
 
   mvc:
     hiddenmethod:
       filter:
-        enabled: true  # [추가] _method=put 등을 인식하게 해줌
+        enabled: true
 
 # 프로젝트 전용 커스텀 설정
 mindlog:
   supabase:
     url: ${SUPABASE_URL}
     anon-key: ${SUPABASE_ANON_KEY}
-
   serverIp: ${SERVER_IP}
   serverPort: ${SERVER_PORT}
 
-# 로깅 설정
+# 로깅 공통 설정
 logging:
   level:
     root: INFO
     com.mindlog: INFO
     com.mindlog.global.logging: INFO
-    # Hibernate SQL 로깅 비활성화 (P6Spy로 대체)
     org.hibernate.SQL: OFF
     org.hibernate.orm.jdbc.bind: OFF
-    # Spring Security 로깅
     org.springframework.security: WARN
-    # P6Spy SQL 로깅
-    p6spy: INFO
