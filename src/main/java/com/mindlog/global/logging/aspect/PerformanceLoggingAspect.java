@@ -75,6 +75,8 @@ public class PerformanceLoggingAspect {
 
         try {
             return joinPoint.proceed();
+        } catch (Error err) {
+            throw err;
         } catch (Throwable ex) {
             success = false;
             errorType = ex.getClass().getSimpleName();
@@ -109,7 +111,8 @@ public class PerformanceLoggingAspect {
         String fullMethodName = className + "." + methodName;
 
         if (!success) {
-            log.warn("Method execution failed",
+            log.warn("Method execution failed: {} ({}ms) - Error: {}", 
+                    fullMethodName, duration, errorType,
                     kv("method", fullMethodName),
                     kv("layer", layer),
                     kv("duration", duration),
@@ -117,7 +120,8 @@ public class PerformanceLoggingAspect {
                     kv("errorType", errorType)
             );
         } else if (duration >= SLOW_EXECUTION_THRESHOLD_MS) {
-            log.warn("Slow method execution detected",
+            log.warn("Slow method execution: {} took {}ms (Threshold: {}ms)", 
+                    fullMethodName, duration, SLOW_EXECUTION_THRESHOLD_MS,
                     kv("method", fullMethodName),
                     kv("layer", layer),
                     kv("duration", duration),
@@ -125,7 +129,8 @@ public class PerformanceLoggingAspect {
                     kv("success", true)
             );
         } else {
-            log.debug("Method execution completed",
+            log.debug("Method execution completed: {} ({}ms)", 
+                    fullMethodName, duration,
                     kv("method", fullMethodName),
                     kv("layer", layer),
                     kv("duration", duration),

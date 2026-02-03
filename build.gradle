@@ -37,7 +37,7 @@ dependencies {
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
-	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	implementation 'io.github.cdimascio:dotenv-java:3.0.0'
 
@@ -61,10 +61,36 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
+// [수정] OS에 따른 npm 실행 파일 경로 설정
+def isWindows = System.getProperty('os.name').toLowerCase().contains('windows')
+def npmExecutable = isWindows ? 'npm.cmd' : 'npm'
+
+// macOS/Linux에서 PATH에 npm이 잡히지 않는 경우를 대비한 절대 경로 체크
+if (!isWindows) {
+    def possiblePaths = ['/opt/homebrew/bin/npm', '/usr/local/bin/npm', '/usr/bin/npm']
+    for (String path : possiblePaths) {
+        if (file(path).exists()) {
+            npmExecutable = path
+            break
+        }
+    }
+}
+
 // [수정] 1. tasks.register를 사용하여 '게으른 등록(Lazy Registration)' 수행
+tasks.register('npmInstall', Exec) {
+    commandLine npmExecutable, 'install'
+    onlyIf { !file('node_modules').exists() }
+}
+
+tasks.register('buildCss', Exec) {
+    dependsOn 'npmInstall'
+    commandLine npmExecutable, 'run', 'build-css'
+}
+
 tasks.register('copyPreline', Copy) {
-	from 'node_modules/preline/dist/preline.js'
-	into 'src/main/resources/static/js'
+    dependsOn 'buildCss' // CSS 빌드 후 복사 (순서 보장)
+    from 'node_modules/preline/dist/preline.js'
+    into 'src/main/resources/static/js'
 }
 
 // [수정] 2. 의존성 설정 (문자열로 태그 이름을 참조)
