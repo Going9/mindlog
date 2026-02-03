@@ -6,16 +6,22 @@ WORKDIR /app
 # Alpine 환경이므로 apk를 사용
 RUN apk add --no-cache nodejs npm
 
-# Gradle 캐시 효율을 위해 설정 파일 먼저 복사
+# 1) Gradle Wrapper 및 설정 파일 복사 (캐시 효율화)
 COPY gradlew .
 COPY gradle gradle
 COPY build.gradle settings.gradle ./
+
+# 2) Node.js/Tailwind 관련 설정 파일 복사
+# npmInstall 및 프론트엔드 빌드를 위해 반드시 필요
+COPY package.json package-lock.json* tailwind.config.js* ./
+
+# 실행 권한 부여
 RUN chmod +x ./gradlew
 
-# 의존성 다운로드
+# 3) 의존성 다운로드 (Java 라이브러리)
 RUN ./gradlew dependencies --no-daemon
 
-# 소스 복사 및 빌드
+# 4) 소스 코드 전체 복사 및 빌드 수행
 COPY src src
 RUN ./gradlew clean bootJar --no-daemon
 
@@ -36,6 +42,7 @@ USER worker
 
 # AppCDS 생성 (AOT)
 # 기본 GC(G1GC)를 사용하므로 별도의 GC 옵션 없이 실행
+# Dummy 환경 변수를 주입하여 컨텍스트 로딩 시 DB 에러 방지 (최소한의 로딩 유도)
 RUN DB_URL=jdbc:postgresql://localhost:5432/dummy \
     DB_USERNAME=dummy \
     DB_PASSWORD=dummy \
@@ -49,7 +56,6 @@ RUN DB_URL=jdbc:postgresql://localhost:5432/dummy \
          -jar app.jar || true
 
 # 실행 옵션
-# -XX:+UseZGC를 제거하여 기본 G1GC를 사용
 # -XX:SharedArchiveFile을 통해 위에서 생성한 app.jsa를 적용
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0 \
                -XX:SharedArchiveFile=app.jsa \
