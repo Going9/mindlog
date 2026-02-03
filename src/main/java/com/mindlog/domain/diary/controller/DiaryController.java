@@ -2,10 +2,9 @@ package com.mindlog.domain.diary.controller;
 
 import com.mindlog.domain.diary.dto.DiaryRequest;
 import com.mindlog.domain.diary.dto.DiaryResponse;
+import com.mindlog.domain.diary.service.DiaryFormService;
 import com.mindlog.domain.diary.service.DiaryService;
 import com.mindlog.domain.tag.dto.TagResponse;
-import com.mindlog.domain.tag.entity.EmotionTag;
-import com.mindlog.domain.tag.service.TagService;
 import com.mindlog.global.security.CurrentProfileId;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -28,7 +27,7 @@ import java.util.UUID;
 public class DiaryController {
 
     private final DiaryService diaryService;
-    private final TagService tagService;
+    private final DiaryFormService diaryFormService;
 
     @GetMapping
     public String index(
@@ -63,10 +62,8 @@ public class DiaryController {
 
     @GetMapping("/new")
     public String getForm(@CurrentProfileId UUID profileId, Model model) {
-        populateFormModel(model, profileId, new DiaryRequest(
-                LocalDate.now(), null, null, null, null, null, null, null, null, null
-        ), null);
-
+        var formData = diaryFormService.getCreateForm(profileId);
+        populateModel(model, formData);
         return "diaries/form";
     }
 
@@ -86,7 +83,8 @@ public class DiaryController {
         // 1. 입력값 검증 실패 시 (DB 가기 전에 컷)
         if (bindingResult.hasErrors()) {
             response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value()); // 422 (Turbo가 인식함)
-            populateFormModel(model, profileId, request, null); // 폼 데이터 유지용
+            var formData = diaryFormService.getFormOnError(profileId, request, null);
+            populateModel(model, formData);
             return "diaries/form"; // 에러 메시지와 함께 폼 다시 띄움
         }
 
@@ -101,16 +99,8 @@ public class DiaryController {
             @PathVariable Long id,
             Model model
     ) {
-        var diary = diaryService.getDiary(profileId, id);
-        var existingTagIds = diary.tags().stream().map(EmotionTag::getId).toList();
-
-        var request = new DiaryRequest(
-                diary.date(), diary.shortContent(), diary.situation(), diary.reaction(),
-                diary.physicalSensation(), diary.desiredReaction(), diary.gratitudeMoment(),
-                diary.selfKindWords(), diary.imageUrl(), existingTagIds
-        );
-
-        populateFormModel(model, profileId, request, id);
+        var formData = diaryFormService.getEditForm(profileId, id);
+        populateModel(model, formData);
         return "diaries/form";
     }
 
@@ -130,7 +120,8 @@ public class DiaryController {
     ) {
         if (bindingResult.hasErrors()) {
             response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
-            populateFormModel(model, profileId, request, id);
+            var formData = diaryFormService.getFormOnError(profileId, request, id);
+            populateModel(model, formData);
             return "diaries/form";
         }
 
@@ -164,17 +155,9 @@ public class DiaryController {
 
     // --- Private Helper Methods ---
 
-    /**
-     * 폼 렌더링에 필요한 공통 모델 데이터 주입
-     * (유효성 검사 실패 시에도 동일한 데이터를 다시 로드해야 하므로 분리)
-     */
-    private void populateFormModel(Model model, UUID profileId, DiaryRequest request, Long diaryId) {
-        var tags = tagService.getAllTags(profileId).stream()
-                .map(TagResponse::from)
-                .toList();
-
-        model.addAttribute("diaryRequest", request);
-        model.addAttribute("tags", tags);
-        model.addAttribute("diaryId", diaryId); // null이면 생성, 값이 있으면 수정 모드
+    private void populateModel(Model model, com.mindlog.domain.diary.dto.DiaryFormDTO formData) {
+        model.addAttribute("diaryRequest", formData.diaryRequest());
+        model.addAttribute("tags", formData.tags());
+        model.addAttribute("diaryId", formData.diaryId());
     }
 }

@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+import com.mindlog.domain.tag.dto.TagResponse;
 import com.mindlog.domain.tag.entity.EmotionTag;
 import org.jspecify.annotations.Nullable;
 
@@ -20,7 +21,7 @@ public record DiaryResponse(
     @Nullable String gratitudeMoment,
     @Nullable String selfKindWords,
     @Nullable String imageUrl,
-    List<EmotionTag>tags
+    List<TagResponse> tags
 ) {
     public static DiaryResponse from(Diary diary, List<EmotionTag> tags) {
         return new DiaryResponse(
@@ -35,7 +36,7 @@ public record DiaryResponse(
                 diary.getGratitudeMoment(),
                 diary.getSelfKindWords(),
                 diary.getImageUrl(),
-                tags
+                tags.stream().map(TagResponse::from).toList()
         );
     }
 }

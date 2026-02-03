@@ -29,34 +29,38 @@ public class DiaryService {
   private final EmotionTagRepository emotionTagRepository;
 
   public List<DiaryResponse> getMonthlyDiaries(UUID profileId, int year, int month) {
-    YearMonth yearMonth = YearMonth.of(year, month);
-    LocalDate start = yearMonth.atDay(1);
-    LocalDate end = yearMonth.atEndOfMonth();
-
-    // 1. 일기 조회
-    List<Diary> diaries = diaryRepository.findByProfileIdAndDateBetweenOrderByDateAsc(profileId,
-        start, end);
-
+    List<Diary> diaries = findDiariesByMonth(profileId, year, month);
     if (diaries.isEmpty()) {
       return List.of();
     }
 
-    // 2. ID 추출
+    Map<Long, List<EmotionTag>> tagsByDiaryId = fetchAndGroupTags(diaries);
+
+    return buildDiaryResponses(diaries, tagsByDiaryId);
+  }
+
+  private List<Diary> findDiariesByMonth(UUID profileId, int year, int month) {
+    YearMonth yearMonth = YearMonth.of(year, month);
+    LocalDate start = yearMonth.atDay(1);
+    LocalDate end = yearMonth.atEndOfMonth();
+    return diaryRepository.findByProfileIdAndDateBetweenOrderByDateAsc(profileId, start, end);
+  }
+
+  private Map<Long, List<EmotionTag>> fetchAndGroupTags(List<Diary> diaries) {
     List<Long> diaryIds = diaries.stream()
         .map(Diary::getId)
         .toList();
 
-    // 3. 태그 한 번에 조회 (Fetch Join으로 이미 EmotionTag가 로딩됨)
     List<DiaryTag> diaryTags = diaryTagRepository.findAllByDiaryIdIn(diaryIds);
 
-    // 4. 그룹화 (더 이상 강제 초기화 필요 없음)
-    Map<Long, List<EmotionTag>> tagsByDiaryId = diaryTags.stream()
+    return diaryTags.stream()
         .collect(Collectors.groupingBy(
             DiaryTag::getDiaryId,
             Collectors.mapping(DiaryTag::getEmotionTag, Collectors.toList())
         ));
+  }
 
-    // 5. 응답 생성
+  private List<DiaryResponse> buildDiaryResponses(List<Diary> diaries, Map<Long, List<EmotionTag>> tagsByDiaryId) {
     return diaries.stream()
         .map(diary -> {
           List<EmotionTag> tags = tagsByDiaryId.getOrDefault(diary.getId(), List.of());
@@ -83,11 +87,24 @@ public class DiaryService {
 
   @Transactional
   public Long createDiary(UUID profileId, DiaryRequest request) {
-    if (diaryRepository.existsByProfileIdAndDate(profileId, request.date())) {
+    validateDiaryNotExists(profileId, request.date());
+
+    Diary diary = buildDiaryFromRequest(profileId, request);
+    Diary savedDiary = diaryRepository.save(diary);
+    
+    saveDiaryTags(savedDiary, request.tagIds());
+
+    return savedDiary.getId();
+  }
+
+  private void validateDiaryNotExists(UUID profileId, LocalDate date) {
+    if (diaryRepository.existsByProfileIdAndDate(profileId, date)) {
       throw new IllegalStateException("Diary already exists for this date");
     }
+  }
 
-    Diary diary = Diary.builder()
+  private Diary buildDiaryFromRequest(UUID profileId, DiaryRequest request) {
+    return Diary.builder()
         .profileId(profileId)
         .date(request.date())
         .shortContent(request.shortContent())
@@ -99,11 +116,6 @@ public class DiaryService {
         .selfKindWords(request.selfKindWords())
         .imageUrl(request.imageUrl())
         .build();
-
-    Diary savedDiary = diaryRepository.save(diary);
-    saveDiaryTags(savedDiary, request.tagIds());
-
-    return savedDiary.getId();
   }
 
   @Transactional
@@ -126,7 +138,9 @@ public class DiaryService {
         request.imageUrl()
     );
 
-    // 기존 태그 삭제 후 재저장
+    List<DiaryTag> existingTags = diaryTagRepository.findByDiaryId(id);
+    existingTags.forEach(dt -> dt.getEmotionTag().decrementUsageCount());
+
     diaryTagRepository.deleteAllByDiaryId(id);
     saveDiaryTags(diary, request.tagIds());
   }
