@@ -3,6 +3,7 @@ package com.mindlog.domain.diary.service;
 import com.mindlog.domain.diary.dto.DiaryRequest;
 import com.mindlog.domain.diary.dto.DiaryResponse;
 import com.mindlog.domain.diary.entity.Diary;
+import com.mindlog.domain.diary.exception.DuplicateDiaryDateException;
 import com.mindlog.domain.diary.repository.DiaryRepository;
 import com.mindlog.domain.tag.entity.DiaryTag;
 import com.mindlog.domain.tag.entity.EmotionTag;
@@ -69,6 +70,24 @@ class DiaryServiceTest {
         // then
         verify(diaryRepository).save(any(Diary.class));
         verify(diaryTagRepository).saveAll(anyList());
+    }
+
+    @Test
+    @DisplayName("일기 생성 - 실패 (중복 날짜)")
+    void createDiary_Fail_DuplicateDate() {
+        // given
+        UUID profileId = UUID.randomUUID();
+        LocalDate today = LocalDate.now();
+        DiaryRequest request = new DiaryRequest(
+                today, "content", null, null, null, null, null, null, null, null
+        );
+
+        given(diaryRepository.existsByProfileIdAndDate(profileId, today)).willReturn(true);
+
+        // when & then
+        assertThatThrownBy(() -> diaryService.createDiary(profileId, request))
+                .isInstanceOf(DuplicateDiaryDateException.class)
+                .hasMessageContaining("이미 해당 날짜에 일기가 존재합니다");
     }
 
     @Test

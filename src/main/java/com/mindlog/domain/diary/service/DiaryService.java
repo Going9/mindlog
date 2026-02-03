@@ -3,6 +3,7 @@ package com.mindlog.domain.diary.service;
 import com.mindlog.domain.diary.dto.DiaryRequest;
 import com.mindlog.domain.diary.dto.DiaryResponse;
 import com.mindlog.domain.diary.entity.Diary;
+import com.mindlog.domain.diary.exception.DuplicateDiaryDateException;
 import com.mindlog.domain.diary.repository.DiaryRepository;
 import com.mindlog.domain.tag.entity.DiaryTag;
 import com.mindlog.domain.tag.entity.EmotionTag;
@@ -99,7 +100,7 @@ public class DiaryService {
 
   private void validateDiaryNotExists(UUID profileId, LocalDate date) {
     if (diaryRepository.existsByProfileIdAndDate(profileId, date)) {
-      throw new IllegalStateException("Diary already exists for this date");
+      throw new DuplicateDiaryDateException("이미 해당 날짜에 일기가 존재합니다");
     }
   }
 

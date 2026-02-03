@@ -80,15 +80,21 @@ public class DiaryController {
             Model model,
             HttpServletResponse response
     ) {
-        // 1. 입력값 검증 실패 시 (DB 가기 전에 컷)
         if (bindingResult.hasErrors()) {
-            response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value()); // 422 (Turbo가 인식함)
+            response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
             var formData = diaryFormService.getFormOnError(profileId, request, null);
             populateModel(model, formData);
-            return "diaries/form"; // 에러 메시지와 함께 폼 다시 띄움
+            return "diaries/form";
         }
 
-        // 2. 성공 시
+        if (diaryService.findIdByDate(profileId, request.date()) != null) {
+            bindingResult.rejectValue("date", "duplicate", "이미 해당 날짜에 일기가 존재합니다");
+            response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
+            var formData = diaryFormService.getFormOnError(profileId, request, null);
+            populateModel(model, formData);
+            return "diaries/form";
+        }
+
         Long id = diaryService.createDiary(profileId, request);
         return new RedirectView("/diaries/" + id, true, false, false); // 303 리다이렉트
     }
@@ -119,6 +125,15 @@ public class DiaryController {
             HttpServletResponse response
     ) {
         if (bindingResult.hasErrors()) {
+            response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
+            var formData = diaryFormService.getFormOnError(profileId, request, id);
+            populateModel(model, formData);
+            return "diaries/form";
+        }
+
+        var existingId = diaryService.findIdByDate(profileId, request.date());
+        if (existingId != null && !existingId.equals(id)) {
+            bindingResult.rejectValue("date", "duplicate", "이미 해당 날짜에 일기가 존재합니다");
             response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
             var formData = diaryFormService.getFormOnError(profileId, request, id);
             populateModel(model, formData);
