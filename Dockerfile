@@ -2,6 +2,10 @@
 FROM eclipse-temurin:25-jdk-alpine AS builder
 WORKDIR /app
 
+# 빌드에 필요한 시스템 종속성 추가 (Node.js 및 npm 설치)
+# Alpine 환경이므로 apk를 사용
+RUN apk add --no-cache nodejs npm
+
 # Gradle 캐시 효율을 위해 설정 파일 먼저 복사
 COPY gradlew .
 COPY gradle gradle
