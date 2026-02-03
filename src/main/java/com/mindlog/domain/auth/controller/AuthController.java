@@ -60,9 +60,11 @@ public class AuthController {
         String challenge = PkceUtil.generateCodeChallenge(verifier);
         session.setAttribute("pkce_verifier", verifier);
 
+        String prompt = "google".equalsIgnoreCase(provider) ? "select_account" : "login";
+
         String authUrl = String.format(
-                "%s/auth/v1/authorize?provider=%s&redirect_to=%s&code_challenge=%s&code_challenge_method=S256&flow_type=pkce",
-                supabaseUrl, provider, getRedirectUri(), challenge);
+                "%s/auth/v1/authorize?provider=%s&redirect_to=%s&code_challenge=%s&code_challenge_method=S256&flow_type=pkce&prompt=%s",
+                supabaseUrl, provider, getRedirectUri(), challenge, prompt);
 
         return "redirect:" + authUrl;
     }

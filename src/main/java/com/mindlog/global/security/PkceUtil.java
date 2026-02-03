@@ -2,6 +2,7 @@ package com.mindlog.global.security;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
 
@@ -49,7 +50,7 @@ public class PkceUtil {
             // 이게 바로 Supabase에게 먼저 보여줄 '변장한 암호(Challenge)'입니다.
             return Base64.getUrlEncoder().withoutPadding().encodeToString(digest);
 
-        } catch (Exception e) {
+        } catch (NoSuchAlgorithmException e) {
             // 혹시라도 자바가 SHA-256을 모르면 에러를 냅니다(그럴 일은 거의 없습니다).
             throw new RuntimeException("SHA-256 algorithm not supported", e);
         }
