@@ -1,5 +1,6 @@
 package com.mindlog.domain.tag.controller;
 
+import com.mindlog.domain.tag.dto.TagResponse;
 import com.mindlog.domain.tag.entity.EmotionCategory;
 import com.mindlog.domain.tag.entity.EmotionTag;
 import com.mindlog.domain.tag.service.TagService;
@@ -20,13 +21,16 @@ public class TagController {
 
     // 태그 목록 가져오기 (GET /api/tags)
     @GetMapping
-    public ResponseEntity<List<EmotionTag>> getTags(@CurrentProfileId UUID profileId) {
-        return ResponseEntity.ok(tagService.getAllTags(profileId));
+    public ResponseEntity<List<TagResponse>> getTags(@CurrentProfileId UUID profileId) {
+        var tags = tagService.getAllTags(profileId).stream()
+                .map(TagResponse::from)
+                .toList();
+        return ResponseEntity.ok(tags);
     }
 
     // 새 태그 만들기 (POST /api/tags)
     @PostMapping
-    public ResponseEntity<EmotionTag> createTag(
+    public ResponseEntity<TagResponse> createTag(
             @CurrentProfileId UUID profileId,
             @RequestBody CreateTagRequest request
     ) {
@@ -36,7 +40,7 @@ public class TagController {
                 request.color(),
                 request.category()
         );
-        return ResponseEntity.ok(tag);
+        return ResponseEntity.ok(TagResponse.from(tag));
     }
 
     // 요청 데이터를 받을 DTO
