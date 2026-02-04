@@ -41,80 +41,45 @@
                 </div>
 
                 <div class="space-y-4">
-                    <!-- 숨겨진 Form들 (Turbo 완전 우회) -->
-                    <form id="googleLoginForm" method="GET" action="/auth/login/google" data-turbo="false"
-                        style="display:none;">
+                    <!-- Google 로그인: form에 data-turbo="false" 설정 -->
+                    <form th:action="@{/auth/login/google}" method="GET" data-turbo="false" id="googleForm">
                         <input type="hidden" name="source" id="googleSource" value="">
+                        <button type="submit"
+                            class="w-full py-3.5 px-4 inline-flex justify-center items-center gap-x-3 text-sm font-medium rounded-xl border border-stone-200 bg-white text-stone-700 shadow-sm hover:bg-stone-50 hover:border-stone-300 transition-all">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"
+                                class="w-5 h-5" alt="Google">
+                            Google로 계속하기
+                        </button>
                     </form>
-                    <form id="kakaoLoginForm" method="GET" action="/auth/login/kakao" data-turbo="false"
-                        style="display:none;">
+
+                    <!-- 카카오 로그인: form에 data-turbo="false" 설정 -->
+                    <form th:action="@{/auth/login/kakao}" method="GET" data-turbo="false" id="kakaoForm">
                         <input type="hidden" name="source" id="kakaoSource" value="">
+                        <button type="submit"
+                            class="w-full py-3.5 px-4 inline-flex justify-center items-center gap-x-3 text-sm font-medium rounded-xl border border-transparent bg-[#FEE500] text-[#000000] hover:bg-[#FDD835] transition-all shadow-sm">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M12 3C6.48 3 2 6.48 2 10.76c0 2.79 1.86 5.27 4.74 6.69-.21.78-.77 2.82-.88 3.23-.14.53.19.52.4.38.27-.18 4.24-2.8 5.88-3.9 5.86.08 10.61-3.39 10.61-7.66C22 6.48 17.52 3 12 3z" />
+                            </svg>
+                            카카오로 계속하기
+                        </button>
                     </form>
-
-                    <!-- Google 로그인 버튼 -->
-                    <button type="button" onclick="handleLogin(event, 'google')"
-                        class="login-btn w-full py-3.5 px-4 inline-flex justify-center items-center gap-x-3 text-sm font-medium rounded-xl border border-stone-200 bg-white text-stone-700 shadow-sm hover:bg-stone-50 hover:border-stone-300 transition-all">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"
-                            class="w-5 h-5" alt="Google">
-                        Google로 계속하기
-                    </button>
-
-                    <!-- 카카오 로그인 버튼 -->
-                    <button type="button" onclick="handleLogin(event, 'kakao')"
-                        class="login-btn w-full py-3.5 px-4 inline-flex justify-center items-center gap-x-3 text-sm font-medium rounded-xl border border-transparent bg-[#FEE500] text-[#000000] hover:bg-[#FDD835] transition-all shadow-sm">
-                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                            <path
-                                d="M12 3C6.48 3 2 6.48 2 10.76c0 2.79 1.86 5.27 4.74 6.69-.21.78-.77 2.82-.88 3.23-.14.53.19.52.4.38.27-.18 4.24-2.8 5.88-3.9 5.86.08 10.61-3.39 10.61-7.66C22 6.48 17.52 3 12 3z" />
-                        </svg>
-                        카카오로 계속하기
-                    </button>
                 </div>
             </div>
         </div>
         <script>
-            // 앱 환경인지 확인 (Android WebView)
-            function isNativeApp() {
+            // 앱 환경이면 source=app 설정 (페이지 로드 시)
+            (function () {
                 const ua = navigator.userAgent || '';
-                // Android WebView는 'wv'를 포함하거나 커스텀 UA를 사용
-                return ua.includes('wv') || ua.includes('Mindlog-Android') ||
+                const isNativeApp = ua.includes('wv') || ua.includes('Mindlog-Android') ||
                     (ua.includes('Android') && ua.includes('Mobile'));
-            }
 
-            /**
-             * 로그인 버튼 클릭 처리
-             * 숨겨진 Form을 submit하여 Turbo를 완전히 우회
-             */
-            function handleLogin(event, provider) {
-                event.preventDefault();
-                event.stopPropagation();
-
-                const element = event.currentTarget;
-                if (element.dataset.loading === 'true') return;
-                element.dataset.loading = 'true';
-
-                // 앱 환경 확인 및 source 설정
-                const sourceValue = isNativeApp() ? 'app' : '';
-                if (sourceValue) {
-                    console.log('[Mindlog] 네이티브 앱 환경 감지 - source=app 설정');
+                if (isNativeApp) {
+                    document.getElementById('googleSource').value = 'app';
+                    document.getElementById('kakaoSource').value = 'app';
+                    console.log('[Mindlog] 네이티브 앱 환경 감지 - source=app 설정됨');
                 }
-
-                // UI 비활성화
-                element.style.pointerEvents = 'none';
-                element.classList.add('opacity-70', 'cursor-not-allowed');
-                element.innerHTML = `
-                    <span class="animate-spin inline-block w-4 h-4 border-[2px] border-current border-t-transparent rounded-full mr-2" aria-hidden="true"></span>
-                    이동 중...
-                `;
-
-                // 숨겨진 Form submit (Turbo 완전 우회)
-                if (provider === 'google') {
-                    document.getElementById('googleSource').value = sourceValue;
-                    document.getElementById('googleLoginForm').submit();
-                } else if (provider === 'kakao') {
-                    document.getElementById('kakaoSource').value = sourceValue;
-                    document.getElementById('kakaoLoginForm').submit();
-                }
-            }
+            })();
         </script>
     </div>
 </body>
