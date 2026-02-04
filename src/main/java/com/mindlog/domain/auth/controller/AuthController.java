@@ -62,16 +62,23 @@ public class AuthController {
         String challenge = PkceUtil.generateCodeChallenge(verifier);
         session.setAttribute("pkce_verifier", verifier);
 
-        // 네이티브 앱에서 요청한 경우 source를 세션에 저장
-        if ("app".equals(source)) {
+        // 네이티브 앱에서 요청한 경우 source를 세션에 저장 (WebView용 백업)
+        boolean isNativeApp = "app".equals(source);
+        if (isNativeApp) {
             session.setAttribute("login_source", "app");
         }
 
         String prompt = "google".equalsIgnoreCase(provider) ? "select_account" : "login";
 
+        // redirect_to URL에 source 파라미터 포함 (Custom Tab은 별도 세션이므로)
+        String redirectUri = getRedirectUri();
+        if (isNativeApp) {
+            redirectUri += "?source=app";
+        }
+
         String authUrl = String.format(
                 "%s/auth/v1/authorize?provider=%s&redirect_to=%s&code_challenge=%s&code_challenge_method=S256&flow_type=pkce&prompt=%s",
-                supabaseUrl, provider, getRedirectUri(), challenge, prompt);
+                supabaseUrl, provider, redirectUri, challenge, prompt);
 
         return "redirect:" + authUrl;
     }
@@ -81,7 +88,8 @@ public class AuthController {
             @RequestParam(name = "error", required = false) String error,
             @RequestParam(name = "source", required = false) String source,
             HttpServletRequest request,
-            HttpServletResponse response) {
+            HttpServletResponse response,
+            org.springframework.ui.Model model) {
 
         if (error != null || code == null) {
             log.error("로그인 실패: code={}, error={}", code, error);
@@ -104,8 +112,10 @@ public class AuthController {
                 String handoverToken = authLoginService.processLoginForNativeApp(code, verifier);
                 session.removeAttribute("pkce_verifier");
 
-                log.info("네이티브 앱 로그인 성공 - 딥링크로 리다이렉트");
-                return "redirect:mindlog://auth/callback?token=" + handoverToken;
+                log.info("네이티브 앱 로그인 성공 - 딥링크 페이지 반환");
+                // Custom Tab에서 딥링크가 작동하도록 HTML 페이지 반환
+                model.addAttribute("deepLinkUrl", "mindlog://auth/callback?token=" + handoverToken);
+                return "auth/app-callback";
             } else {
                 // 웹: 기존대로 처리
                 authLoginService.processLogin(code, verifier, request, response);
