@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-    layout:decorate="~{${viewLayout}}">
+    layout:decorate="~{layout/auth-layout}">
 
 <head>
     <title>로그인</title>
@@ -41,22 +41,18 @@
                 </div>
 
                 <div class="space-y-4">
-                    <a th:href="@{/auth/login/google}"
-                       data-turbo="false"
-                       target="_top"
-                       id="googleBtn"
-                       class="w-full py-3.5 px-4 inline-flex justify-center items-center gap-x-3 text-sm font-medium rounded-xl border border-stone-200 bg-white text-stone-700 shadow-sm hover:bg-stone-50 transition-all">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" class="w-5 h-5" alt="Google">
+                    <a th:href="@{/auth/login/google}" data-turbo="false" target="_top" id="googleBtn"
+                        class="w-full py-3.5 px-4 inline-flex justify-center items-center gap-x-3 text-sm font-medium rounded-xl border border-stone-200 bg-white text-stone-700 shadow-sm hover:bg-stone-50 transition-all">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"
+                            class="w-5 h-5" alt="Google">
                         Google로 계속하기
                     </a>
 
-                    <a th:href="@{/auth/login/kakao}"
-                       data-turbo="false"
-                       target="_top"
-                       id="kakaoBtn"
-                       class="w-full py-3.5 px-4 inline-flex justify-center items-center gap-x-3 text-sm font-medium rounded-xl border border-transparent bg-[#FEE500] text-[#000000] hover:bg-[#FDD835] transition-all shadow-sm">
+                    <a th:href="@{/auth/login/kakao}" data-turbo="false" target="_top" id="kakaoBtn"
+                        class="w-full py-3.5 px-4 inline-flex justify-center items-center gap-x-3 text-sm font-medium rounded-xl border border-transparent bg-[#FEE500] text-[#000000] hover:bg-[#FDD835] transition-all shadow-sm">
                         <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 3C6.48 3 2 6.48 2 10.76c0 2.79 1.86 5.27 4.74 6.69-.21.78-.77 2.82-.88 3.23-.14.53.19.52.4.38.27-.18 4.24-2.8 5.88-3.9 5.86.08 10.61-3.39 10.61-7.66C22 6.48 17.52 3 12 3z" />
+                            <path
+                                d="M12 3C6.48 3 2 6.48 2 10.76c0 2.79 1.86 5.27 4.74 6.69-.21.78-.77 2.82-.88 3.23-.14.53.19.52.4.38.27-.18 4.24-2.8 5.88-3.9 5.86.08 10.61-3.39 10.61-7.66C22 6.48 17.52 3 12 3z" />
                         </svg>
                         카카오로 계속하기
                     </a>
@@ -74,8 +70,8 @@
                     const googleBtn = document.getElementById('googleBtn');
                     const kakaoBtn = document.getElementById('kakaoBtn');
 
-                    if(googleBtn) googleBtn.href += (googleBtn.href.includes('?') ? '&' : '?') + 'source=app';
-                    if(kakaoBtn) kakaoBtn.href += (kakaoBtn.href.includes('?') ? '&' : '?') + 'source=app';
+                    if (googleBtn) googleBtn.href += (googleBtn.href.includes('?') ? '&' : '?') + 'source=app';
+                    if (kakaoBtn) kakaoBtn.href += (kakaoBtn.href.includes('?') ? '&' : '?') + 'source=app';
 
                     console.log('[Mindlog] 앱 환경 감지: source=app 파라미터 추가 완료');
                 }
