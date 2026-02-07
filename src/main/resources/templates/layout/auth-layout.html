@@ -11,6 +11,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/output.css}">
+
+    <!-- Safe Area Padding for Native Apps (Edge-to-Edge) -->
+    <style>
+        body.is-native {
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+    </style>
 </head>
 
 <body class="bg-stone-50 text-stone-800 antialiased min-h-screen" th:classappend="${isNative} ? 'is-native' : 'is-web'">

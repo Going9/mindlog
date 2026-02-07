@@ -1,28 +1,39 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Mindlog</title>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
 
     <link rel="stylesheet" th:href="@{/css/output.css}">
 
-    <meta name="_csrf" th:content="${_csrf?.token}" th:if="${_csrf}"/>
-    <meta name="_csrf_header" th:content="${_csrf?.headerName}" th:if="${_csrf}"/>
+    <meta name="_csrf" th:content="${_csrf?.token}" th:if="${_csrf}" />
+    <meta name="_csrf_header" th:content="${_csrf?.headerName}" th:if="${_csrf}" />
+
+    <!-- Safe Area Padding for Native Apps (Edge-to-Edge) -->
+    <style>
+        /* 네이티브 앱에서만 Safe Area 패딩 적용 */
+        body.is-native {
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+    </style>
 </head>
 
-<body class="bg-stone-50 text-stone-800 antialiased min-h-screen"
-      th:classappend="${isNative} ? 'is-native' : 'is-web'">
+<body class="bg-stone-50 text-stone-800 antialiased min-h-screen" th:classappend="${isNative} ? 'is-native' : 'is-web'">
 
-<nav th:unless="${isNative}" th:replace="~{fragments/navbar :: navbar}"></nav>
+    <nav th:unless="${isNative}" th:replace="~{fragments/navbar :: navbar}"></nav>
 
-<main layout:fragment="content" class="container mx-auto px-4 py-6 max-w-4xl">
-</main>
+    <main layout:fragment="content" class="container mx-auto px-4 py-6 max-w-4xl">
+    </main>
 
-<div class="h-20" th:if="${isNative}"></div>
+    <div class="h-20" th:if="${isNative}"></div>
 
     <div th:replace="~{fragments/scripts :: scripts(
                 ${@environment.getProperty('mindlog.supabase.url')},
@@ -32,16 +43,23 @@
     <th:block layout:fragment="script"></th:block>
 
     <!-- Global Turbo Confirm Modal (Preline) -->
-    <div id="turbo-confirm-modal" class="hs-overlay hidden size-full fixed top-0 start-0 z-[80] overflow-x-hidden overflow-y-auto pointer-events-none" role="dialog" tabindex="-1" aria-labelledby="turbo-confirm-modal-label">
-        <div class="hs-overlay-open:mt-7 hs-overlay-open:opacity-100 hs-overlay-open:duration-500 mt-0 opacity-0 ease-out transition-all sm:max-w-lg sm:w-full m-3 sm:mx-auto">
+    <div id="turbo-confirm-modal"
+        class="hs-overlay hidden size-full fixed top-0 start-0 z-[80] overflow-x-hidden overflow-y-auto pointer-events-none"
+        role="dialog" tabindex="-1" aria-labelledby="turbo-confirm-modal-label">
+        <div
+            class="hs-overlay-open:mt-7 hs-overlay-open:opacity-100 hs-overlay-open:duration-500 mt-0 opacity-0 ease-out transition-all sm:max-w-lg sm:w-full m-3 sm:mx-auto">
             <div class="flex flex-col bg-white border border-stone-200 shadow-sm rounded-2xl pointer-events-auto">
                 <div class="flex justify-between items-center py-3 px-4 border-b border-stone-200">
                     <h3 id="turbo-confirm-modal-label" class="font-bold text-stone-800">
                         확인
                     </h3>
-                    <button type="button" class="inline-flex justify-center items-center size-8 text-sm font-semibold rounded-full border border-transparent text-stone-800 hover:bg-stone-100 focus:outline-none focus:bg-stone-100 disabled:opacity-50 disabled:pointer-events-none" aria-label="Close" data-hs-overlay="#turbo-confirm-modal">
+                    <button type="button"
+                        class="inline-flex justify-center items-center size-8 text-sm font-semibold rounded-full border border-transparent text-stone-800 hover:bg-stone-100 focus:outline-none focus:bg-stone-100 disabled:opacity-50 disabled:pointer-events-none"
+                        aria-label="Close" data-hs-overlay="#turbo-confirm-modal">
                         <span class="sr-only">Close</span>
-                        <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
                             <path d="M18 6 6 18"></path>
                             <path d="m6 6 12 12"></path>
                         </svg>
@@ -53,10 +71,13 @@
                     </p>
                 </div>
                 <div class="flex justify-end items-center gap-x-2 py-3 px-4 border-t border-stone-200">
-                    <button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-xl border border-stone-200 bg-white text-stone-800 shadow-sm hover:bg-stone-50 focus:outline-none focus:bg-stone-50 disabled:opacity-50 disabled:pointer-events-none" data-hs-overlay="#turbo-confirm-modal">
+                    <button type="button"
+                        class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-xl border border-stone-200 bg-white text-stone-800 shadow-sm hover:bg-stone-50 focus:outline-none focus:bg-stone-50 disabled:opacity-50 disabled:pointer-events-none"
+                        data-hs-overlay="#turbo-confirm-modal">
                         취소
                     </button>
-                    <button id="turbo-confirm-button" type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-xl border border-transparent bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:bg-red-700 disabled:opacity-50 disabled:pointer-events-none">
+                    <button id="turbo-confirm-button" type="button"
+                        class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-xl border border-transparent bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:bg-red-700 disabled:opacity-50 disabled:pointer-events-none">
                         확인
                     </button>
                 </div>
@@ -64,4 +85,5 @@
         </div>
     </div>
 </body>
+
 </html>
