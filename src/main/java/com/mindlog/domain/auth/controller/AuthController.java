@@ -73,7 +73,11 @@ public class AuthController {
         // redirect_to URL에 source 파라미터 포함 (Custom Tab은 별도 세션이므로)
         String redirectUri = getRedirectUri();
         if (isNativeApp) {
-            redirectUri += "?source=app";
+            // 앱용: verifier를 URL에 포함 (Custom Tab은 세션을 공유하지 않으므로)
+            // Base64 인코딩하여 URL-safe하게 전달
+            String encodedVerifier = java.util.Base64.getUrlEncoder().withoutPadding()
+                    .encodeToString(verifier.getBytes());
+            redirectUri += "?source=app&v=" + encodedVerifier;
         }
 
         String authUrl = String.format(
@@ -87,6 +91,7 @@ public class AuthController {
     public String handleCallback(@RequestParam(name = "code", required = false) String code,
             @RequestParam(name = "error", required = false) String error,
             @RequestParam(name = "source", required = false) String source,
+            @RequestParam(name = "v", required = false) String encodedVerifier,
             HttpServletRequest request,
             HttpServletResponse response,
             org.springframework.ui.Model model) {
@@ -97,14 +102,25 @@ public class AuthController {
         }
 
         HttpSession session = request.getSession();
-        String verifier = (String) session.getAttribute("pkce_verifier");
-
-        if (verifier == null) {
-            return "redirect:/auth/login?error=invalid_session";
-        }
 
         // 네이티브 앱 여부 판별 (source 파라미터 또는 User-Agent로 판단)
         boolean isNativeApp = "app".equals(source) || isNativeAppRequest(request);
+
+        // verifier 결정: URL 파라미터 > 세션
+        String verifier;
+        if (encodedVerifier != null && !encodedVerifier.isEmpty()) {
+            // 앱용: URL에서 verifier 디코딩
+            verifier = new String(java.util.Base64.getUrlDecoder().decode(encodedVerifier));
+            log.debug("URL에서 verifier 추출 완료");
+        } else {
+            // 웹용: 세션에서 verifier 추출
+            verifier = (String) session.getAttribute("pkce_verifier");
+        }
+
+        if (verifier == null) {
+            log.error("verifier를 찾을 수 없음 - source={}", source);
+            return "redirect:/auth/login?error=invalid_session";
+        }
 
         try {
             if (isNativeApp) {
