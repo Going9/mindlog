@@ -61,9 +61,12 @@
         </div>
         <script>
             (function () {
-                const ua = navigator.userAgent || '';
-                // 안드로이드 앱 웹뷰인지 확인하는 정밀한 로직
-                const isNativeApp = ua.includes('wv') || ua.includes('Mindlog-Android');
+                // URL 파라미터에서 source=app 확인 (Custom Tab에서 전달됨)
+                const urlParams = new URLSearchParams(window.location.search);
+                const isNativeApp = urlParams.get('source') === 'app';
+
+                console.log('[Mindlog] URL params:', window.location.search);
+                console.log('[Mindlog] isNativeApp:', isNativeApp);
 
                 if (isNativeApp) {
                     // 앱일 때만 링크 뒤에 source=app을 붙여줌
@@ -74,6 +77,7 @@
                     if (kakaoBtn) kakaoBtn.href += (kakaoBtn.href.includes('?') ? '&' : '?') + 'source=app';
 
                     console.log('[Mindlog] 앱 환경 감지: source=app 파라미터 추가 완료');
+                    console.log('[Mindlog] kakaoBtn.href:', kakaoBtn ? kakaoBtn.href : 'not found');
                 }
             })();
         </script>
