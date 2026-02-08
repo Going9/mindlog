@@ -23,20 +23,20 @@
             padding: 2rem;
         }
 
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid rgba(255, 255, 255, 0.3);
+        .checkmark {
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s linear infinite;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
             margin: 0 auto 1.5rem;
         }
 
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
+        .checkmark svg {
+            width: 32px;
+            height: 32px;
         }
 
         h1 {
@@ -47,48 +47,59 @@
         p {
             font-size: 1rem;
             opacity: 0.9;
+            margin-bottom: 1.5rem;
         }
 
         .manual-link {
-            margin-top: 2rem;
-            padding: 12px 24px;
+            padding: 14px 32px;
             background: white;
             color: #764ba2;
             text-decoration: none;
-            border-radius: 8px;
+            border-radius: 12px;
             font-weight: 600;
             display: inline-block;
+            font-size: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: transform 0.2s;
+        }
+
+        .manual-link:active {
+            transform: scale(0.98);
+        }
+
+        .hint {
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            opacity: 0.7;
         }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <div class="spinner"></div>
+        <div class="checkmark">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+        </div>
         <h1>로그인 성공!</h1>
-        <p>잠시 후 앱으로 이동합니다...</p>
-        <a id="manualLink" class="manual-link" style="display: none;">앱으로 이동하기</a>
+        <p>아래 버튼을 눌러 앱으로 돌아가세요</p>
+        <a id="manualLink" class="manual-link">앱으로 이동하기</a>
+        <p class="hint">또는 상단의 "Continue" 버튼을 눌러주세요</p>
     </div>
 
     <script th:inline="javascript">
         (function () {
             var deepLinkUrl = /*[[${deepLinkUrl}]]*/ '';
+            var manualLink = document.getElementById('manualLink');
+            manualLink.href = deepLinkUrl;
 
-            // 딥링크 열기 시도
-            function openDeepLink() {
-                // location.href로 딥링크 열기
+            // 자동 딥링크 시도 (일부 기기에서 작동할 수 있음)
+            try {
                 window.location.href = deepLinkUrl;
+            } catch (e) {
+                console.log('Auto deep link failed:', e);
             }
-
-            // 바로 딥링크 열기
-            openDeepLink();
-
-            // 2초 후에도 페이지가 열려있으면 수동 링크 표시
-            setTimeout(function () {
-                var manualLink = document.getElementById('manualLink');
-                manualLink.href = deepLinkUrl;
-                manualLink.style.display = 'inline-block';
-            }, 2000);
         })();
     </script>
 </body>
