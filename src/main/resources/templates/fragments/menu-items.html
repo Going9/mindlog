@@ -7,7 +7,7 @@
     <th:block th:fragment="menu-items(styleClass, linkClass, buttonClass)">
 
         <!-- 로그인 상태 -->
-        <div sec:authorize="isAuthenticated()">
+        <th:block sec:authorize="isAuthenticated()">
             <div th:class="${styleClass}">
                 <span class="menu-greeting">
                     <span th:text="${userName} ?: '사용자'">사용자</span>님 반가워요!
@@ -18,12 +18,12 @@
             <form th:action="@{/auth/logout}" method="post" data-turbo="false" class="logout-form">
                 <button type="submit" th:class="${buttonClass}">로그아웃</button>
             </form>
-        </div>
+        </th:block>
 
         <!-- 비로그인 상태 -->
-        <div sec:authorize="isAnonymous()">
+        <th:block sec:authorize="isAnonymous()">
             <a th:href="@{/auth/login}" data-turbo="false" th:class="${linkClass}">로그인</a>
-        </div>
+        </th:block>
 
     </th:block>
 
