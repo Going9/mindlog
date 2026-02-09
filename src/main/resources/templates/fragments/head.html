@@ -2,21 +2,24 @@
 <html xmlns:th="http://www.thymeleaf.org">
 
 <th:block th:fragment="head">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="description" content="Mindlog - 당신의 감정일기">
-    <meta name="theme-color" content="#1a1a2e">
-    <meta name="turbo-cache-control" content="no-preview">
+  <title>Mindlog | 감성적인 기록의 시작</title>
+  <link rel="canonical" href="https://mindlog.blog">
+  <meta property="og:url" content="https://mindlog.blog">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Mindlog - 당신의 감정일기">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="turbo-cache-control" content="no-preview">
 
-    <link th:href="@{/css/output.css(v=${#dates.format(#dates.createNow(), 'yyyyMMddHHmm')})}" rel="stylesheet">
+  <link th:href="@{/css/output.css(v=${#dates.format(#dates.createNow(), 'yyyyMMddHHmm')})}" rel="stylesheet">
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <script type="importmap">
+  <script type="importmap">
         {
           "imports": {
             "@hotwired/turbo": "/js/libs/turbo.js",
@@ -26,9 +29,11 @@
         }
     </script>
 
-    <script type="module" th:src="@{/js/turbo-init.js(v=${#dates.format(#dates.createNow(), 'yyyyMMddHHmm')})}"></script>
-    <script type="module" th:src="@{/js/stimulus-init.js(v=${#dates.format(#dates.createNow(), 'yyyyMMddHHmm')})}"></script>
+  <script type="module" th:src="@{/js/turbo-init.js(v=${#dates.format(#dates.createNow(), 'yyyyMMddHHmm')})}"></script>
+  <script type="module"
+    th:src="@{/js/stimulus-init.js(v=${#dates.format(#dates.createNow(), 'yyyyMMddHHmm')})}"></script>
 
-    <script th:src="@{/js/preline.js(v=${#dates.format(#dates.createNow(), 'yyyyMMddHHmm')})}" defer></script>
+  <script th:src="@{/js/preline.js(v=${#dates.format(#dates.createNow(), 'yyyyMMddHHmm')})}" defer></script>
 </th:block>
+
 </html>
