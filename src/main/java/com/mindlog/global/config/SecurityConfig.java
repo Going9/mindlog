@@ -42,7 +42,34 @@ public class SecurityConfig {
                                                 .invalidateHttpSession(true) // 서버 세션 무효화
                                                 .deleteCookies("SESSION") // 우리가 설정한 쿠키 이름 삭제
                                                 .clearAuthentication(true) // 인증 정보 확실히 삭제
-                                                .permitAll());
+                                                .permitAll())
+
+                                // 5. 예외 처리 설정
+                                .exceptionHandling(conf -> conf
+                                                .authenticationEntryPoint((request, response, authException) -> {
+                                                        // AJAX 또는 Turbo 요청인지 확인
+                                                        String requestedWith = request.getHeader("X-Requested-With");
+                                                        String accept = request.getHeader("Accept");
+                                                        boolean isTurbo = accept != null
+                                                                        && (accept.contains(
+                                                                                        "text/vnd.turbo-stream.html")
+                                                                                        || accept.contains(
+                                                                                                        "application/json"));
+
+                                                        if ("XMLHttpRequest".equals(requestedWith) || isTurbo) {
+                                                                // JS에서 처리할 수 있도록 401 반환
+                                                                response.sendError(
+                                                                                jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
+                                                        } else {
+                                                                // 일반 브라우저 요청은 로그인 페이지로 이동
+                                                                response.sendRedirect("/auth/login");
+                                                        }
+                                                })
+                                                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                                                        // 권한 부족 시 403 에러 처리 (Spring Boot가 error/4xx.html을 자동으로 찾음)
+                                                        response.sendError(
+                                                                        jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN);
+                                                }));
 
                 return http.build();
         }
