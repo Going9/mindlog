@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<body>
+
+    <!-- 공통 메뉴 항목 Fragment -->
+    <th:block th:fragment="menu-items(styleClass, linkClass, buttonClass)">
+
+        <!-- 로그인 상태 -->
+        <div sec:authorize="isAuthenticated()">
+            <div th:class="${styleClass}">
+                <span class="menu-greeting">
+                    <span th:text="${userName} ?: '사용자'">사용자</span>님 반가워요!
+                </span>
+            </div>
+            <a th:href="@{/diaries}" th:class="${linkClass}">나의 일기</a>
+            <a th:href="@{/diaries/new}" th:class="${linkClass}">일기 쓰기</a>
+            <form th:action="@{/auth/logout}" method="post" data-turbo="false" class="logout-form">
+                <button type="submit" th:class="${buttonClass}">로그아웃</button>
+            </form>
+        </div>
+
+        <!-- 비로그인 상태 -->
+        <div sec:authorize="isAnonymous()">
+            <a th:href="@{/auth/login}" data-turbo="false" th:class="${linkClass}">로그인</a>
+        </div>
+
+    </th:block>
+
+</body>
+
+</html>

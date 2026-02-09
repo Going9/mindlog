@@ -51,14 +51,30 @@
         <!-- 모바일 메뉴 (네이티브 앱용) -->
         <div id="native-navbar-menu" class="hidden overflow-hidden transition-all duration-300 mt-3">
             <div class="flex flex-col gap-2 py-2 border-t border-stone-100">
-                <a th:href="@{/diaries}"
-                    class="px-2 py-2 text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg">나의 일기</a>
-                <a th:href="@{/diaries/new}"
-                    class="px-2 py-2 text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg">일기 쓰기</a>
-                <form th:action="@{/auth/logout}" method="post" class="px-2">
-                    <button type="submit"
-                        class="w-full text-left py-2 text-stone-600 hover:text-stone-900">로그아웃</button>
-                </form>
+
+                <!-- 공통 메뉴 항목 사용 -->
+                <style>
+                    /* 네이티브 앱 전용 스타일 */
+                    #native-navbar-menu .menu-greeting {
+                        display: block;
+                        padding: 0.75rem 0.5rem;
+                        color: #44403c;
+                        font-weight: 500;
+                        border-bottom: 1px solid #f5f5f4;
+                        margin-bottom: 0.5rem;
+                    }
+
+                    #native-navbar-menu .logout-form {
+                        margin-top: 0.5rem;
+                    }
+                </style>
+
+                <th:block th:replace="~{fragments/menu-items :: menu-items(
+                    styleClass='',
+                    linkClass='px-2 py-2 text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg block',
+                    buttonClass='w-full text-left px-2 py-2 text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg'
+                )}"></th:block>
+
             </div>
         </div>
     </header>
@@ -122,6 +138,32 @@
             </div>
         </div>
     </div>
+
+    <!-- Turbo 네비게이션 시 네이티브 메뉴 닫기 -->
+    <script th:if="${isNative}">
+        document.addEventListener('turbo:before-render', function () {
+            // 네이티브 메뉴를 항상 닫힌 상태로 초기화
+            var menu = document.getElementById('native-navbar-menu');
+            if (menu) {
+                menu.classList.add('hidden');
+                menu.classList.remove('open');
+            }
+            // Preline collapse 상태도 리셋
+            var toggleBtn = document.querySelector('[data-hs-collapse="#native-navbar-menu"]');
+            if (toggleBtn) {
+                toggleBtn.classList.remove('open');
+                toggleBtn.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        // 페이지 로드 시에도 메뉴 닫기
+        document.addEventListener('turbo:load', function () {
+            var menu = document.getElementById('native-navbar-menu');
+            if (menu) {
+                menu.classList.add('hidden');
+            }
+        });
+    </script>
 </body>
 
 </html>
