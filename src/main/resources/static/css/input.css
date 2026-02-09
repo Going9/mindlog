@@ -9,6 +9,7 @@
 }
 
 @layer components {
+
   /* Common Button Styles */
   .btn-primary {
     @apply inline-flex justify-center items-center px-6 py-3 bg-stone-700 text-stone-50 font-medium rounded-xl hover:bg-stone-800 transition-all shadow-sm active:scale-95;
@@ -29,11 +30,23 @@
 
   /* Form Input Styles */
   .form-input {
-    @apply w-full bg-white border border-stone-200 rounded-xl px-4 py-3 text-stone-800 placeholder-stone-400 focus:border-stone-500 focus:ring-stone-500 transition-colors;
+    @apply w-full bg-white border border-stone-200 rounded-xl px-4 py-3 text-stone-800 placeholder-stone-400 focus:border-stone-500 focus:ring-stone-500 transition-colors shadow-sm;
+  }
+
+  .form-textarea {
+    @apply py-3 px-4 block w-full border border-gray-200 rounded-xl text-sm focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none bg-white shadow-sm;
   }
 
   .form-label {
     @apply block text-sm font-medium text-stone-700 mb-2;
+  }
+
+  .form-error {
+    @apply mt-2 text-sm text-red-600;
+  }
+
+  .form-input-error {
+    @apply !border-red-500 focus:!border-red-500 focus:!ring-red-500;
   }
 
   /* Typography overrides */
@@ -45,4 +58,38 @@
   .bg-gradient-button {
     @apply bg-stone-700 text-white;
   }
+}
+
+/* ===== Turbo Loading Feedback Styles ===== */
+/* @layer 밖에서 정의하여 항상 포함되도록 함 */
+
+/* 로딩 중 상태 - 클릭 비활성화 및 시각적 피드백 */
+[aria-busy="true"] {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+/* 버튼/링크 로딩 상태 */
+.turbo-loading {
+  pointer-events: none;
+  opacity: 0.7;
+  cursor: wait;
+}
+
+/* 로딩 스피너 - 기본 숨김 상태 */
+.loading-spinner {
+  display: none !important;
+}
+
+/* 로딩 중일 때 스피너 표시 및 회전 애니메이션 */
+.turbo-loading .loading-spinner,
+[aria-busy="true"] .loading-spinner {
+  display: inline-block !important;
+  animation: spin 1s linear infinite;
+}
+
+/* 로딩 중일 때 원래 텍스트/아이콘 숨김 */
+.turbo-loading .loading-hide,
+[aria-busy="true"] .loading-hide {
+  display: none !important;
 }

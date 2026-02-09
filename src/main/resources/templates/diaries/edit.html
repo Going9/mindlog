@@ -7,128 +7,93 @@
 </head>
 
 <body>
-    <div layout:fragment="content" class="max-w-3xl mx-auto px-4 py-10 sm:px-6 lg:px-8">
-        <div
-            class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 sm:p-10 dark:bg-gray-800 dark:border-gray-700">
-            <header class="mb-10 text-center">
-                <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-200">
-                    일기 수정
-                </h1>
-            </header>
+    <div layout:fragment="content" class="max-w-4xl mx-auto space-y-8 px-4 sm:px-6">
 
-            <form id="edit-form" th:action="@{/diaries/{id}/update(id=${diaryId})}" th:method="post"
-                th:object="${diaryRequest}">
+        <turbo-frame id="diary_context">
+
+            <div class="text-center space-y-2 mb-8">
+                <h1 class="text-3xl font-bold text-stone-800">기록 수정</h1>
+                <p class="text-stone-500">마음을 다시 들여다보며 수정합니다.</p>
+            </div>
+
+            <form class="space-y-6 pb-20" id="edit-form" method="post"
+                th:action="@{/diaries/{id}/update(id=${diaryId})}" th:object="${diaryRequest}" data-turbo-frame="_top"
+                data-controller="form-submit" data-action="submit->form-submit#submit">
+
                 <div class="space-y-6">
-                    <!-- Date -->
+                    <!-- 기록 날짜 -->
                     <div>
-                        <label for="date" class="block text-sm font-medium mb-2 text-stone-700 dark:text-white">기록
-                            날짜</label>
-                        <input type="date" th:field="*{date}" id="date"
-                            class="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none bg-gray-50/50 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400 dark:focus:ring-gray-600">
+                        <label class="form-label" for="date">기록 날짜</label>
+                        <input class="form-textarea" id="date" th:field="*{date}" type="date">
                     </div>
 
-                    <!-- Short Content -->
+                    <!-- 한줄 요약 -->
                     <div>
-                        <label for="shortContent"
-                            class="block text-sm font-medium mb-2 text-stone-700 dark:text-white">오늘의 한 줄 요약</label>
-                        <input type="text" id="shortContent" th:field="*{shortContent}" placeholder="어떤 하루였나요?"
-                            class="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none bg-gray-50/50 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400 dark:focus:ring-gray-600">
+                        <label class="form-label" for="shortContent">한줄 요약</label>
+                        <input class="form-textarea" id="shortContent" placeholder="오늘 하루를 한 문장으로 표현한다면?"
+                            th:field="*{shortContent}" type="text">
                     </div>
 
-                    <div class="border-t border-gray-200 my-8 dark:border-gray-700"></div>
-
-                    <!-- Detail Section -->
+                    <!-- 상황 -->
                     <div>
-                        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">상세 기록</h3>
-
-                        <div class="space-y-6">
-                            <div>
-                                <label for="situation"
-                                    class="block text-sm font-medium mb-2 text-stone-700 dark:text-white">어떤 상황이었나요?
-                                    (상황)</label>
-                                <textarea id="situation" th:field="*{situation}" rows="3" placeholder="객관적인 상황을 적어보세요."
-                                    class="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none bg-gray-50/50 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400 dark:focus:ring-gray-600"></textarea>
-                            </div>
-
-                            <div>
-                                <label for="reaction"
-                                    class="block text-sm font-medium mb-2 text-stone-700 dark:text-white">그 때 어떤 생각이
-                                    들었나요? (반응)</label>
-                                <textarea id="reaction" th:field="*{reaction}" rows="3"
-                                    placeholder="머릿속에 스쳐 지나간 생각들을 적어보세요."
-                                    class="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none bg-gray-50/50 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400 dark:focus:ring-gray-600"></textarea>
-                            </div>
-
-                            <div>
-                                <label for="physicalSensation"
-                                    class="block text-sm font-medium mb-2 text-stone-700 dark:text-white">몸의 느낌은 어땠나요?
-                                    (신체 감각)</label>
-                                <textarea id="physicalSensation" th:field="*{physicalSensation}" rows="2"
-                                    placeholder="가슴이 답답하거나 손이 떨리는 등의 감각을 적어보세요."
-                                    class="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none bg-gray-50/50 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400 dark:focus:ring-gray-600"></textarea>
-                            </div>
-
-                            <div class="bg-emerald-50/30 p-4 rounded-xl border border-emerald-100">
-                                <label for="desiredReaction"
-                                    class="block text-sm font-medium mb-2 text-emerald-800 dark:text-white">어떻게 생각하면 더
-                                    도움이 될까요? (적응적 생각)</label>
-                                <textarea id="desiredReaction" th:field="*{desiredReaction}" rows="3"
-                                    placeholder="상황을 조금 다르게 바라본다면 어떨까요?"
-                                    class="py-3 px-4 block w-full border-emerald-200 rounded-lg text-sm focus:border-emerald-500 focus:ring-emerald-500 disabled:opacity-50 disabled:pointer-events-none bg-white dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400 dark:focus:ring-gray-600"></textarea>
-                            </div>
-                        </div>
+                        <label class="form-label" for="situation">상황</label>
+                        <textarea class="form-textarea" id="situation" placeholder="어떤 상황이었나요?" rows="3"
+                            th:field="*{situation}"></textarea>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label for="gratitudeMoment"
-                                class="block text-sm font-medium mb-2 text-stone-700 dark:text-white">오늘의 감사한 순간</label>
-                            <textarea id="gratitudeMoment" th:field="*{gratitudeMoment}" rows="3"
-                                placeholder="작은 감사함을 찾아보세요."
-                                class="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none bg-gray-50/50 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400 dark:focus:ring-gray-600"></textarea>
-                        </div>
-                        <div>
-                            <label for="selfKindWords"
-                                class="block text-sm font-medium mb-2 text-stone-700 dark:text-white">나에게 해주고 싶은 친절한
-                                말</label>
-                            <textarea id="selfKindWords" th:field="*{selfKindWords}" rows="3"
-                                placeholder="자기 자신을 다독여주세요."
-                                class="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none bg-gray-50/50 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400 dark:focus:ring-gray-600"></textarea>
-                        </div>
+                    <!-- 나의 반응 -->
+                    <div>
+                        <label class="form-label" for="reaction">나의 반응</label>
+                        <textarea class="form-textarea" id="reaction" placeholder="그때 어떻게 행동했나요?" rows="3"
+                            th:field="*{reaction}"></textarea>
                     </div>
 
+                    <!-- 신체 감각 -->
+                    <div>
+                        <label class="form-label" for="physicalSensation">신체 감각</label>
+                        <textarea class="form-textarea" id="physicalSensation" placeholder="몸에서는 어떤 느낌이 들었나요?" rows="3"
+                            th:field="*{physicalSensation}"></textarea>
+                    </div>
+
+                    <!-- 원했던 반응 -->
+                    <div>
+                        <label class="form-label" for="desiredReaction">원했던 반응</label>
+                        <textarea class="form-textarea" id="desiredReaction" placeholder="어떻게 행동하고 싶었나요?" rows="3"
+                            th:field="*{desiredReaction}"></textarea>
+                    </div>
+
+                    <!-- 감사한 순간 -->
+                    <div>
+                        <label class="form-label" for="gratitudeMoment">감사한 순간</label>
+                        <textarea class="form-textarea" id="gratitudeMoment" placeholder="오늘 감사한 일은 무엇인가요?" rows="3"
+                            th:field="*{gratitudeMoment}"></textarea>
+                    </div>
+
+                    <!-- 나에게 해주고 싶은 말 -->
+                    <div>
+                        <label class="form-label" for="selfKindWords">나에게 해주고 싶은 말</label>
+                        <textarea class="form-textarea" id="selfKindWords" placeholder="자기 자신을 다독여주세요." rows="3"
+                            th:field="*{selfKindWords}"></textarea>
+                    </div>
+
+                    <!-- 버튼 영역 -->
                     <div class="mt-8 flex justify-end gap-x-2">
-                        <a th:href="@{/diaries/{id}(id=${diaryId})}"
-                            class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-slate-900 dark:border-gray-700 dark:text-white dark:hover:bg-gray-800 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600">
+                        <a class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-stone-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none transition-all"
+                            th:href="@{/diaries/{id}(id=${diaryId})}">
                             취소
                         </a>
-                        <button id="edit-submit-btn" type="submit"
-                            class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-stone-800 text-white hover:bg-stone-900 disabled:opacity-50 disabled:pointer-events-none dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600">
-                            <svg id="edit-submit-spinner" class="hidden animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                    stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor"
-                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                </path>
-                            </svg>
-                            <span id="edit-submit-text">수정 완료</span>
+                        <button id="submit-btn" data-form-submit-target="submit"
+                            class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-stone-800 text-white hover:bg-stone-900 disabled:opacity-50 disabled:pointer-events-none shadow-md hover:shadow-lg transition-all"
+                            type="submit">
+                            <th:block th:replace="~{fragments/spinner :: loading-spinner-white}"></th:block>
+                            <span class="loading-hide" data-form-submit-target="text">수정 완료</span>
+                            <span class="hidden turbo-loading-show">저장 중...</span>
                         </button>
                     </div>
                 </div>
             </form>
 
-            <script>
-                document.getElementById('edit-form').addEventListener('submit', function (e) {
-                    var btn = document.getElementById('edit-submit-btn');
-                    var spinner = document.getElementById('edit-submit-spinner');
-                    var btnText = document.getElementById('edit-submit-text');
-                    btn.disabled = true;
-                    spinner.classList.remove('hidden');
-                    btnText.textContent = '저장 중...';
-                });
-            </script>
-        </div>
+        </turbo-frame>
     </div>
 </body>
 

@@ -32,7 +32,7 @@ window.Turbo = Turbo
 // 4. 로드 확인 로그
 document.addEventListener("turbo:load", () => {
     console.log("[Mindlog] Turbo 화면 로드 완료")
-    
+
     if (typeof HSStaticMethods !== 'undefined') {
         HSStaticMethods.autoInit();
     }
@@ -98,5 +98,107 @@ document.addEventListener("turbo:confirm", (event) => {
         if (window.confirm(message)) {
             event.detail.resume()
         }
+    }
+})
+
+// ===== 7. 전역 Turbo 로딩 피드백 =====
+// 역할: 링크/버튼 클릭 시 로딩 상태를 표시하여 사용자에게 즉각적인 피드백 제공
+
+// 현재 로딩 중인 요소 추적
+let currentLoadingElement = null
+
+/**
+ * 요소에 로딩 상태를 설정합니다.
+ */
+function setLoadingState(element) {
+    if (!element) return
+
+    // 이전 로딩 상태 해제
+    clearLoadingState()
+
+    currentLoadingElement = element
+    element.classList.add('turbo-loading')
+    element.setAttribute('aria-busy', 'true')
+}
+
+/**
+ * 로딩 상태를 해제합니다.
+ */
+function clearLoadingState() {
+    if (currentLoadingElement) {
+        currentLoadingElement.classList.remove('turbo-loading')
+        currentLoadingElement.removeAttribute('aria-busy')
+        currentLoadingElement = null
+    }
+
+    // 모든 로딩 상태 요소 해제 (안전장치)
+    document.querySelectorAll('.turbo-loading').forEach(el => {
+        el.classList.remove('turbo-loading')
+        el.removeAttribute('aria-busy')
+    })
+}
+
+// Turbo 링크 클릭 시 즉시 로딩 상태 표시
+document.addEventListener('turbo:click', (event) => {
+    const target = event.target.closest('a, button')
+    if (target) {
+        setLoadingState(target)
+    }
+})
+
+// 폼 제출 시 로딩 상태 표시
+document.addEventListener('turbo:submit-start', (event) => {
+    const submitButton = event.target.querySelector('button[type="submit"], input[type="submit"]')
+    if (submitButton) {
+        setLoadingState(submitButton)
+    }
+})
+
+// 페이지 로드 완료 시 로딩 상태 해제
+document.addEventListener('turbo:load', () => {
+    clearLoadingState()
+})
+
+// 프레임 로드 완료 시 로딩 상태 해제
+document.addEventListener('turbo:frame-load', () => {
+    clearLoadingState()
+})
+
+// 네비게이션 실패 시 로딩 상태 해제
+document.addEventListener('turbo:visit', () => {
+    // visit 시작 후 일정 시간 내 완료되지 않으면 해제 (타임아웃 안전장치)
+    setTimeout(() => {
+        if (currentLoadingElement) {
+            console.log('[Mindlog] 로딩 타임아웃 - 상태 해제')
+            clearLoadingState()
+        }
+    }, 10000) // 10초 타임아웃
+})
+
+// 8. Custom Tab으로 열리는 링크 처리 (data-turbo="false")
+// 역할: Turbo 없이 열리는 링크에도 클릭 피드백 제공
+document.addEventListener('click', (event) => {
+    const link = event.target.closest('a[data-turbo="false"]')
+    if (link) {
+        setLoadingState(link)
+
+        // Custom Tab에서 돌아올 때를 대비한 상태 복구
+        // visibilitychange 이벤트로 앱 복귀 감지
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                // 앱으로 돌아왔을 때 로딩 상태 해제
+                setTimeout(() => {
+                    clearLoadingState()
+                }, 300)
+                document.removeEventListener('visibilitychange', handleVisibilityChange)
+            }
+        }
+        document.addEventListener('visibilitychange', handleVisibilityChange)
+
+        // 5초 후 자동 해제 (폴백)
+        setTimeout(() => {
+            clearLoadingState()
+            document.removeEventListener('visibilitychange', handleVisibilityChange)
+        }, 5000)
     }
 })

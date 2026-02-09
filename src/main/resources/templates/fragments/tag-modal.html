@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<body>
+
+    <!-- 태그 추가 모달 Fragment -->
+    <!-- 사용법: th:replace="~{fragments/tag-modal :: tag-modal}" -->
+    <!-- 
+        이 fragment는 data-controller="tag"가 적용된 컨테이너 안에서 사용해야 합니다.
+        색상 프리셋 커스터마이징: data-tag-colors-value='["#EF4444", "#3B82F6", ...]'
+    -->
+    <div th:fragment="tag-modal" aria-labelledby="modal-title" aria-modal="true"
+        class="hidden fixed inset-0 z-[60] overflow-y-auto" id="tag-modal" role="dialog" data-tag-target="modal">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div aria-hidden="true" class="fixed inset-0 bg-stone-500 bg-opacity-75 transition-opacity"
+                data-action="click->tag#closeModal"></div>
+            <span aria-hidden="true" class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+            <div
+                class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full animate-scale-in">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-bold text-stone-900" id="modal-title">
+                                새 태그 추가
+                            </h3>
+                            <div class="mt-4 space-y-4">
+                                <div>
+                                    <label class="form-label">태그 이름</label>
+                                    <input class="form-textarea bg-stone-50" data-tag-target="tagName"
+                                        placeholder="예: 기쁨, 슬픔" type="text">
+                                </div>
+                                <div>
+                                    <label class="form-label">카테고리</label>
+                                    <select class="form-textarea bg-stone-50" data-tag-target="tagCategory">
+                                        <option value="POSITIVE">긍정</option>
+                                        <option value="NEGATIVE">부정</option>
+                                        <option value="NEUTRAL">중립</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="form-label">색상 선택</label>
+                                    <div class="flex flex-wrap gap-2 justify-center sm:justify-start"
+                                        data-tag-target="colorPicker">
+                                    </div>
+                                    <input data-tag-target="colorValue" type="hidden">
+                                </div>
+                                <div data-tag-target="errorMessage" class="form-error hidden"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-stone-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button data-tag-target="submitBtn"
+                        class="w-full inline-flex justify-center items-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-stone-800 text-base font-medium text-white hover:bg-stone-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-stone-500 sm:ml-3 sm:w-auto sm:text-sm transition-colors disabled:opacity-50"
+                        data-action="click->tag#createTag" type="button">
+                        <svg data-tag-target="spinner" class="hidden animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                            </circle>
+                            <path class="opacity-75" fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                            </path>
+                        </svg>
+                        <span data-tag-target="submitText">추가하기</span>
+                    </button>
+                    <button
+                        class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-stone-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors"
+                        data-action="click->tag#closeModal" type="button">
+                        취소
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

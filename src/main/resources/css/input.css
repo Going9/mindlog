@@ -21,6 +21,7 @@
 }
 
 @layer components {
+
   /* [Design Guideline 4] Mindlog Card System */
   .mindlog-card {
     @apply bg-white border border-stone-200 shadow-sm rounded-2xl p-5 transition-all hover:shadow-md;
@@ -46,6 +47,7 @@
 }
 
 @layer utilities {
+
   /* 하단 고정 버튼 레이아웃용 */
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom);
@@ -61,4 +63,48 @@
 .container {
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
+}
+
+/* ===== Turbo Loading Feedback Styles ===== */
+/* @layer 밖에서 정의하여 항상 포함되도록 함 */
+
+/* 로딩 중 상태 - 클릭 비활성화 및 시각적 피드백 */
+[aria-busy="true"] {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+/* 버튼/링크 로딩 상태 */
+.turbo-loading {
+  pointer-events: none;
+  opacity: 0.7;
+  cursor: wait;
+}
+
+/* 로딩 스피너 - 기본 숨김 상태 */
+.loading-spinner {
+  display: none !important;
+}
+
+/* 로딩 중일 때 스피너 표시 및 회전 애니메이션 */
+.turbo-loading .loading-spinner,
+[aria-busy="true"] .loading-spinner {
+  display: inline-block !important;
+  animation: spin 1s linear infinite;
+}
+
+/* 로딩 중일 때 원래 텍스트/아이콘 숨김 */
+.turbo-loading .loading-hide,
+[aria-busy="true"] .loading-hide {
+  display: none !important;
+}
+
+/* 로딩 중일 때만 표시되는 요소 */
+.turbo-loading-show {
+  display: none !important;
+}
+
+.turbo-loading .turbo-loading-show,
+[aria-busy="true"] .turbo-loading-show {
+  display: inline !important;
 }
