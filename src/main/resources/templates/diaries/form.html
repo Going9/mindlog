@@ -187,7 +187,6 @@
                                             id="color-picker">
                                         </div>
                                         <input id="selected-color-value" type="hidden">
-                                        <p class="text-xs mt-2 text-stone-500 h-4" id="color-feedback"></p>
                                     </div>
                                     <div id="tag-error-message" class="text-red-600 text-sm mt-2 hidden"></div>
                                 </div>
@@ -195,10 +194,18 @@
                         </div>
                     </div>
                     <div class="bg-stone-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                        <button
-                            class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-stone-800 text-base font-medium text-white hover:bg-stone-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-stone-500 sm:ml-3 sm:w-auto sm:text-sm transition-colors"
+                        <button id="create-tag-btn"
+                            class="w-full inline-flex justify-center items-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-stone-800 text-base font-medium text-white hover:bg-stone-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-stone-500 sm:ml-3 sm:w-auto sm:text-sm transition-colors disabled:opacity-50"
                             onclick="createTag()" type="button">
-                            추가하기
+                            <svg id="create-tag-spinner" class="hidden animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                </path>
+                            </svg>
+                            <span id="create-tag-text">추가하기</span>
                         </button>
                         <button
                             class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-stone-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors"
@@ -278,10 +285,6 @@
                 document.querySelectorAll('.color-option').forEach(b =>
                     b.classList.remove('ring-offset-2', 'ring-stone-400'));
                 btn.classList.add('ring-offset-2', 'ring-stone-400');
-
-                const feedback = document.getElementById('color-feedback');
-                feedback.innerText = `선택된 색상: ${color}`;
-                feedback.style.color = color;
             }
 
             async function createTag() {
@@ -289,12 +292,20 @@
                 const category = document.getElementById('new-tag-category').value;
                 const color = document.getElementById('selected-color-value').value || '#78716C';
                 const errorDiv = document.getElementById('tag-error-message');
+                const btn = document.getElementById('create-tag-btn');
+                const spinner = document.getElementById('create-tag-spinner');
+                const btnText = document.getElementById('create-tag-text');
 
                 if (!name) {
                     errorDiv.innerText = "이름을 입력해주세요.";
                     errorDiv.classList.remove('hidden');
                     return;
                 }
+
+                // 로딩 상태 표시
+                btn.disabled = true;
+                spinner.classList.remove('hidden');
+                btnText.textContent = '추가 중...';
 
                 try {
                     const csrfTokenMeta = document.querySelector('meta[name="_csrf"]');
@@ -313,6 +324,10 @@
 
                     if (response.ok) {
                         const newTag = await response.json();
+                        // 로딩 상태 해제
+                        btn.disabled = false;
+                        spinner.classList.add('hidden');
+                        btnText.textContent = '추가하기';
                         closeModal();
 
                         const container = document.getElementById('tag-list');
@@ -334,11 +349,19 @@
                         const errorText = await response.text();
                         errorDiv.innerText = errorText || "태그 생성 실패";
                         errorDiv.classList.remove('hidden');
+                        // 로딩 상태 해제
+                        btn.disabled = false;
+                        spinner.classList.add('hidden');
+                        btnText.textContent = '추가하기';
                     }
                 } catch (e) {
                     console.error(e);
                     errorDiv.innerText = "오류가 발생했습니다: " + e.message;
                     errorDiv.classList.remove('hidden');
+                    // 로딩 상태 해제
+                    btn.disabled = false;
+                    spinner.classList.add('hidden');
+                    btnText.textContent = '추가하기';
                 }
             }
 
