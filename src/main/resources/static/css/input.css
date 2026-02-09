@@ -37,6 +37,11 @@
     @apply py-3 px-4 block w-full border border-gray-200 rounded-xl text-sm focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none bg-white shadow-sm;
   }
 
+  /* select 요소의 기본 화살표 제거 */
+  select.form-textarea {
+    @apply appearance-none;
+  }
+
   .form-label {
     @apply block text-sm font-medium text-stone-700 mb-2;
   }
@@ -46,7 +51,7 @@
   }
 
   .form-input-error {
-    @apply !border-red-500 focus:!border-red-500 focus:!ring-red-500;
+    @apply !border-red-500 focus: !border-red-500 focus: !ring-red-500;
   }
 
   /* Typography overrides */

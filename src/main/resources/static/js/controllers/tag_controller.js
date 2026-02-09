@@ -63,7 +63,23 @@ export default class extends Controller {
     }
 
     connect() {
-        // 필요 시 초기화 로직 추가
+        // 이미 선택된 태그가 있다면(hidden inputs), 버튼의 시각적 상태(Ring, Border)를 동기화합니다.
+        // 이는 수정 페이지(edit.html) 등에서 서버가 렌더링한 초기 상태를 반영하기 위함입니다.
+        if (this.hasSelectedContainerTarget && this.hasTagListTarget) {
+            const inputs = this.selectedContainerTarget.querySelectorAll('input[name="tagIds"]')
+            
+            inputs.forEach(input => {
+                const id = input.value
+                const btn = this.tagListTarget.querySelector(`button[data-tag-id="${id}"]`)
+                
+                if (btn) {
+                    const color = btn.dataset.tagColor
+                    btn.classList.add('ring-2', 'ring-offset-1')
+                    btn.style.borderColor = color
+                    btn.style.boxShadow = `0 0 0 2px ${color}`
+                }
+            })
+        }
     }
 
     /**

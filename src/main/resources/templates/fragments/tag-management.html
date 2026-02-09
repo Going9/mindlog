@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+    <div th:fragment="tag-management">
+        <label class="block text-sm font-medium mb-2 text-stone-700">감정 태그</label>
+
+        <!-- 선택된 태그의 hidden input들이 여기에 저장됨 -->
+        <div id="selected-tags-container" data-tag-target="selectedContainer">
+            <!-- 수정 시 이미 선택된 태그의 hidden input 생성 -->
+            <input th:each="tagId : ${diaryRequest.tagIds}" th:if="${diaryRequest.tagIds != null}"
+                name="tagIds" th:value="${tagId}" type="hidden">
+        </div>
+
+        <div class="flex flex-wrap gap-2" id="tag-list" data-tag-target="tagList">
+            <button
+                class="tag-btn px-3 py-1.5 rounded-full text-sm font-medium border transition-all duration-200 select-none bg-white shadow-sm"
+                data-action="click->tag#toggle"
+                th:classappend="${diaryRequest.tagIds != null && #lists.contains(diaryRequest.tagIds, tag.id)} ? 'ring-2 ring-offset-1' : ''"
+                th:data-tag-color="${tag.color}" th:data-tag-id="${tag.id}" th:each="tag : ${tags}"
+                th:style="${diaryRequest.tagIds != null && #lists.contains(diaryRequest.tagIds, tag.id)} ?
+                              'border-color:' + ${tag.color} + '; color:' + ${tag.color} + '; ring-color:' + ${tag.color} + '; box-shadow: 0 0 0 2px ' + ${tag.color} :
+                              'border-color:' + ${tag.color} + '; color:' + ${tag.color}"
+                th:text="${tag.name}" type="button">
+            </button>
+            <button
+                class="px-3 py-1.5 rounded-full text-sm font-medium border border-stone-200 text-stone-400 hover:text-stone-600 hover:border-stone-300 transition-all"
+                data-action="click->tag#openModal" type="button">
+                + 태그 추가
+            </button>
+        </div>
+        
+        <!-- 태그 추가 모달 (Fragment) - 컨트롤러와 같은 스코프 내에 있어야 함 -->
+        <th:block th:replace="~{fragments/tag-modal :: tag-modal}"></th:block>
+    </div>
+
+</body>
+</html>

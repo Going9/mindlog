@@ -2,99 +2,129 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
     layout:decorate="~{${viewLayout}}">
 
-<head>
-    <title>일기 수정</title>
-</head>
+<th:block layout:fragment="title">일기 수정하기</th:block>
 
-<body>
-    <div layout:fragment="content" class="max-w-4xl mx-auto space-y-8 px-4 sm:px-6">
+<div class="max-w-4xl mx-auto space-y-8 px-4 sm:px-6" layout:fragment="content">
 
-        <turbo-frame id="diary_context">
+    <turbo-frame id="diary_context" data-controller="tag">
 
-            <div class="text-center space-y-2 mb-8">
-                <h1 class="text-3xl font-bold text-stone-800">기록 수정</h1>
-                <p class="text-stone-500">마음을 다시 들여다보며 수정합니다.</p>
+        <div class="text-center space-y-2 mb-8">
+            <h1 class="text-3xl font-bold text-stone-800">기록 수정</h1>
+            <p class="text-stone-500">마음을 다시 들여다보며 수정합니다.</p>
+        </div>
+
+        <form class="space-y-6 pb-20" id="diary-form" method="post" th:action="@{/diaries/{id}(id=${diaryId})}"
+            th:object="${diaryRequest}" data-turbo-frame="_top" data-controller="form-submit"
+            data-action="submit->form-submit#submit">
+
+            <input name="_method" type="hidden" value="put">
+
+            <div id="selected-tags-container" data-tag-target="selectedContainer">
+                <th:block th:if="${diaryRequest.tagIds != null}">
+                    <input name="tagIds" th:each="tagId : ${diaryRequest.tagIds}" th:value="${tagId}" type="hidden">
+                </th:block>
             </div>
 
-            <form class="space-y-6 pb-20" id="edit-form" method="post"
-                th:action="@{/diaries/{id}/update(id=${diaryId})}" th:object="${diaryRequest}" data-turbo-frame="_top"
-                data-controller="form-submit" data-action="submit->form-submit#submit">
-
-                <div class="space-y-6">
-                    <!-- 기록 날짜 -->
-                    <div>
-                        <label class="form-label" for="date">기록 날짜</label>
-                        <input class="form-textarea" id="date" th:field="*{date}" type="date">
-                    </div>
-
-                    <!-- 한줄 요약 -->
-                    <div>
-                        <label class="form-label" for="shortContent">한줄 요약</label>
-                        <input class="form-textarea" id="shortContent" placeholder="오늘 하루를 한 문장으로 표현한다면?"
-                            th:field="*{shortContent}" type="text">
-                    </div>
-
-                    <!-- 상황 -->
-                    <div>
-                        <label class="form-label" for="situation">상황</label>
-                        <textarea class="form-textarea" id="situation" placeholder="어떤 상황이었나요?" rows="3"
-                            th:field="*{situation}"></textarea>
-                    </div>
-
-                    <!-- 나의 반응 -->
-                    <div>
-                        <label class="form-label" for="reaction">나의 반응</label>
-                        <textarea class="form-textarea" id="reaction" placeholder="그때 어떻게 행동했나요?" rows="3"
-                            th:field="*{reaction}"></textarea>
-                    </div>
-
-                    <!-- 신체 감각 -->
-                    <div>
-                        <label class="form-label" for="physicalSensation">신체 감각</label>
-                        <textarea class="form-textarea" id="physicalSensation" placeholder="몸에서는 어떤 느낌이 들었나요?" rows="3"
-                            th:field="*{physicalSensation}"></textarea>
-                    </div>
-
-                    <!-- 원했던 반응 -->
-                    <div>
-                        <label class="form-label" for="desiredReaction">원했던 반응</label>
-                        <textarea class="form-textarea" id="desiredReaction" placeholder="어떻게 행동하고 싶었나요?" rows="3"
-                            th:field="*{desiredReaction}"></textarea>
-                    </div>
-
-                    <!-- 감사한 순간 -->
-                    <div>
-                        <label class="form-label" for="gratitudeMoment">감사한 순간</label>
-                        <textarea class="form-textarea" id="gratitudeMoment" placeholder="오늘 감사한 일은 무엇인가요?" rows="3"
-                            th:field="*{gratitudeMoment}"></textarea>
-                    </div>
-
-                    <!-- 나에게 해주고 싶은 말 -->
-                    <div>
-                        <label class="form-label" for="selfKindWords">나에게 해주고 싶은 말</label>
-                        <textarea class="form-textarea" id="selfKindWords" placeholder="자기 자신을 다독여주세요." rows="3"
-                            th:field="*{selfKindWords}"></textarea>
-                    </div>
-
-                    <!-- 버튼 영역 -->
-                    <div class="mt-8 flex justify-end gap-x-2">
-                        <a class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-stone-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none transition-all"
-                            th:href="@{/diaries/{id}(id=${diaryId})}">
-                            취소
-                        </a>
-                        <button id="submit-btn" data-form-submit-target="submit"
-                            class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-stone-800 text-white hover:bg-stone-900 disabled:opacity-50 disabled:pointer-events-none shadow-md hover:shadow-lg transition-all"
-                            type="submit">
-                            <th:block th:replace="~{fragments/spinner :: loading-spinner-white}"></th:block>
-                            <span class="loading-hide" data-form-submit-target="text">수정 완료</span>
-                            <span class="hidden turbo-loading-show">저장 중...</span>
-                        </button>
-                    </div>
+            <div class="space-y-6">
+                <!-- 기록 날짜 -->
+                <div>
+                    <label class="block text-sm font-medium mb-2 text-stone-700" for="date">기록 날짜</label>
+                    <input
+                        class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none bg-white"
+                        id="date" name="date"
+                        th:classappend="${#fields.hasErrors('date')} ? '!border-red-500 focus:!border-red-500 focus:!ring-red-500' : ''"
+                        th:value="${#temporals.format(diaryRequest.date, 'yyyy-MM-dd')}" type="date">
+                    <p class="mt-2 text-sm text-red-600" th:errors="*{date}" th:if="${#fields.hasErrors('date')}">날짜 에러
+                    </p>
                 </div>
-            </form>
 
-        </turbo-frame>
-    </div>
-</body>
+                <!-- 한줄 요약 -->
+                <div>
+                    <label class="block text-sm font-medium mb-2 text-stone-700" for="shortContent">한줄 요약</label>
+                    <input
+                        class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none bg-white"
+                        id="shortContent" placeholder="오늘 하루를 한 문장으로 표현한다면?"
+                        th:classappend="${#fields.hasErrors('shortContent')} ? '!border-red-500 focus:!border-red-500 focus:!ring-red-500' : ''"
+                        th:field="*{shortContent}" type="text">
+                    <p class="mt-2 text-sm text-red-600" th:errors="*{shortContent}"
+                        th:if="${#fields.hasErrors('shortContent')}">내용 에러</p>
+                </div>
+
+                <!-- 감정 태그 -->
+                <div>
+                    <th:block th:replace="~{fragments/tag-management :: tag-management}"></th:block>
+                </div>
+
+                <!-- 상황 -->
+                <div>
+                    <label class="block text-sm font-medium mb-2 text-stone-700" for="situation">상황</label>
+                    <textarea
+                        class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none bg-white"
+                        id="situation" placeholder="어떤 상황이었나요?" rows="3" th:field="*{situation}"></textarea>
+                </div>
+
+                <!-- 나의 반응 -->
+                <div>
+                    <label class="block text-sm font-medium mb-2 text-stone-700" for="reaction">나의 반응</label>
+                    <textarea
+                        class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none bg-white"
+                        id="reaction" placeholder="그때 어떻게 행동했나요?" rows="3" th:field="*{reaction}"></textarea>
+                </div>
+
+                <!-- 신체 감각 -->
+                <div>
+                    <label class="block text-sm font-medium mb-2 text-stone-700" for="physicalSensation">신체 감각</label>
+                    <textarea
+                        class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none bg-white"
+                        id="physicalSensation" placeholder="몸에서는 어떤 느낌이 들었나요?" rows="3"
+                        th:field="*{physicalSensation}"></textarea>
+                </div>
+
+                <!-- 원했던 반응 -->
+                <div>
+                    <label class="block text-sm font-medium mb-2 text-stone-700" for="desiredReaction">원했던 반응</label>
+                    <textarea
+                        class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none bg-white"
+                        id="desiredReaction" placeholder="어떻게 행동하고 싶었나요?" rows="3"
+                        th:field="*{desiredReaction}"></textarea>
+                </div>
+
+                <!-- 감사한 순간 -->
+                <div>
+                    <label class="block text-sm font-medium mb-2 text-stone-700" for="gratitudeMoment">감사한 순간</label>
+                    <textarea
+                        class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none bg-white"
+                        id="gratitudeMoment" placeholder="오늘 감사한 일은 무엇인가요?" rows="3"
+                        th:field="*{gratitudeMoment}"></textarea>
+                </div>
+
+                <!-- 나에게 해주고 싶은 말 -->
+                <div>
+                    <label class="block text-sm font-medium mb-2 text-stone-700" for="selfKindWords">나에게 해주고 싶은
+                        말</label>
+                    <textarea
+                        class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none bg-white"
+                        id="selfKindWords" placeholder="자기 자신을 다독여주세요." rows="3" th:field="*{selfKindWords}"></textarea>
+                </div>
+
+                <!-- 버튼 영역 -->
+                <div class="mt-8 flex justify-end gap-x-2">
+                    <a class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-stone-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none transition-all"
+                        th:href="@{/diaries/{id}(id=${diaryId})}">
+                        취소
+                    </a>
+                    <button id="submit-btn" data-form-submit-target="submit"
+                        class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-stone-800 text-white hover:bg-stone-900 disabled:opacity-50 disabled:pointer-events-none shadow-md hover:shadow-lg transition-all"
+                        type="submit">
+                        <th:block th:replace="~{fragments/spinner :: loading-spinner-white}"></th:block>
+                        <span class="loading-hide" data-form-submit-target="text">수정 완료</span>
+                        <span class="hidden turbo-loading-show">저장 중...</span>
+                    </button>
+                </div>
+            </div>
+        </form>
+
+    </turbo-frame>
+</div>
 
 </html>

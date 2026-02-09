@@ -52,24 +52,7 @@
 
                 <!-- 감정 태그 -->
                 <div>
-                    <label class="block text-sm font-medium mb-2 text-stone-700">감정 태그</label>
-                    <div class="flex flex-wrap gap-2" id="tag-list" data-tag-target="tagList">
-                        <button
-                            class="tag-btn px-3 py-1.5 rounded-full text-sm font-medium border transition-all duration-200 select-none bg-white shadow-sm"
-                            data-action="click->tag#toggle"
-                            th:classappend="${diaryRequest.tagIds != null && #lists.contains(diaryRequest.tagIds, tag.id)} ? 'ring-2 ring-offset-1' : ''"
-                            th:data-tag-color="${tag.color}" th:data-tag-id="${tag.id}" th:each="tag : ${tags}"
-                            th:style="${diaryRequest.tagIds != null && #lists.contains(diaryRequest.tagIds, tag.id)} ?
-                                          'border-color:' + ${tag.color} + '; color:' + ${tag.color} + '; ring-color:' + ${tag.color} + '; box-shadow: 0 0 0 2px ' + ${tag.color} :
-                                          'border-color:' + ${tag.color} + '; color:' + ${tag.color}"
-                            th:text="${tag.name}" type="button">
-                        </button>
-                        <button
-                            class="px-3 py-1.5 rounded-full text-sm font-medium border border-stone-200 text-stone-400 hover:text-stone-600 hover:border-stone-300 transition-all"
-                            data-action="click->tag#openModal" type="button">
-                            + 태그 추가
-                        </button>
-                    </div>
+                    <th:block th:replace="~{fragments/tag-management :: tag-management}"></th:block>
                 </div>
 
                 <!-- 상황 -->
@@ -141,9 +124,6 @@
                 </div>
             </div>
         </form>
-
-        <!-- 태그 추가 모달 (Fragment) -->
-        <th:block th:replace="~{fragments/tag-modal :: tag-modal}"></th:block>
 
     </turbo-frame>
 </div>
