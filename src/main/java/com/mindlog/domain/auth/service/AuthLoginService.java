@@ -48,37 +48,11 @@ public class AuthLoginService {
         String email = (String) userMap.get("email");
         UUID profileId = UUID.fromString(userIdStr);
 
-        Map<String, Object> userMeta = (Map<String, Object>) userMap.get("user_metadata");
-        String name = email.split("@")[0];
-        String avatar = null;
+        // 사용자 메타데이터 추출 (중복 제거)
+        UserMetadata metadata = extractUserMetadata(email, userMap);
 
-        if (userMeta != null) {
-            if (userMeta.get("full_name") != null)
-                name = (String) userMeta.get("full_name");
-            else if (userMeta.get("name") != null)
-                name = (String) userMeta.get("name");
-
-            if (userMeta.get("avatar_url") != null)
-                avatar = (String) userMeta.get("avatar_url");
-            else if (userMeta.get("picture") != null)
-                avatar = (String) userMeta.get("picture");
-        }
-
-        if (!profileRepository.existsById(profileId)) {
-            String userName = email.split("@")[0] + "_" + userIdStr.substring(0, 8);
-
-            Profile newProfile = Profile.builder()
-                    .id(profileId)
-                    .email(email)
-                    .name(name)
-                    .userName(userName)
-                    .avatar(avatar)
-                    .role(UserRole.USER)
-                    .build();
-
-            profileRepository.save(newProfile);
-            log.info("신규 유저 프로필 동기화 완료: {} ({})", name, userName);
-        }
+        // 프로필 동기화 (중복 제거)
+        syncUserProfile(profileId, email, metadata.name(), metadata.avatar());
 
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
@@ -91,7 +65,7 @@ public class AuthLoginService {
 
         HttpSession session = request.getSession();
         session.setAttribute("ACCESS_TOKEN", accessToken);
-        session.setAttribute("USER_NAME", name);
+        session.setAttribute("USER_NAME", metadata.name());
         if (refreshToken != null) {
             session.setAttribute("REFRESH_TOKEN", refreshToken);
         }
@@ -120,6 +94,35 @@ public class AuthLoginService {
         String email = (String) userMap.get("email");
         UUID profileId = UUID.fromString(userIdStr);
 
+        // 사용자 메타데이터 추출 (중복 제거)
+        UserMetadata metadata = extractUserMetadata(email, userMap);
+
+        // 프로필 동기화 (중복 제거)
+        syncUserProfile(profileId, email, metadata.name(), metadata.avatar());
+
+        // 인증 객체 생성
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                userIdStr,
+                accessToken,
+                List.of(new SimpleGrantedAuthority("ROLE_USER")));
+
+        // 세션에 저장할 속성들
+        Map<String, Object> sessionAttributes = new HashMap<>();
+        sessionAttributes.put("ACCESS_TOKEN", accessToken);
+        sessionAttributes.put("USER_NAME", metadata.name());
+        if (refreshToken != null) {
+            sessionAttributes.put("REFRESH_TOKEN", refreshToken);
+        }
+
+        // 일회용 토큰 생성 및 반환
+        return authHandoverService.createOneTimeToken(auth, sessionAttributes);
+    }
+
+    /**
+     * 사용자 메타데이터 추출
+     * OAuth 제공자로부터 받은 사용자 정보에서 name과 avatar를 추출합니다.
+     */
+    private UserMetadata extractUserMetadata(String email, Map<String, Object> userMap) {
         Map<String, Object> userMeta = (Map<String, Object>) userMap.get("user_metadata");
         String name = email.split("@")[0];
         String avatar = null;
@@ -136,8 +139,16 @@ public class AuthLoginService {
                 avatar = (String) userMeta.get("picture");
         }
 
+        return new UserMetadata(name, avatar);
+    }
+
+    /**
+     * 사용자 프로필 동기화
+     * 프로필이 존재하지 않으면 새로 생성합니다.
+     */
+    private void syncUserProfile(UUID profileId, String email, String name, String avatar) {
         if (!profileRepository.existsById(profileId)) {
-            String userName = email.split("@")[0] + "_" + userIdStr.substring(0, 8);
+            String userName = email.split("@")[0] + "_" + profileId.toString().substring(0, 8);
 
             Profile newProfile = Profile.builder()
                     .id(profileId)
@@ -149,24 +160,13 @@ public class AuthLoginService {
                     .build();
 
             profileRepository.save(newProfile);
-            log.info("신규 유저 프로필 동기화 완료 (Native App): {} ({})", name, userName);
+            log.info("신규 유저 프로필 동기화 완료: {} ({})", name, userName);
         }
+    }
 
-        // 인증 객체 생성
-        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                userIdStr,
-                accessToken,
-                List.of(new SimpleGrantedAuthority("ROLE_USER")));
-
-        // 세션에 저장할 속성들
-        Map<String, Object> sessionAttributes = new HashMap<>();
-        sessionAttributes.put("ACCESS_TOKEN", accessToken);
-        sessionAttributes.put("USER_NAME", name);
-        if (refreshToken != null) {
-            sessionAttributes.put("REFRESH_TOKEN", refreshToken);
-        }
-
-        // 일회용 토큰 생성 및 반환
-        return authHandoverService.createOneTimeToken(auth, sessionAttributes);
+    /**
+     * 사용자 메타데이터를 담는 Record
+     */
+    private record UserMetadata(String name, String avatar) {
     }
 }

@@ -34,8 +34,7 @@ public class DiaryController {
             @CurrentProfileId UUID profileId,
             @RequestParam(required = false) Integer year,
             @RequestParam(required = false) Integer month,
-            Model model
-    ) {
+            Model model) {
         var now = LocalDate.now();
         var y = (year != null) ? year : now.getYear();
         var m = (month != null) ? month : now.getMonthValue();
@@ -53,8 +52,7 @@ public class DiaryController {
     public String detail(
             @CurrentProfileId UUID profileId,
             @PathVariable Long id,
-            Model model
-    ) {
+            Model model) {
         var diary = diaryService.getDiary(profileId, id);
         model.addAttribute("diary", diary);
         return "diaries/detail";
@@ -76,10 +74,9 @@ public class DiaryController {
     public Object create(
             @CurrentProfileId UUID profileId,
             @Valid @ModelAttribute DiaryRequest request,
-            BindingResult bindingResult,                 // 에러 결과 담는 통
+            BindingResult bindingResult,
             Model model,
-            HttpServletResponse response
-    ) {
+            HttpServletResponse response) {
         if (bindingResult.hasErrors()) {
             response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
             var formData = diaryFormService.getFormOnError(profileId, request, null);
@@ -87,24 +84,23 @@ public class DiaryController {
             return "diaries/form";
         }
 
-        if (diaryService.findIdByDate(profileId, request.date()) != null) {
-            bindingResult.rejectValue("date", "duplicate", "이미 해당 날짜에 일기가 존재합니다");
+        try {
+            Long id = diaryService.createDiary(profileId, request);
+            return new RedirectView("/diaries/" + id, true, false, false);
+        } catch (com.mindlog.domain.diary.exception.DuplicateDiaryDateException e) {
+            bindingResult.rejectValue("date", "duplicate", e.getMessage());
             response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
             var formData = diaryFormService.getFormOnError(profileId, request, null);
             populateModel(model, formData);
             return "diaries/form";
         }
-
-        Long id = diaryService.createDiary(profileId, request);
-        return new RedirectView("/diaries/" + id, true, false, false); // 303 리다이렉트
     }
 
     @GetMapping("/{id}/edit")
     public String editForm(
             @CurrentProfileId UUID profileId,
             @PathVariable Long id,
-            Model model
-    ) {
+            Model model) {
         var formData = diaryFormService.getEditForm(profileId, id);
         populateModel(model, formData);
         return "diaries/form";
@@ -122,8 +118,7 @@ public class DiaryController {
             @Valid @ModelAttribute DiaryRequest request,
             BindingResult bindingResult,
             Model model,
-            HttpServletResponse response
-    ) {
+            HttpServletResponse response) {
         if (bindingResult.hasErrors()) {
             response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
             var formData = diaryFormService.getFormOnError(profileId, request, id);
@@ -131,17 +126,16 @@ public class DiaryController {
             return "diaries/form";
         }
 
-        var existingId = diaryService.findIdByDate(profileId, request.date());
-        if (existingId != null && !existingId.equals(id)) {
-            bindingResult.rejectValue("date", "duplicate", "이미 해당 날짜에 일기가 존재합니다");
+        try {
+            diaryService.updateDiary(profileId, id, request);
+            return new RedirectView("/diaries/" + id, true, false, false);
+        } catch (com.mindlog.domain.diary.exception.DuplicateDiaryDateException e) {
+            bindingResult.rejectValue("date", "duplicate", e.getMessage());
             response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
             var formData = diaryFormService.getFormOnError(profileId, request, id);
             populateModel(model, formData);
             return "diaries/form";
         }
-
-        diaryService.updateDiary(profileId, id, request);
-        return new RedirectView("/diaries/" + id, true, false, false);
     }
 
     /**
@@ -152,8 +146,7 @@ public class DiaryController {
     @DeleteMapping("/{id}")
     public RedirectView delete(
             @CurrentProfileId UUID profileId,
-            @PathVariable Long id
-    ) {
+            @PathVariable Long id) {
         diaryService.deleteDiary(profileId, id);
         // 삭제 후 목록으로 303 리다이렉트
         return new RedirectView("/diaries", true, false, false);
@@ -163,7 +156,7 @@ public class DiaryController {
     @GetMapping("/check")
     @ResponseBody
     public ResponseEntity<Long> checkDiaryDate(@CurrentProfileId UUID profileId,
-                                               @RequestParam LocalDate date) {
+            @RequestParam LocalDate date) {
         var diaryId = diaryService.findIdByDate(profileId, date);
         return ResponseEntity.ok(diaryId);
     }

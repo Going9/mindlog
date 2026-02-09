@@ -57,8 +57,7 @@ public class DiaryService {
     return diaryTags.stream()
         .collect(Collectors.groupingBy(
             DiaryTag::getDiaryId,
-            Collectors.mapping(DiaryTag::getEmotionTag, Collectors.toList())
-        ));
+            Collectors.mapping(DiaryTag::getEmotionTag, Collectors.toList())));
   }
 
   private List<DiaryResponse> buildDiaryResponses(List<Diary> diaries, Map<Long, List<EmotionTag>> tagsByDiaryId) {
@@ -92,7 +91,7 @@ public class DiaryService {
 
     Diary diary = buildDiaryFromRequest(profileId, request);
     Diary savedDiary = diaryRepository.save(diary);
-    
+
     saveDiaryTags(savedDiary, request.tagIds());
 
     return savedDiary.getId();
@@ -128,6 +127,15 @@ public class DiaryService {
       throw new IllegalArgumentException("Unauthorized access");
     }
 
+    // 날짜 중복 검증: 다른 일기가 이미 해당 날짜를 사용하고 있는지 확인
+    Long existingId = diaryRepository.findByProfileIdAndDate(profileId, request.date())
+        .map(Diary::getId)
+        .orElse(null);
+
+    if (existingId != null && !existingId.equals(id)) {
+      throw new DuplicateDiaryDateException("이미 해당 날짜에 일기가 존재합니다");
+    }
+
     diary.update(
         request.shortContent(),
         request.situation(),
@@ -136,8 +144,7 @@ public class DiaryService {
         request.desiredReaction(),
         request.gratitudeMoment(),
         request.selfKindWords(),
-        request.imageUrl()
-    );
+        request.imageUrl());
 
     List<DiaryTag> existingTags = diaryTagRepository.findByDiaryId(id);
     existingTags.forEach(dt -> dt.getEmotionTag().decrementUsageCount());
