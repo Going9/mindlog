@@ -23,9 +23,8 @@ public class SecurityConfig {
                 // 1. CSRF 비활성화
                 http.csrf(AbstractHttpConfigurer::disable);
 
-                // 1-1. 운영 환경에서만 HTTPS 강제/HSTS 적용
+                // 1-1. 운영 환경에서만 HSTS 적용
                 if (requireHttps) {
-                        http.requiresChannel(channel -> channel.anyRequest().requiresSecure());
                         http.headers(headers -> headers
                                         .httpStrictTransportSecurity(hsts -> hsts
                                                         .maxAgeInSeconds(31536000)
