@@ -43,6 +43,9 @@ public class AuthExchangeController {
             HttpServletResponse response) {
 
         log.info("토큰 교환 요청: {}", token.substring(0, Math.min(8, token.length())) + "...");
+        log.info("토큰 교환 요청 세션 정보 - requestedSessionId={}, valid={}",
+                request.getRequestedSessionId(),
+                request.isRequestedSessionIdValid());
 
         // 1. 토큰 검증 및 인증 정보 조회
         var result = handoverService.consumeToken(token);
@@ -63,6 +66,7 @@ public class AuthExchangeController {
         // 4. 세션에 추가 속성 저장 (ACCESS_TOKEN, USER_NAME 등)
         HttpSession session = request.getSession();
         result.sessionAttributes().forEach(session::setAttribute);
+        log.info("토큰 교환 후 세션 생성 - sessionId={}", session.getId());
 
         log.info("WebView 세션 생성 완료: 사용자 {}", result.authentication().getName());
 
