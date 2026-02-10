@@ -147,21 +147,24 @@ public class AuthLoginService {
      * 프로필이 존재하지 않으면 새로 생성합니다.
      */
     private void syncUserProfile(UUID profileId, String email, String name, String avatar) {
-        if (!profileRepository.existsById(profileId)) {
-            String userName = email.split("@")[0] + "_" + profileId.toString().substring(0, 8);
-
-            Profile newProfile = Profile.builder()
-                    .id(profileId)
-                    .email(email)
-                    .name(name)
-                    .userName(userName)
-                    .avatar(avatar)
-                    .role(UserRole.USER)
-                    .build();
-
-            profileRepository.save(newProfile);
-            log.info("신규 유저 프로필 동기화 완료: {} ({})", name, userName);
+        var existingProfile = profileRepository.findById(profileId);
+        if (existingProfile.isPresent()) {
+            return;
         }
+
+        String userName = email.split("@")[0] + "_" + profileId.toString().substring(0, 8);
+
+        Profile newProfile = Profile.builder()
+                .id(profileId)
+                .email(email)
+                .name(name)
+                .userName(userName)
+                .avatar(avatar)
+                .role(UserRole.USER)
+                .build();
+
+        profileRepository.save(newProfile);
+        log.info("신규 유저 프로필 동기화 완료: {} ({})", name, userName);
     }
 
     /**

@@ -66,6 +66,8 @@ mindlog:
     anon-key: ${SUPABASE_ANON_KEY}
   serverIp: ${SERVER_IP}
   serverPort: ${SERVER_PORT}
+  performance:
+    warmup-db-on-startup: true
 
 # 로깅 공통 설정
 logging:

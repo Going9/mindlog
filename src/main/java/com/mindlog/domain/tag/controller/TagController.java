@@ -6,6 +6,8 @@ import com.mindlog.domain.tag.entity.EmotionTag;
 import com.mindlog.domain.tag.service.TagService;
 import com.mindlog.global.security.CurrentProfileId;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,17 +32,23 @@ public class TagController {
 
     // 새 태그 만들기 (POST /api/tags)
     @PostMapping
-    public ResponseEntity<TagResponse> createTag(
+    public ResponseEntity<?> createTag(
             @CurrentProfileId UUID profileId,
             @RequestBody CreateTagRequest request
     ) {
-        EmotionTag tag = tagService.createCustomTag(
-                profileId,
-                request.name(),
-                request.color(),
-                request.category()
-        );
-        return ResponseEntity.ok(TagResponse.from(tag));
+        try {
+            EmotionTag tag = tagService.createCustomTag(
+                    profileId,
+                    request.name(),
+                    request.color(),
+                    request.category()
+            );
+            return ResponseEntity.ok(TagResponse.from(tag));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(e.getMessage());
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("이미 존재하는 태그 이름입니다.");
+        }
     }
 
     // 요청 데이터를 받을 DTO

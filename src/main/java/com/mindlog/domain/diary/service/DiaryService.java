@@ -1,5 +1,7 @@
 package com.mindlog.domain.diary.service;
 
+import com.mindlog.domain.diary.dto.DiaryListItemResponse;
+import com.mindlog.domain.diary.dto.DiaryMonthlySummary;
 import com.mindlog.domain.diary.dto.DiaryRequest;
 import com.mindlog.domain.diary.dto.DiaryResponse;
 import com.mindlog.domain.diary.entity.Diary;
@@ -9,12 +11,15 @@ import com.mindlog.domain.tag.entity.DiaryTag;
 import com.mindlog.domain.tag.entity.EmotionTag;
 import com.mindlog.domain.tag.repository.DiaryTagRepository;
 import com.mindlog.domain.tag.repository.EmotionTagRepository;
+import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
@@ -29,29 +34,45 @@ public class DiaryService {
   private final DiaryTagRepository diaryTagRepository;
   private final EmotionTagRepository emotionTagRepository;
 
-  public List<DiaryResponse> getMonthlyDiaries(UUID profileId, int year, int month) {
-    List<Diary> diaries = findDiariesByMonth(profileId, year, month);
+  public List<DiaryListItemResponse> getMonthlyDiaries(UUID profileId, int year, int month) {
+    YearMonth yearMonth = resolveYearMonth(year, month);
+    List<DiaryMonthlySummary> diaries = findDiariesByMonth(profileId, yearMonth);
     if (diaries.isEmpty()) {
       return List.of();
     }
 
-    Map<Long, List<EmotionTag>> tagsByDiaryId = fetchAndGroupTags(diaries);
+    Map<Long, List<EmotionTag>> tagsByDiaryId = fetchAndGroupTags(extractDiaryIds(diaries));
 
-    return buildDiaryResponses(diaries, tagsByDiaryId);
+    return buildDiaryListResponses(diaries, tagsByDiaryId);
   }
 
-  private List<Diary> findDiariesByMonth(UUID profileId, int year, int month) {
-    YearMonth yearMonth = YearMonth.of(year, month);
+  public List<Integer> getAvailableYears(UUID profileId, int selectedYear) {
+    LocalDate minDate = diaryRepository.findMinDateByProfileId(profileId);
+    LocalDate maxDate = diaryRepository.findMaxDateByProfileId(profileId);
+
+    if (minDate == null || maxDate == null) {
+      return IntStream.rangeClosed(selectedYear - 2, selectedYear + 2)
+          .boxed()
+          .sorted((a, b) -> Integer.compare(b, a))
+          .toList();
+    }
+
+    int startYear = Math.min(minDate.getYear(), selectedYear);
+    int endYear = Math.max(maxDate.getYear(), selectedYear);
+
+    return IntStream.rangeClosed(startYear, endYear)
+        .boxed()
+        .sorted((a, b) -> Integer.compare(b, a))
+        .toList();
+  }
+
+  private List<DiaryMonthlySummary> findDiariesByMonth(UUID profileId, YearMonth yearMonth) {
     LocalDate start = yearMonth.atDay(1);
     LocalDate end = yearMonth.atEndOfMonth();
-    return diaryRepository.findByProfileIdAndDateBetweenOrderByDateAsc(profileId, start, end);
+    return diaryRepository.findMonthlySummaryByProfileIdAndDateBetween(profileId, start, end);
   }
 
-  private Map<Long, List<EmotionTag>> fetchAndGroupTags(List<Diary> diaries) {
-    List<Long> diaryIds = diaries.stream()
-        .map(Diary::getId)
-        .toList();
-
+  private Map<Long, List<EmotionTag>> fetchAndGroupTags(List<Long> diaryIds) {
     List<DiaryTag> diaryTags = diaryTagRepository.findAllByDiaryIdIn(diaryIds);
 
     return diaryTags.stream()
@@ -60,13 +81,29 @@ public class DiaryService {
             Collectors.mapping(DiaryTag::getEmotionTag, Collectors.toList())));
   }
 
-  private List<DiaryResponse> buildDiaryResponses(List<Diary> diaries, Map<Long, List<EmotionTag>> tagsByDiaryId) {
+  private List<Long> extractDiaryIds(List<DiaryMonthlySummary> diaries) {
+    return diaries.stream()
+        .map(DiaryMonthlySummary::id)
+        .toList();
+  }
+
+  private List<DiaryListItemResponse> buildDiaryListResponses(
+      List<DiaryMonthlySummary> diaries,
+      Map<Long, List<EmotionTag>> tagsByDiaryId) {
     return diaries.stream()
         .map(diary -> {
-          List<EmotionTag> tags = tagsByDiaryId.getOrDefault(diary.getId(), List.of());
-          return DiaryResponse.from(diary, tags);
+          List<EmotionTag> tags = tagsByDiaryId.getOrDefault(diary.id(), List.of());
+          return DiaryListItemResponse.from(diary, tags);
         })
         .toList();
+  }
+
+  private YearMonth resolveYearMonth(int year, int month) {
+    try {
+      return YearMonth.of(year, month);
+    } catch (DateTimeException e) {
+      return YearMonth.now();
+    }
   }
 
   public DiaryResponse getDiary(UUID profileId, Long id) {
@@ -92,7 +129,7 @@ public class DiaryService {
     Diary diary = buildDiaryFromRequest(profileId, request);
     Diary savedDiary = diaryRepository.save(diary);
 
-    saveDiaryTags(savedDiary, request.tagIds());
+    saveDiaryTags(savedDiary.getId(), request.tagIds());
 
     return savedDiary.getId();
   }
@@ -127,12 +164,7 @@ public class DiaryService {
       throw new IllegalArgumentException("Unauthorized access");
     }
 
-    // 날짜 중복 검증: 다른 일기가 이미 해당 날짜를 사용하고 있는지 확인
-    Long existingId = diaryRepository.findByProfileIdAndDate(profileId, request.date())
-        .map(Diary::getId)
-        .orElse(null);
-
-    if (existingId != null && !existingId.equals(id)) {
+    if (diaryRepository.existsByProfileIdAndDateAndIdNot(profileId, request.date(), id)) {
       throw new DuplicateDiaryDateException("이미 해당 날짜에 일기가 존재합니다");
     }
 
@@ -146,11 +178,7 @@ public class DiaryService {
         request.selfKindWords(),
         request.imageUrl());
 
-    List<DiaryTag> existingTags = diaryTagRepository.findByDiaryId(id);
-    existingTags.forEach(dt -> dt.getEmotionTag().decrementUsageCount());
-
-    diaryTagRepository.deleteAllByDiaryId(id);
-    saveDiaryTags(diary, request.tagIds());
+    replaceDiaryTags(id, request.tagIds());
   }
 
   @Transactional
@@ -173,20 +201,34 @@ public class DiaryService {
         .orElse(null);
   }
 
-  private void saveDiaryTags(Diary diary, List<Long> tagIds) {
-    if (tagIds == null || tagIds.isEmpty()) {
+  private void replaceDiaryTags(Long diaryId, @Nullable List<Long> tagIds) {
+    emotionTagRepository.decrementUsageCountByDiaryId(diaryId);
+    diaryTagRepository.deleteAllByDiaryId(diaryId);
+    saveDiaryTags(diaryId, tagIds);
+  }
+
+  private void saveDiaryTags(Long diaryId, @Nullable List<Long> tagIds) {
+    List<Long> normalizedTagIds = normalizeTagIds(tagIds);
+    if (normalizedTagIds.isEmpty()) {
       return;
     }
 
-    var tags = emotionTagRepository.findAllById(tagIds);
+    emotionTagRepository.incrementUsageCountByIds(normalizedTagIds);
 
-    List<DiaryTag> diaryTags = tags.stream()
-        .map(tag -> {
-          tag.incrementUsageCount();
-          return DiaryTag.of(diary.getId(), tag);
-        })
+    List<DiaryTag> diaryTags = normalizedTagIds.stream()
+        .map(tagId -> DiaryTag.of(diaryId, emotionTagRepository.getReferenceById(tagId)))
         .toList();
 
     diaryTagRepository.saveAll(diaryTags);
+  }
+
+  private List<Long> normalizeTagIds(@Nullable List<Long> tagIds) {
+    if (tagIds == null || tagIds.isEmpty()) {
+      return List.of();
+    }
+    return tagIds.stream()
+        .filter(Objects::nonNull)
+        .distinct()
+        .toList();
   }
 }

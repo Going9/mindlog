@@ -9,11 +9,14 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 public class SupabaseAuthService {
+    private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(3);
+    private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(10);
 
     @Value("${mindlog.supabase.url}")
     private String supabaseUrl;
@@ -22,7 +25,9 @@ public class SupabaseAuthService {
     private String supabaseAnonKey;
 
     private final ObjectMapper objectMapper;
-    private final HttpClient httpClient = HttpClient.newHttpClient();
+    private final HttpClient httpClient = HttpClient.newBuilder()
+            .connectTimeout(CONNECT_TIMEOUT)
+            .build();
 
     // [신규] PKCE 흐름: 인증 코드를 토큰으로 교환
     public Map<String, Object> exchangeCodeForToken(String code, String codeVerifier) throws Exception {
@@ -38,7 +43,9 @@ public class SupabaseAuthService {
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(tokenUrl))
+                .timeout(REQUEST_TIMEOUT)
                 .header("apikey", supabaseAnonKey)
+                .header("Accept", "application/json")
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                 .build();
@@ -63,7 +70,9 @@ public class SupabaseAuthService {
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(tokenUrl))
+                .timeout(REQUEST_TIMEOUT)
                 .header("apikey", supabaseAnonKey)
+                .header("Accept", "application/json")
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                 .build();

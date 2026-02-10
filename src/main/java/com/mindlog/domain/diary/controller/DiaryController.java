@@ -1,10 +1,9 @@
 package com.mindlog.domain.diary.controller;
 
+import com.mindlog.domain.diary.dto.DiaryListItemResponse;
 import com.mindlog.domain.diary.dto.DiaryRequest;
-import com.mindlog.domain.diary.dto.DiaryResponse;
 import com.mindlog.domain.diary.service.DiaryFormService;
 import com.mindlog.domain.diary.service.DiaryService;
-import com.mindlog.domain.tag.dto.TagResponse;
 import com.mindlog.global.security.CurrentProfileId;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -18,13 +17,17 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.IntStream;
 
 @Controller
 @RequestMapping("/diaries")
 @RequiredArgsConstructor
 public class DiaryController {
+    private static final DateTimeFormatter MONTH_FORMATTER = DateTimeFormatter.ofPattern("yyyy년 M월");
 
     private final DiaryService diaryService;
     private final DiaryFormService diaryFormService;
@@ -35,15 +38,24 @@ public class DiaryController {
             @RequestParam(required = false) Integer year,
             @RequestParam(required = false) Integer month,
             Model model) {
-        var now = LocalDate.now();
-        var y = (year != null) ? year : now.getYear();
-        var m = (month != null) ? month : now.getMonthValue();
+        var currentYearMonth = resolveYearMonth(year, month);
+        var y = currentYearMonth.getYear();
+        var m = currentYearMonth.getMonthValue();
+        var previous = currentYearMonth.minusMonths(1);
+        var next = currentYearMonth.plusMonths(1);
 
-        List<DiaryResponse> diaries = diaryService.getMonthlyDiaries(profileId, y, m);
+        List<DiaryListItemResponse> diaries = diaryService.getMonthlyDiaries(profileId, y, m);
 
         model.addAttribute("diaries", diaries);
         model.addAttribute("year", y);
         model.addAttribute("month", m);
+        model.addAttribute("monthLabel", currentYearMonth.format(MONTH_FORMATTER));
+        model.addAttribute("prevYear", previous.getYear());
+        model.addAttribute("prevMonth", previous.getMonthValue());
+        model.addAttribute("nextYear", next.getYear());
+        model.addAttribute("nextMonth", next.getMonthValue());
+        model.addAttribute("yearOptions", diaryService.getAvailableYears(profileId, y));
+        model.addAttribute("monthOptions", IntStream.rangeClosed(1, 12).boxed().toList());
 
         return "diaries/index";
     }
@@ -167,5 +179,17 @@ public class DiaryController {
         model.addAttribute("diaryRequest", formData.diaryRequest());
         model.addAttribute("tags", formData.tags());
         model.addAttribute("diaryId", formData.diaryId());
+    }
+
+    private YearMonth resolveYearMonth(Integer year, Integer month) {
+        var now = LocalDate.now();
+        var resolvedYear = (year != null) ? year : now.getYear();
+        var resolvedMonth = (month != null) ? month : now.getMonthValue();
+
+        try {
+            return YearMonth.of(resolvedYear, resolvedMonth);
+        } catch (RuntimeException ignored) {
+            return YearMonth.of(now.getYear(), now.getMonthValue());
+        }
     }
 }
