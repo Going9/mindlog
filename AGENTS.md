@@ -74,11 +74,3 @@ This project uses **Hotwire (Turbo Drive)**. Controllers must follow specific HT
 2. **Verify Auth**: Ensure `@CurrentProfileId` is used for user-scoped data.
 3. **Run Tests**: Verify logic with `./gradlew test`.
 4. **DTOs**: Use specific DTOs for requests/responses; do not expose Entities directly in Controller.
-
-## 6. Documentation
-- **Folder**: Create/Use `docs/work_logs` in the root directory.
-- **File Naming**: `YYYY-MM-DD-task-name.md`.
-- **Language**: **Korean**.
-- **Content**: Record work details, changes made, reasoning, and any pending issues.
-- **Frequency**: Create a log after every significant task or session completion.
-- **Mandatory**: ALL "ulw" (Ultrawork) sessions MUST be recorded in this folder immediately upon completion.

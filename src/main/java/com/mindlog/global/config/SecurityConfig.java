@@ -1,6 +1,7 @@
 package com.mindlog.global.config;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -14,17 +15,28 @@ import org.springframework.security.web.SecurityFilterChain;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+        @Value("${mindlog.security.require-https:false}")
+        private boolean requireHttps;
+
         @Bean
         public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-                http
-                                // 1. CSRF 비활성화
-                                .csrf(AbstractHttpConfigurer::disable)
+                // 1. CSRF 비활성화
+                http.csrf(AbstractHttpConfigurer::disable);
 
-                                // 2. 세션 정책: 필요하면 생성 (이 설정이 Spring Session과 연동됨)
-                                .sessionManagement(session -> session
-                                                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                                                .maximumSessions(1) // (선택) 중복 로그인 방지
-                                )
+                // 1-1. 운영 환경에서만 HTTPS 강제/HSTS 적용
+                if (requireHttps) {
+                        http.requiresChannel(channel -> channel.anyRequest().requiresSecure());
+                        http.headers(headers -> headers
+                                        .httpStrictTransportSecurity(hsts -> hsts
+                                                        .maxAgeInSeconds(31536000)
+                                                        .includeSubDomains(true)));
+                }
+
+                // 2. 세션 정책: 필요하면 생성 (이 설정이 Spring Session과 연동됨)
+                http.sessionManagement(session -> session
+                                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                                .maximumSessions(1) // (선택) 중복 로그인 방지
+                )
 
                                 // 3. 페이지별 접근 권한 설정
                                 .authorizeHttpRequests(auth -> auth
