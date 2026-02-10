@@ -30,6 +30,59 @@
     </a>
   </div>
 
+  <div class="mb-8 flex items-center justify-between gap-3 rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
+    <a th:href="@{/diaries(year=${prevYear},month=${prevMonth})}"
+       class="inline-flex items-center gap-2 rounded-lg border border-stone-200 px-3 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50"
+       aria-label="이전 달 보기">
+      <span aria-hidden="true">←</span>
+      <span>이전 달</span>
+    </a>
+
+    <p class="text-base font-semibold text-stone-800" th:text="${monthLabel}">
+      2026년 2월
+    </p>
+
+    <a th:href="@{/diaries(year=${nextYear},month=${nextMonth})}"
+       class="inline-flex items-center gap-2 rounded-lg border border-stone-200 px-3 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50"
+       aria-label="다음 달 보기">
+      <span>다음 달</span>
+      <span aria-hidden="true">→</span>
+    </a>
+  </div>
+
+  <form method="get" th:action="@{/diaries}" class="mb-8 flex flex-wrap items-end gap-3 rounded-xl border border-stone-200 bg-white px-4 py-4 shadow-sm">
+    <div class="flex items-center gap-2">
+      <label for="year-select" class="text-sm font-medium text-stone-600">연도</label>
+      <select id="year-select" name="year"
+              class="rounded-lg border border-stone-300 bg-white pl-3 pr-10 py-2 text-sm text-stone-700 focus:border-stone-500 focus:outline-none">
+        <option th:each="yearOption : ${yearOptions}"
+                th:value="${yearOption}"
+                th:text="${yearOption + '년'}"
+                th:selected="${yearOption == year}">
+          2026년
+        </option>
+      </select>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <label for="month-select" class="text-sm font-medium text-stone-600">월</label>
+      <select id="month-select" name="month"
+              class="rounded-lg border border-stone-300 bg-white pl-3 pr-10 py-2 text-sm text-stone-700 focus:border-stone-500 focus:outline-none">
+        <option th:each="monthOption : ${monthOptions}"
+                th:value="${monthOption}"
+                th:text="${monthOption + '월'}"
+                th:selected="${monthOption == month}">
+          2월
+        </option>
+      </select>
+    </div>
+
+    <button type="submit"
+            class="inline-flex items-center rounded-lg bg-stone-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-stone-900">
+      이동
+    </button>
+  </form>
+
   <div th:if="${#lists.isEmpty(diaries)}"
        class="text-center py-20 bg-white border border-dashed border-stone-300 rounded-xl shadow-sm">
     <svg class="mx-auto h-12 w-12 text-stone-300" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"

@@ -6,7 +6,8 @@
 
 <div class="max-w-4xl mx-auto space-y-8 px-4 sm:px-6" layout:fragment="content">
 
-    <turbo-frame id="diary_context" data-controller="tag">
+    <turbo-frame id="diary_context">
+        <div data-controller="tag">
 
         <div class="text-center space-y-2 mb-8">
             <h1 class="text-3xl font-bold text-stone-800" th:text="${diaryId == null ? '오늘의 기록' : '기록 수정'}"></h1>
@@ -18,12 +19,6 @@
             data-turbo-frame="_top">
 
             <input name="_method" th:value="${diaryId == null} ? '' : 'put'" type="hidden">
-
-            <div id="selected-tags-container" data-tag-target="selectedContainer">
-                <th:block th:if="${diaryRequest.tagIds != null}">
-                    <input name="tagIds" th:each="tagId : ${diaryRequest.tagIds}" th:value="${tagId}" type="hidden">
-                </th:block>
-            </div>
 
             <div class="space-y-6">
                 <!-- 기록 날짜 -->
@@ -125,6 +120,7 @@
             </div>
         </form>
 
+        </div>
     </turbo-frame>
 </div>
 

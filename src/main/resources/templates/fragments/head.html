@@ -29,11 +29,10 @@
         }
     </script>
 
-  <script type="module" th:src="@{/js/turbo-init.js(v=${#dates.format(#dates.createNow(), 'yyyyMMddHHmm')})}"></script>
-  <script type="module"
-    th:src="@{/js/stimulus-init.js(v=${#dates.format(#dates.createNow(), 'yyyyMMddHHmm')})}"></script>
+  <script type="module" th:src="@{/js/turbo-init.js}"></script>
+  <script type="module" th:src="@{/js/stimulus-init.js}"></script>
 
-  <script th:src="@{/js/preline.js(v=${#dates.format(#dates.createNow(), 'yyyyMMddHHmm')})}" defer></script>
+  <script th:src="@{/js/preline.js}" defer></script>
 </th:block>
 
 </html>

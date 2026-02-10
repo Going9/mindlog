@@ -42,6 +42,8 @@ export default class extends Controller {
         "tagCategory",
         "colorPicker",
         "colorValue",
+        "selectedColorPreview",
+        "selectedColorLabel",
         "errorMessage",
         "submitBtn",
         "spinner",
@@ -63,6 +65,8 @@ export default class extends Controller {
     }
 
     connect() {
+        this.isCreating = false
+
         // 이미 선택된 태그가 있다면(hidden inputs), 버튼의 시각적 상태(Ring, Border)를 동기화합니다.
         // 이는 수정 페이지(edit.html) 등에서 서버가 렌더링한 초기 상태를 반영하기 위함입니다.
         if (this.hasSelectedContainerTarget && this.hasTagListTarget) {
@@ -87,6 +91,7 @@ export default class extends Controller {
      * data-tag-id, data-tag-color 속성 필요
      */
     toggle(event) {
+        event.preventDefault()
         const btn = event.currentTarget
         const id = btn.dataset.tagId
         const color = btn.dataset.tagColor
@@ -118,18 +123,21 @@ export default class extends Controller {
     /**
      * 모달 열기
      */
-    openModal() {
+    openModal(event) {
+        event?.preventDefault()
         if (!this.hasModalTarget) return
 
         this.modalTarget.classList.remove('hidden')
         this._clearError()
         this._initColorPicker()
+        this._applySelectedColor(this.defaultColorValue)
     }
 
     /**
      * 모달 닫기
      */
-    closeModal() {
+    closeModal(event) {
+        event?.preventDefault()
         if (!this.hasModalTarget) return
 
         this.modalTarget.classList.add('hidden')
@@ -140,26 +148,20 @@ export default class extends Controller {
      * 색상 선택
      */
     selectColor(event) {
+        event.preventDefault()
         const btn = event.currentTarget
         const color = btn.dataset.color
 
-        if (this.hasColorValueTarget) {
-            this.colorValueTarget.value = color
-        }
-
-        // 기존 선택 해제
-        this.colorPickerTarget.querySelectorAll('.color-option').forEach(b => {
-            b.classList.remove('ring-offset-2', 'ring-stone-400')
-        })
-
-        // 새 선택 표시
-        btn.classList.add('ring-offset-2', 'ring-stone-400')
+        this._applySelectedColor(color)
     }
 
     /**
      * 태그 생성 API 호출
      */
-    async createTag() {
+    async createTag(event) {
+        event?.preventDefault()
+        if (this.isCreating) return
+
         const name = this.hasTagNameTarget ? this.tagNameTarget.value.trim() : ''
         const category = this.hasTagCategoryTarget ? this.tagCategoryTarget.value : this.defaultCategoryValue
         const color = this.hasColorValueTarget && this.colorValueTarget.value
@@ -171,6 +173,7 @@ export default class extends Controller {
             return
         }
 
+        this.isCreating = true
         this._setLoading(true)
 
         try {
@@ -197,6 +200,8 @@ export default class extends Controller {
             console.error(e)
             this._showError('오류가 발생했습니다: ' + e.message)
             this._setLoading(false)
+        } finally {
+            this.isCreating = false
         }
     }
 
@@ -227,6 +232,12 @@ export default class extends Controller {
     _addTagToList(tag) {
         if (!this.hasTagListTarget) return
 
+        const existingBtn = this.tagListTarget.querySelector(`button[data-tag-id="${tag.id}"]`)
+        if (existingBtn) {
+            this._selectNewTag(tag, existingBtn)
+            return
+        }
+
         const tagBtn = document.createElement('button')
         tagBtn.type = 'button'
         tagBtn.innerText = tag.name
@@ -250,6 +261,11 @@ export default class extends Controller {
      */
     _selectNewTag(tag, btn) {
         if (!this.hasSelectedContainerTarget) return
+
+        const existingInput = this.selectedContainerTarget.querySelector(`input[name="tagIds"][value="${tag.id}"]`)
+        if (existingInput) {
+            return
+        }
 
         const input = document.createElement('input')
         input.type = 'hidden'
@@ -327,16 +343,35 @@ export default class extends Controller {
             this.tagCategoryTarget.value = this.defaultCategoryValue
         }
 
+        this._applySelectedColor(this.defaultColorValue)
+    }
+
+    _applySelectedColor(color) {
+        if (!color) return
+
         if (this.hasColorValueTarget) {
-            this.colorValueTarget.value = ''
+            this.colorValueTarget.value = color
         }
 
-        // 색상 선택 해제
         if (this.hasColorPickerTarget) {
-            const selected = this.colorPickerTarget.querySelector('.color-option.ring-offset-2')
-            if (selected) {
-                selected.classList.remove('ring-offset-2', 'ring-stone-400')
+            // 기존 선택 해제
+            this.colorPickerTarget.querySelectorAll('.color-option').forEach(b => {
+                b.classList.remove('ring-offset-2', 'ring-stone-400')
+            })
+
+            // 새 선택 표시
+            const selectedBtn = this.colorPickerTarget.querySelector(`.color-option[data-color="${color}"]`)
+            if (selectedBtn) {
+                selectedBtn.classList.add('ring-offset-2', 'ring-stone-400')
             }
+        }
+
+        if (this.hasSelectedColorPreviewTarget) {
+            this.selectedColorPreviewTarget.style.backgroundColor = color
+        }
+
+        if (this.hasSelectedColorLabelTarget) {
+            this.selectedColorLabelTarget.textContent = color.toUpperCase()
         }
     }
 }
