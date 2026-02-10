@@ -29,12 +29,6 @@ public class AuthController {
     @Value("${mindlog.supabase.url}")
     private String supabaseUrl;
 
-    @Value("${mindlog.serverIp}")
-    private String serverIp;
-
-    @Value("${mindlog.serverPort}")
-    private String serverPort;
-
     @GetMapping("/login")
     public String loginPage() {
         log.info("[AUTH] 로그인 페이지 요청");
@@ -217,6 +211,15 @@ public class AuthController {
             authority = host;
         } else {
             authority = request.getServerName() + ":" + request.getServerPort();
+        }
+
+        // 운영 인증서(CN=www.mindlog.blog)와 콜백 도메인을 일치시켜 인증서 경고를 예방
+        if ("https".equalsIgnoreCase(scheme)) {
+            if ("mindlog.blog".equalsIgnoreCase(authority)) {
+                authority = "www.mindlog.blog";
+            } else if (authority.toLowerCase().startsWith("mindlog.blog:")) {
+                authority = "www.mindlog.blog" + authority.substring("mindlog.blog".length());
+            }
         }
 
         return scheme + "://" + authority + "/auth/callback";
