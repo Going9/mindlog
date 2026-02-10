@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 420" fill="none">
+  <rect width="360" height="420" fill="#EFEFEA"/>
+  <circle cx="180" cy="160" r="108" fill="#111111"/>
+
+  <text x="180" y="132" text-anchor="middle" fill="#ECEBE8"
+    font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+    font-size="25" font-style="italic" font-weight="700" letter-spacing="0.3">daily</text>
+
+  <text x="180" y="202" text-anchor="middle" fill="#FFFFFF"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="74" font-style="italic" font-weight="700" letter-spacing="-1.6">heart</text>
+
+  <text x="180" y="322" text-anchor="middle" fill="#121212"
+    font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Noto Sans KR', sans-serif"
+    font-size="54" font-weight="850" letter-spacing="-1.2">마음기록</text>
+</svg>

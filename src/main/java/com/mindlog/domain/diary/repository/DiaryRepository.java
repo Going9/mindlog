@@ -31,6 +31,23 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
             @Param("start") LocalDate start,
             @Param("end") LocalDate end);
 
+    @Query("""
+            SELECT new com.mindlog.domain.diary.dto.DiaryMonthlySummary(
+                d.id,
+                d.date,
+                d.shortContent,
+                d.situation
+            )
+            FROM Diary d
+            WHERE d.profileId = :profileId
+              AND d.date BETWEEN :start AND :end
+            ORDER BY d.date DESC
+            """)
+    List<DiaryMonthlySummary> findMonthlySummaryByProfileIdAndDateBetweenDesc(
+            @Param("profileId") UUID profileId,
+            @Param("start") LocalDate start,
+            @Param("end") LocalDate end);
+
     @Nullable
     @Query("SELECT MIN(d.date) FROM Diary d WHERE d.profileId = :profileId")
     LocalDate findMinDateByProfileId(@Param("profileId") UUID profileId);

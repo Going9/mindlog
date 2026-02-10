@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 420" fill="none">
+  <rect width="360" height="420" fill="#F0F0ED"/>
+  <circle cx="180" cy="160" r="108" fill="#111111"/>
+
+  <text x="180" y="132" text-anchor="middle" fill="#F7F7F5"
+    font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif"
+    font-size="28" font-style="italic" font-weight="700" letter-spacing="-0.3">my</text>
+
+  <text x="180" y="202" text-anchor="middle" fill="#FFFFFF"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="76" font-style="italic" font-weight="700" letter-spacing="-1.2">mind</text>
+
+  <text x="180" y="324" text-anchor="middle" fill="#121212"
+    font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Noto Sans KR', sans-serif"
+    font-size="54" font-weight="800" letter-spacing="-1.1">마인드로그</text>
+</svg>

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 420" fill="none">
+  <rect width="360" height="420" fill="#EFEFEA"/>
+  <circle cx="180" cy="160" r="108" fill="#0E0E0E"/>
+
+  <text x="180" y="130" text-anchor="middle" fill="#EAEAEA"
+    font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+    font-size="24" font-style="italic" font-weight="700" letter-spacing="0.2">dear</text>
+
+  <text x="180" y="198" text-anchor="middle" fill="#FAFAFA"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="74" font-style="italic" font-weight="700" letter-spacing="-1.4">mood</text>
+
+  <text x="180" y="322" text-anchor="middle" fill="#151515"
+    font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Noto Sans KR', sans-serif"
+    font-size="56" font-weight="800" letter-spacing="-1.5">Mindlog</text>
+</svg>

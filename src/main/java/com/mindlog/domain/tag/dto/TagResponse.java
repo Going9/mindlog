@@ -6,7 +6,8 @@ public record TagResponse(
     Long id,
     String name,
     String color,
-    String category
+    String category,
+    boolean isDefault
 ) {
 
   // 엔티티를 DTO로 변환하는 정적 메서드
@@ -15,7 +16,8 @@ public record TagResponse(
         tag.getId(),
         tag.getName(),
         tag.getColor(),
-        tag.getCategory().name()
+        tag.getCategory().name(),
+        tag.isDefault()
     );
   }
 }

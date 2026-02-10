@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 238 44" fill="none">
+  <defs>
+    <linearGradient id="pulseGrad" x1="8" y1="8" x2="38" y2="36" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#707B88"/>
+      <stop offset="1" stop-color="#303843"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="2" y="2" width="40" height="40" rx="12" fill="#FFFFFF" fill-opacity="0.94" stroke="#D7DDE4"/>
+  <path d="M11 22h4.8l2.9-7 3.8 12 2.7-7h5.8" stroke="url(#pulseGrad)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <text x="54" y="28" fill="#1F242B" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Noto Sans KR', sans-serif"
+    font-size="24" font-weight="620" letter-spacing="-0.4">Mindlog</text>
+</svg>

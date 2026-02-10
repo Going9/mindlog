@@ -10,13 +10,13 @@
 
 <th:block layout:fragment="title">홈</th:block>
 
-<div layout:fragment="content" class="max-w-2xl mx-auto space-y-10 mt-8 sm:mt-16">
+<div layout:fragment="content" class="max-w-2xl mx-auto space-y-8 mt-8 sm:mt-14 px-2">
 
     <section class="text-center space-y-4 animate-fade-in-up">
-        <h1 class="text-5xl font-bold text-stone-800 tracking-tight font-sans">
-            Mindlog
+        <h1 class="flex justify-center">
+            <img th:src="@{/images/logo-wordmark.svg}" src="/images/logo-wordmark.svg" alt="Mindlog" class="h-12 sm:h-14 w-auto">
         </h1>
-        <p class="text-lg text-stone-500 font-light tracking-wide">
+        <p class="text-base text-stone-500 font-light tracking-wide">
             당신의 감정을 기록해보세요
         </p>
     </section>
@@ -26,7 +26,7 @@
         <div sec:authorize="isAuthenticated()" class="mindlog-card text-center py-10 px-8 space-y-8">
             <div class="space-y-2">
                 <div
-                    class="inline-flex items-center justify-center gap-2 px-4 py-1.5 rounded-full bg-stone-100 text-stone-600 text-sm font-medium mb-2">
+                    class="chip-soft">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M20 6 9 17l-5-5" />
@@ -55,7 +55,7 @@
                 </a>
             </div>
 
-            <div class="pt-4 border-t border-stone-100">
+            <div class="pt-4 border-t border-stone-200/70">
                 <form th:action="@{/auth/logout}" method="post">
                     <button type="submit"
                         class="text-sm text-stone-400 hover:text-stone-600 transition-colors underline decoration-stone-200 underline-offset-4">
@@ -68,7 +68,7 @@
         <div sec:authorize="!isAuthenticated()" class="mindlog-card text-center py-12 px-8 space-y-8">
             <div class="space-y-4">
                 <div
-                    class="mx-auto w-16 h-16 bg-stone-100 rounded-2xl flex items-center justify-center text-stone-500 mb-4">
+                    class="mx-auto w-16 h-16 rounded-2xl flex items-center justify-center text-stone-500 mb-4 border border-stone-300/70 bg-white/70">
                     <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />

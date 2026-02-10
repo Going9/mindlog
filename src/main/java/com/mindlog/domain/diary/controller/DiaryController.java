@@ -37,14 +37,17 @@ public class DiaryController {
             @CurrentProfileId UUID profileId,
             @RequestParam(required = false) Integer year,
             @RequestParam(required = false) Integer month,
+            @RequestParam(required = false, defaultValue = "latest") String sort,
             Model model) {
         var currentYearMonth = resolveYearMonth(year, month);
         var y = currentYearMonth.getYear();
         var m = currentYearMonth.getMonthValue();
         var previous = currentYearMonth.minusMonths(1);
         var next = currentYearMonth.plusMonths(1);
+        var normalizedSort = "oldest".equalsIgnoreCase(sort) ? "oldest" : "latest";
+        var newestFirst = "latest".equals(normalizedSort);
 
-        List<DiaryListItemResponse> diaries = diaryService.getMonthlyDiaries(profileId, y, m);
+        List<DiaryListItemResponse> diaries = diaryService.getMonthlyDiaries(profileId, y, m, newestFirst);
 
         model.addAttribute("diaries", diaries);
         model.addAttribute("year", y);
@@ -56,6 +59,7 @@ public class DiaryController {
         model.addAttribute("nextMonth", next.getMonthValue());
         model.addAttribute("yearOptions", diaryService.getAvailableYears(profileId, y));
         model.addAttribute("monthOptions", IntStream.rangeClosed(1, 12).boxed().toList());
+        model.addAttribute("sort", normalizedSort);
 
         return "diaries/index";
     }

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <defs>
+    <linearGradient id="mindlogMarkGrad" x1="4" y1="4" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#5F6772"/>
+      <stop offset="1" stop-color="#2F3741"/>
+    </linearGradient>
+  </defs>
+  <rect x="1.5" y="1.5" width="29" height="29" rx="9" fill="rgba(255,255,255,0.88)" stroke="#D4D8DD"/>
+  <path d="M8 14.2c0-2.6 2.1-4.3 4.6-4.3s4.6 1.7 4.6 4.3c0-2.6 2.1-4.3 4.6-4.3S26.4 11.6 26.4 14.2"
+    stroke="url(#mindlogMarkGrad)" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M8 18.1c0-2.5 2.1-4.2 4.6-4.2s4.6 1.7 4.6 4.2c0-2.5 2.1-4.2 4.6-4.2s4.6 1.7 4.6 4.2"
+    stroke="url(#mindlogMarkGrad)" stroke-width="2.2" stroke-linecap="round"/>
+</svg>

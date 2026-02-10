@@ -62,4 +62,19 @@ public class TagService {
                     .orElseThrow(() -> e);
         }
     }
+
+    /**
+     * 커스텀 태그 삭제
+     */
+    @Transactional
+    public void deleteCustomTag(UUID profileId, Long tagId) {
+        var tag = emotionTagRepository.findByIdAndProfileId(tagId, profileId)
+                .orElseThrow(() -> new IllegalArgumentException("삭제할 태그를 찾을 수 없습니다."));
+
+        if (tag.isDefault()) {
+            throw new IllegalArgumentException("기본 태그는 삭제할 수 없습니다.");
+        }
+
+        emotionTagRepository.delete(tag);
+    }
 }

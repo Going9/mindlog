@@ -3,7 +3,7 @@
 <body>
 
     <div th:fragment="tag-management">
-        <label class="block text-sm font-medium mb-2 text-stone-700">감정 태그</label>
+        <label class="form-label">감정 태그</label>
 
         <!-- 선택된 태그의 hidden input들이 여기에 저장됨 -->
         <div id="selected-tags-container" data-tag-target="selectedContainer">
@@ -12,19 +12,31 @@
                 name="tagIds" th:value="${tagId}" type="hidden">
         </div>
 
-        <div class="flex flex-wrap gap-2" id="tag-list" data-tag-target="tagList">
+        <div class="flex flex-wrap gap-2.5" id="tag-list" data-tag-target="tagList">
+            <div class="relative inline-flex items-start" th:each="tag : ${tags}" th:data-tag-item-id="${tag.id}">
+                <button
+                    class="tag-btn tag-chip"
+                    data-action="click->tag#toggle"
+                    th:classappend="${diaryRequest.tagIds != null && #lists.contains(diaryRequest.tagIds, tag.id)} ? 'ring-2 ring-offset-1' : ''"
+                    th:data-tag-color="${tag.color}" th:data-tag-id="${tag.id}"
+                    th:style="${diaryRequest.tagIds != null && #lists.contains(diaryRequest.tagIds, tag.id)} ?
+                                  'border-color:' + ${tag.color} + '; color:' + ${tag.color} + '; ring-color:' + ${tag.color} + '; box-shadow: 0 0 0 2px ' + ${tag.color} :
+                                  'border-color:' + ${tag.color} + '; color:' + ${tag.color}"
+                    th:text="${tag.name}" type="button">
+                </button>
+                <button
+                    class="tag-delete-btn"
+                    data-action="click->tag#deleteTag"
+                    th:if="${!tag.isDefault}"
+                    th:data-tag-id="${tag.id}"
+                    th:title="${tag.name + ' 태그 삭제'}"
+                    type="button">
+                    <span aria-hidden="true">×</span>
+                    <span class="sr-only" th:text="${tag.name + ' 태그 삭제'}">태그 삭제</span>
+                </button>
+            </div>
             <button
-                class="tag-btn px-3 py-1.5 rounded-full text-sm font-medium border transition-all duration-200 select-none bg-white shadow-sm"
-                data-action="click->tag#toggle"
-                th:classappend="${diaryRequest.tagIds != null && #lists.contains(diaryRequest.tagIds, tag.id)} ? 'ring-2 ring-offset-1' : ''"
-                th:data-tag-color="${tag.color}" th:data-tag-id="${tag.id}" th:each="tag : ${tags}"
-                th:style="${diaryRequest.tagIds != null && #lists.contains(diaryRequest.tagIds, tag.id)} ?
-                              'border-color:' + ${tag.color} + '; color:' + ${tag.color} + '; ring-color:' + ${tag.color} + '; box-shadow: 0 0 0 2px ' + ${tag.color} :
-                              'border-color:' + ${tag.color} + '; color:' + ${tag.color}"
-                th:text="${tag.name}" type="button">
-            </button>
-            <button
-                class="px-3 py-1.5 rounded-full text-sm font-medium border border-stone-200 text-stone-400 hover:text-stone-600 hover:border-stone-300 transition-all"
+                class="tag-chip text-stone-500 border-stone-300 hover:text-stone-700 hover:border-stone-400"
                 data-action="click->tag#openModal" type="button">
                 + 태그 추가
             </button>

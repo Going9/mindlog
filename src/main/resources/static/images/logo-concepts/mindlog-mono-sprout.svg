@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 228 44" fill="none">
+  <rect x="2" y="2" width="40" height="40" rx="11" fill="#FAFAF9" stroke="#D6D3D1"/>
+  <circle cx="16" cy="18" r="2.9" fill="#44403C"/>
+  <circle cx="28" cy="18" r="2.9" fill="#44403C"/>
+  <path d="M13 24.5c1.2 1.5 2.9 2.3 5 2.3s3.8-.8 5-2.3" stroke="#44403C" stroke-width="2" stroke-linecap="round"/>
+  <path d="M22 10.2c0-1.5 1-2.8 2.6-3.3" stroke="#78716C" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M22 10.2c.9-1.2 2.2-1.9 3.7-1.9" stroke="#A8A29E" stroke-width="1.6" stroke-linecap="round"/>
+  <text x="54" y="28" fill="#292524" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Noto Sans KR', sans-serif"
+    font-size="24" font-weight="620" letter-spacing="-0.35">Mindlog</text>
+</svg>

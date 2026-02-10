@@ -4,17 +4,17 @@
 
 <th:block layout:fragment="title" th:text="${diaryId == null ? '새 일기 쓰기' : '일기 수정하기'}"></th:block>
 
-<div class="max-w-4xl mx-auto space-y-8 px-4 sm:px-6" layout:fragment="content">
+<div class="page-shell" layout:fragment="content">
 
     <turbo-frame id="diary_context">
         <div data-controller="tag">
 
-        <div class="text-center space-y-2 mb-8">
-            <h1 class="text-3xl font-bold text-stone-800" th:text="${diaryId == null ? '오늘의 기록' : '기록 수정'}"></h1>
-            <p class="text-stone-500" th:text="${diaryId == null ? '오늘 하루, 당신의 마음은 어땠나요?' : '마음을 다시 들여다보며 수정합니다.'}"></p>
+        <div class="text-center space-y-2 mb-6">
+            <h1 class="page-title" th:text="${diaryId == null ? '오늘의 기록' : '기록 수정'}"></h1>
+            <p class="page-subtitle" th:text="${diaryId == null ? '오늘 하루, 당신의 마음은 어땠나요?' : '마음을 다시 들여다보며 수정합니다.'}"></p>
         </div>
 
-        <form class="space-y-6 pb-20" id="diary-form" method="post"
+        <form class="surface-panel-strong space-y-6 p-5 sm:p-7 pb-20" id="diary-form" method="post"
             th:action="@{${diaryId == null ? '/diaries' : '/diaries/' + diaryId}}" th:object="${diaryRequest}"
             data-turbo-frame="_top">
 
@@ -25,7 +25,7 @@
                 <div>
                     <label class="block text-sm font-medium mb-2 text-stone-700" for="date">기록 날짜</label>
                     <input
-                        class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none bg-white"
+                        class="form-input"
                         id="date" name="date"
                         th:classappend="${#fields.hasErrors('date')} ? '!border-red-500 focus:!border-red-500 focus:!ring-red-500' : ''"
                         th:value="${#temporals.format(diaryRequest.date, 'yyyy-MM-dd')}" type="date">
@@ -37,7 +37,7 @@
                 <div>
                     <label class="block text-sm font-medium mb-2 text-stone-700" for="shortContent">한줄 요약</label>
                     <input
-                        class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none bg-white"
+                        class="form-input"
                         id="shortContent" placeholder="오늘 하루를 한 문장으로 표현한다면?"
                         th:classappend="${#fields.hasErrors('shortContent')} ? '!border-red-500 focus:!border-red-500 focus:!ring-red-500' : ''"
                         th:field="*{shortContent}" type="text">
@@ -54,7 +54,7 @@
                 <div>
                     <label class="block text-sm font-medium mb-2 text-stone-700" for="situation">상황</label>
                     <textarea
-                        class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none bg-white"
+                        class="form-input min-h-24"
                         id="situation" placeholder="어떤 상황이었나요?" rows="3" th:field="*{situation}"></textarea>
                 </div>
 
@@ -62,7 +62,7 @@
                 <div>
                     <label class="block text-sm font-medium mb-2 text-stone-700" for="reaction">나의 반응</label>
                     <textarea
-                        class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none bg-white"
+                        class="form-input min-h-24"
                         id="reaction" placeholder="그때 어떻게 행동했나요?" rows="3" th:field="*{reaction}"></textarea>
                 </div>
 
@@ -70,7 +70,7 @@
                 <div>
                     <label class="block text-sm font-medium mb-2 text-stone-700" for="physicalSensation">신체 감각</label>
                     <textarea
-                        class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none bg-white"
+                        class="form-input min-h-24"
                         id="physicalSensation" placeholder="몸에서는 어떤 느낌이 들었나요?" rows="3"
                         th:field="*{physicalSensation}"></textarea>
                 </div>
@@ -79,7 +79,7 @@
                 <div>
                     <label class="block text-sm font-medium mb-2 text-stone-700" for="desiredReaction">원했던 반응</label>
                     <textarea
-                        class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none bg-white"
+                        class="form-input min-h-24"
                         id="desiredReaction" placeholder="어떻게 행동하고 싶었나요?" rows="3"
                         th:field="*{desiredReaction}"></textarea>
                 </div>
@@ -88,7 +88,7 @@
                 <div>
                     <label class="block text-sm font-medium mb-2 text-stone-700" for="gratitudeMoment">감사한 순간</label>
                     <textarea
-                        class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none bg-white"
+                        class="form-input min-h-24"
                         id="gratitudeMoment" placeholder="오늘 감사한 일은 무엇인가요?" rows="3"
                         th:field="*{gratitudeMoment}"></textarea>
                 </div>
@@ -98,19 +98,19 @@
                     <label class="block text-sm font-medium mb-2 text-stone-700" for="selfKindWords">나에게 해주고 싶은
                         말</label>
                     <textarea
-                        class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none bg-white"
+                        class="form-input min-h-24"
                         id="selfKindWords" placeholder="자기 자신을 다독여주세요." rows="3" th:field="*{selfKindWords}"></textarea>
                 </div>
 
                 <!-- 버튼 영역 -->
                 <div class="mt-8 flex justify-end gap-x-2">
-                    <a class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-stone-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none transition-all"
+                    <a class="btn-secondary"
                         th:data-turbo-frame="${diaryId == null ? '_top' : ''}"
                         th:href="@{${diaryId == null ? '/diaries' : '/diaries/' + diaryId}}">
                         취소
                     </a>
                     <button id="submit-btn"
-                        class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-stone-800 text-white hover:bg-stone-900 disabled:opacity-50 disabled:pointer-events-none shadow-md hover:shadow-lg transition-all"
+                        class="btn-primary disabled:opacity-50 disabled:pointer-events-none"
                         type="submit">
                         <th:block th:replace="~{fragments/spinner :: loading-spinner-white}"></th:block>
                         <span class="loading-hide">저장하기</span>

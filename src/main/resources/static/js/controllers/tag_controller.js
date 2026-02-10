@@ -43,7 +43,6 @@ export default class extends Controller {
         "colorPicker",
         "colorValue",
         "selectedColorPreview",
-        "selectedColorLabel",
         "errorMessage",
         "submitBtn",
         "spinner",
@@ -66,6 +65,7 @@ export default class extends Controller {
 
     connect() {
         this.isCreating = false
+        this.deletingTagIds = new Set()
 
         // 이미 선택된 태그가 있다면(hidden inputs), 버튼의 시각적 상태(Ring, Border)를 동기화합니다.
         // 이는 수정 페이지(edit.html) 등에서 서버가 렌더링한 초기 상태를 반영하기 위함입니다.
@@ -205,6 +205,51 @@ export default class extends Controller {
         }
     }
 
+    /**
+     * 커스텀 태그 삭제 API 호출
+     */
+    async deleteTag(event) {
+        event.preventDefault()
+        event.stopPropagation()
+
+        const btn = event.currentTarget
+        const tagId = btn?.dataset?.tagId
+        if (!tagId || this.deletingTagIds.has(tagId)) return
+
+        if (!window.confirm('이 태그를 삭제할까요?')) {
+            return
+        }
+
+        this.deletingTagIds.add(tagId)
+        btn.disabled = true
+
+        try {
+            const headers = {}
+            this._addCsrfHeaders(headers)
+
+            const response = await fetch(`${this.apiEndpointValue}/${tagId}`, {
+                method: 'DELETE',
+                headers: headers
+            })
+
+            if (response.ok) {
+                this._removeTagFromSelection(tagId)
+                this._removeTagItem(tagId)
+                this._clearError()
+            } else {
+                const errorText = await response.text()
+                this._showError(errorText || '태그 삭제 실패')
+                btn.disabled = false
+            }
+        } catch (e) {
+            console.error(e)
+            this._showError('오류가 발생했습니다: ' + e.message)
+            btn.disabled = false
+        } finally {
+            this.deletingTagIds.delete(tagId)
+        }
+    }
+
     // ========== Private Methods ==========
 
     /**
@@ -238,22 +283,45 @@ export default class extends Controller {
             return
         }
 
+        const tagItem = this._buildTagItem(tag)
+        const tagBtn = tagItem.querySelector(`button[data-tag-id="${tag.id}"]`)
+
+        // "태그 추가" 버튼 앞에 삽입
+        const addButton = this.tagListTarget.lastElementChild
+        this.tagListTarget.insertBefore(tagItem, addButton)
+
+        // 새 태그 자동 선택
+        this._selectNewTag(tag, tagBtn)
+    }
+
+    _buildTagItem(tag) {
+        const wrapper = document.createElement('div')
+        wrapper.className = 'relative inline-flex items-start'
+        wrapper.dataset.tagItemId = String(tag.id)
+
         const tagBtn = document.createElement('button')
         tagBtn.type = 'button'
         tagBtn.innerText = tag.name
-        tagBtn.className = 'tag-btn px-3 py-1.5 rounded-full text-sm font-medium border transition-all duration-200 select-none bg-white shadow-sm'
+        tagBtn.className = 'tag-btn tag-chip'
         tagBtn.dataset.tagId = tag.id
         tagBtn.dataset.tagColor = tag.color
         tagBtn.dataset.action = 'click->tag#toggle'
         tagBtn.style.borderColor = tag.color
         tagBtn.style.color = tag.color
+        wrapper.appendChild(tagBtn)
 
-        // "태그 추가" 버튼 앞에 삽입
-        const addButton = this.tagListTarget.lastElementChild
-        this.tagListTarget.insertBefore(tagBtn, addButton)
+        if (!tag.isDefault) {
+            const deleteBtn = document.createElement('button')
+            deleteBtn.type = 'button'
+            deleteBtn.className = 'tag-delete-btn'
+            deleteBtn.dataset.tagId = tag.id
+            deleteBtn.dataset.action = 'click->tag#deleteTag'
+            deleteBtn.title = `${tag.name} 태그 삭제`
+            deleteBtn.innerHTML = '<span aria-hidden="true">×</span><span class="sr-only">태그 삭제</span>'
+            wrapper.appendChild(deleteBtn)
+        }
 
-        // 새 태그 자동 선택
-        this._selectNewTag(tag, tagBtn)
+        return wrapper
     }
 
     /**
@@ -276,6 +344,22 @@ export default class extends Controller {
         btn.classList.add('ring-2', 'ring-offset-1')
         btn.style.borderColor = tag.color
         btn.style.boxShadow = `0 0 0 2px ${tag.color}`
+    }
+
+    _removeTagFromSelection(tagId) {
+        if (!this.hasSelectedContainerTarget) return
+        const input = this.selectedContainerTarget.querySelector(`input[name="tagIds"][value="${tagId}"]`)
+        if (input) {
+            input.remove()
+        }
+    }
+
+    _removeTagItem(tagId) {
+        if (!this.hasTagListTarget) return
+        const tagItem = this.tagListTarget.querySelector(`[data-tag-item-id="${tagId}"]`)
+        if (tagItem) {
+            tagItem.remove()
+        }
     }
 
     /**
@@ -370,8 +454,5 @@ export default class extends Controller {
             this.selectedColorPreviewTarget.style.backgroundColor = color
         }
 
-        if (this.hasSelectedColorLabelTarget) {
-            this.selectedColorLabelTarget.textContent = color.toUpperCase()
-        }
     }
 }

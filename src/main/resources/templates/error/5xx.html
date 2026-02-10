@@ -16,12 +16,13 @@
     </style>
 </head>
 
-<body class="bg-stone-50 flex items-center justify-center min-h-screen px-6 py-12">
-    <div class="text-center max-w-xl mx-auto">
-        <!-- Error Icon -->
+<body
+    class="min-h-screen px-6 py-12 text-stone-800 flex items-center justify-center"
+    style="background: radial-gradient(circle at 16% 8%, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0) 44%), linear-gradient(160deg, #f7f7f4, #edf0ee);">
+    <div class="text-center max-w-xl mx-auto rounded-2xl border border-stone-300/40 bg-white/78 shadow-xl shadow-stone-300/20 backdrop-blur-md p-8 sm:p-10">
         <div class="mb-8 flex justify-center">
-            <div class="bg-red-50 p-4 rounded-full">
-                <svg class="w-12 h-12 text-red-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+            <div class="h-16 w-16 rounded-2xl border border-red-200/70 bg-red-50/80 flex items-center justify-center shadow-sm">
+                <svg class="w-9 h-9 text-red-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                     stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round"
                         d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
@@ -29,20 +30,18 @@
             </div>
         </div>
 
-        <!-- Error Message -->
-        <h1 class="text-4xl font-bold text-stone-900 mb-4 tracking-tight">
+        <h1 class="text-3xl sm:text-4xl font-bold text-stone-900 mb-4 tracking-tight">
             서버에 문제가 발생했습니다
         </h1>
 
-        <p class="text-lg text-stone-600 mb-10 leading-relaxed">
+        <p class="text-base sm:text-lg text-stone-600 mb-10 leading-relaxed">
             일시적인 시스템 오류입니다.<br>
             잠시 후 다시 시도해주시거나 관리자에게 문의해주세요.
         </p>
 
-        <!-- Actions -->
-        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
             <a href="/"
-                class="w-full sm:w-auto px-6 py-3 bg-stone-900 hover:bg-stone-800 text-white font-medium rounded-xl transition-colors duration-200 flex items-center justify-center gap-2">
+                class="w-full sm:w-auto px-6 py-3 rounded-xl bg-stone-900 text-white font-medium hover:bg-stone-800 transition-colors flex items-center justify-center gap-2">
                 <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
                     stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round"
@@ -51,12 +50,12 @@
                 새로고침
             </a>
             <a href="/"
-                class="w-full sm:w-auto px-6 py-3 bg-white border border-stone-200 hover:bg-stone-50 text-stone-700 font-medium rounded-xl transition-colors duration-200">
+                class="w-full sm:w-auto px-6 py-3 rounded-xl border border-stone-300/70 bg-white/70 text-stone-700 font-medium hover:bg-white transition-colors">
                 홈으로 이동
             </a>
         </div>
 
-        <div class="mt-12 pt-8 border-t border-stone-100">
+        <div class="mt-10 pt-6 border-t border-stone-200/70">
             <p class="text-xs text-stone-400 font-mono">
                 Error Code: 500 <span th:if="${error}" th:text="'| ' + ${error}"></span>
             </p>

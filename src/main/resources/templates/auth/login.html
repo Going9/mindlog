@@ -8,9 +8,11 @@
 
 <body>
     <div layout:fragment="content" class="flex items-center justify-center min-h-[calc(100vh-5rem)] p-4">
-        <div class="w-full max-w-md card p-8 sm:p-10">
+        <div class="w-full max-w-md surface-panel-strong p-8 sm:p-10">
             <div class="text-center mb-10">
-                <h1 class="block text-2xl font-bold text-stone-800">Mindlog 시작하기</h1>
+                <h1 class="flex justify-center">
+                    <img th:src="@{/images/logo-wordmark.svg}" src="/images/logo-wordmark.svg" alt="Mindlog" class="h-10 w-auto">
+                </h1>
                 <p class="mt-2 text-sm text-stone-500">
                     소셜 계정으로 간편하게 로그인하세요.
                 </p>
@@ -42,7 +44,7 @@
 
                 <div class="space-y-4">
                     <a th:href="@{/auth/login/google}" data-turbo="false" target="_top" id="googleBtn"
-                        class="w-full py-3.5 px-4 inline-flex justify-center items-center gap-x-3 text-sm font-medium rounded-xl border border-stone-200 bg-white text-stone-700 shadow-sm hover:bg-stone-50 transition-all">
+                        class="btn-secondary w-full py-3 inline-flex justify-center items-center gap-x-3 text-sm font-medium">
                         <svg class="loading-spinner h-5 w-5 text-stone-700" xmlns="http://www.w3.org/2000/svg"
                             fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
@@ -57,7 +59,7 @@
                     </a>
 
                     <a th:href="@{/auth/login/kakao}" data-turbo="false" target="_top" id="kakaoBtn"
-                        class="w-full py-3.5 px-4 inline-flex justify-center items-center gap-x-3 text-sm font-medium rounded-xl border border-transparent bg-[#FEE500] text-[#000000] hover:bg-[#FDD835] transition-all shadow-sm">
+                        class="w-full py-3 px-4 inline-flex justify-center items-center gap-x-3 text-sm font-medium rounded-xl border border-transparent bg-[#F5DE4A] text-[#2f2c1c] hover:bg-[#edd13b] transition-all shadow-sm">
                         <svg class="loading-spinner h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none"
                             viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">

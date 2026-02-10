@@ -23,6 +23,8 @@ public interface EmotionTagRepository extends JpaRepository<EmotionTag, Long> {
 
     Optional<EmotionTag> findByProfileIdAndName(UUID profileId, String name);
 
+    Optional<EmotionTag> findByIdAndProfileId(Long id, UUID profileId);
+
     @Query("SELECT e FROM EmotionTag e WHERE (e.profileId = :profileId OR e.isDefault = true) ORDER BY e.usageCount DESC")
     List<EmotionTag> findAvailableTagsForProfile(@Param("profileId") UUID profileId);
 

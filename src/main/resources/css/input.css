@@ -5,12 +5,22 @@
 @layer base {
   :root {
     --safe-area-inset-bottom: env(safe-area-inset-bottom);
+    --bg-start: #f5f5f2;
+    --bg-end: #ecece9;
+    --surface: rgba(248, 248, 245, 0.8);
+    --surface-strong: rgba(248, 248, 245, 0.92);
+    --line: rgba(110, 114, 120, 0.17);
+    --line-strong: rgba(110, 114, 120, 0.32);
   }
 
   body {
-    @apply bg-stone-50 text-stone-800 antialiased;
+    @apply text-stone-800 antialiased;
+    background:
+      radial-gradient(circle at 12% 8%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 36%),
+      linear-gradient(160deg, #F7F7F4 0%, #F1F1EE 100%);
     /* [Safe Area] 하단 고정 요소가 있을 경우를 대비해 바디에 기본 여백 부여 */
     padding-bottom: var(--safe-area-inset-bottom);
+    min-height: 100vh;
   }
 
   /* 앱 환경에서만 적용되는 글로벌 스타일 */
@@ -22,27 +32,96 @@
 
 @layer components {
 
-  /* [Design Guideline 4] Mindlog Card System */
-  .mindlog-card {
-    @apply bg-white border border-stone-200 shadow-sm rounded-2xl p-5 transition-all hover:shadow-md;
+  .surface-panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    box-shadow: 0 18px 38px -28px rgba(24, 24, 27, 0.26), 0 4px 14px -10px rgba(24, 24, 27, 0.14);
+    backdrop-filter: blur(12px);
+    border-radius: 1rem;
   }
 
-  /* [Design Guideline 4] Mindlog Buttons */
+  .surface-panel-strong {
+    background: var(--surface-strong);
+    border: 1px solid var(--line);
+    box-shadow: 0 20px 42px -30px rgba(24, 24, 27, 0.28), 0 4px 14px -10px rgba(24, 24, 27, 0.16);
+    backdrop-filter: blur(12px);
+    border-radius: 1rem;
+  }
+
+  .mindlog-card {
+    @apply surface-panel p-5 transition-all duration-200;
+  }
+
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-x-2 px-4 py-3 text-sm font-semibold rounded-xl border border-transparent bg-stone-800 text-white hover:bg-stone-900 disabled:opacity-50 disabled:pointer-events-none transition-all;
+    @apply inline-flex items-center justify-center gap-x-2 px-4 py-2.5 text-sm font-semibold rounded-xl text-white transition-all duration-200;
+    background: linear-gradient(160deg, #3a3c40, #272a2e);
+    box-shadow: 0 14px 24px -14px rgba(24, 24, 27, 0.58);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-1px);
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-x-2 px-4 py-3 text-sm font-semibold rounded-xl border border-stone-200 bg-white text-stone-800 shadow-sm hover:bg-stone-50 disabled:opacity-50 disabled:pointer-events-none transition-all;
+    @apply inline-flex items-center justify-center gap-x-2 px-4 py-2.5 text-sm font-semibold rounded-xl text-stone-700 transition-all duration-200;
+    background: rgba(248, 248, 245, 0.74);
+    border: 1px solid var(--line);
+    box-shadow: 0 10px 20px -18px rgba(24, 24, 27, 0.32);
   }
 
-  /* [iOS Optimization] 자동 줌 방지를 위해 text-base(16px) 이상 권장 */
+  .btn-secondary:hover {
+    background: rgba(248, 248, 245, 0.92);
+  }
+
+  .glass-input {
+    @apply block w-full rounded-xl text-sm px-4 py-3 text-stone-700 placeholder:text-stone-400 focus:outline-none focus:ring-2;
+    background: rgba(248, 248, 245, 0.76);
+    border: 1px solid var(--line);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    --tw-ring-color: rgba(99, 102, 110, 0.35);
+  }
+
   .form-input {
-    @apply block w-full border-stone-200 rounded-xl text-base px-4 py-3 focus:border-stone-500 focus:ring-stone-500 disabled:opacity-50 disabled:pointer-events-none;
+    @apply glass-input disabled:opacity-50 disabled:pointer-events-none;
   }
 
   .form-label {
-    @apply block text-sm font-medium mb-2 text-stone-700;
+    @apply block text-sm font-medium mb-2 text-stone-600;
+  }
+
+  .page-shell {
+    @apply max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8 space-y-6 pb-20;
+  }
+
+  .page-title {
+    @apply text-3xl font-bold tracking-tight text-stone-800;
+  }
+
+  .page-subtitle {
+    @apply text-sm text-stone-500;
+  }
+
+  .chip-soft {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border;
+    background: rgba(248, 248, 245, 0.86);
+    border-color: var(--line-strong);
+  }
+
+  .tag-chip {
+    @apply px-3 py-1.5 rounded-full text-sm font-medium border transition-all duration-200 select-none;
+    background: rgba(248, 248, 245, 0.82);
+    box-shadow: 0 8px 20px -16px rgba(24, 24, 27, 0.3);
+  }
+
+  .tag-delete-btn {
+    @apply absolute -top-1 -right-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-semibold transition-colors;
+    background: rgba(41, 37, 36, 0.9);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.75);
+  }
+
+  .tag-delete-btn:hover {
+    background: rgba(28, 25, 23, 1);
   }
 }
 

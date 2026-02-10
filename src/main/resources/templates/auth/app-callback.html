@@ -14,20 +14,27 @@
             justify-content: center;
             min-height: 100vh;
             margin: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: radial-gradient(circle at 15% 8%, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0) 42%),
+                linear-gradient(160deg, #f7f7f4, #edf0ee);
+            color: #1f2937;
         }
 
         .container {
             text-align: center;
-            padding: 2rem;
+            padding: 2rem 2.2rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(86, 96, 107, 0.15);
+            background: rgba(255, 255, 255, 0.78);
+            box-shadow: 0 20px 40px -28px rgba(17, 24, 39, 0.4);
+            backdrop-filter: blur(8px);
         }
 
         .checkmark {
             width: 60px;
             height: 60px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            border: 1px solid rgba(86, 96, 107, 0.2);
+            background: rgba(255, 255, 255, 0.88);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -37,30 +44,32 @@
         .checkmark svg {
             width: 32px;
             height: 32px;
+            color: #3f4b57;
         }
 
         h1 {
             font-size: 1.5rem;
             margin-bottom: 0.5rem;
+            color: #1f2937;
         }
 
         p {
             font-size: 1rem;
-            opacity: 0.9;
+            color: #6b7280;
             margin-bottom: 1.5rem;
         }
 
         .manual-link {
             padding: 14px 32px;
-            background: white;
-            color: #764ba2;
+            background: linear-gradient(160deg, #30353d, #1f242b);
+            color: #fff;
             text-decoration: none;
             border-radius: 12px;
             font-weight: 600;
             display: inline-block;
             font-size: 1rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            transition: transform 0.2s;
+            box-shadow: 0 14px 24px -14px rgba(17, 24, 39, 0.65);
+            transition: transform 0.2s, opacity 0.2s;
         }
 
         .manual-link:active {
@@ -70,7 +79,7 @@
         .hint {
             margin-top: 1rem;
             font-size: 0.85rem;
-            opacity: 0.7;
+            color: #9ca3af;
         }
     </style>
 </head>

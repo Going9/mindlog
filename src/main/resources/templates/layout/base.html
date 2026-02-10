@@ -19,20 +19,23 @@
     <style>
         /* 네이티브 앱에서만 Safe Area 패딩 적용 */
         body.is-native {
-            padding-top: env(safe-area-inset-top);
             padding-bottom: env(safe-area-inset-bottom);
         }
     </style>
 </head>
 
-<body class="bg-stone-50 text-stone-800 antialiased min-h-screen" th:classappend="${isNative} ? 'is-native' : 'is-web'">
+<body class="text-stone-800 antialiased min-h-screen" th:classappend="${isNative} ? 'is-native' : 'is-web'">
 
     <!-- 네이티브 앱용 고정 헤더 -->
-    <header th:if="${isNative}" class="sticky top-0 z-50 bg-white border-b border-stone-200 px-4 py-3">
-        <nav class="flex items-center justify-between max-w-4xl mx-auto">
-            <a th:href="@{/}" class="text-xl font-semibold text-stone-900">Mindlog</a>
+    <header th:if="${isNative}"
+        class="sticky top-0 z-50 border-b border-[#d2d3cf]/80 bg-[#f5f5f2]/90 backdrop-blur-md"
+        style="box-shadow: 0 8px 24px -22px rgba(24, 24, 27, 0.3);">
+        <nav class="flex items-center justify-between max-w-4xl mx-auto px-4 sm:px-6 h-16">
+            <a th:href="@{/}" class="inline-flex h-full items-center leading-none" aria-label="Mindlog">
+                <img th:src="@{/images/logo-wordmark.svg}" src="/images/logo-wordmark.svg" alt="Mindlog" class="block h-7 sm:h-8 w-auto">
+            </a>
             <button type="button"
-                class="hs-collapse-toggle p-2 inline-flex justify-center items-center gap-2 rounded-lg border border-stone-200 font-medium bg-white text-stone-700 shadow-sm align-middle hover:bg-stone-50 focus:outline-none transition-all text-sm"
+                class="hs-collapse-toggle p-2 inline-flex justify-center items-center gap-2 rounded-lg border border-stone-300/80 text-stone-700 bg-[#f5f5f2]/95 hover:bg-[#f5f5f2] transition-all text-sm"
                 data-hs-collapse="#native-navbar-menu" aria-controls="native-navbar-menu"
                 aria-label="Toggle navigation">
                 <svg class="hs-collapse-open:hidden w-4 h-4" width="16" height="16" fill="currentColor"
@@ -48,8 +51,8 @@
             </button>
         </nav>
         <!-- 모바일 메뉴 (네이티브 앱용) -->
-        <div id="native-navbar-menu" class="hidden overflow-hidden transition-all duration-300 mt-3">
-            <div class="flex flex-col gap-2 py-2 border-t border-stone-100">
+        <div id="native-navbar-menu" class="hidden overflow-hidden transition-all duration-300 border-t border-stone-200/70">
+            <div class="flex flex-col gap-2 py-2 px-4 sm:px-6 bg-[#f5f5f2]/95">
 
                 <!-- 공통 메뉴 항목 사용 -->
                 <style>
@@ -70,8 +73,8 @@
 
                 <th:block th:replace="~{fragments/menu-items :: menu-items(
                     styleClass='',
-                    linkClass='px-2 py-2 text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg block',
-                    buttonClass='w-full text-left px-2 py-2 text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg'
+                        linkClass='px-2 py-2 text-stone-600 hover:text-stone-900 hover:bg-stone-100/70 rounded-lg block',
+                        buttonClass='w-full text-left px-2 py-2 text-stone-600 hover:text-stone-900 hover:bg-stone-100/70 rounded-lg'
                 )}"></th:block>
 
             </div>

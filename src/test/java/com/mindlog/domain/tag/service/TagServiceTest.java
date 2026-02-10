@@ -11,6 +11,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 class TagServiceTest {
@@ -65,7 +67,7 @@ class TagServiceTest {
         String color = "#FFFFFF";
         EmotionCategory category = EmotionCategory.POSITIVE;
 
-        given(emotionTagRepository.existsByProfileIdAndName(profileId, name)).willReturn(false);
+        given(emotionTagRepository.findByProfileIdAndName(profileId, name)).willReturn(Optional.empty());
         given(emotionTagRepository.save(any(EmotionTag.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
@@ -79,17 +81,84 @@ class TagServiceTest {
     }
 
     @Test
-    @DisplayName("커스텀 태그 생성 - 중복 이름이면 실패")
+    @DisplayName("커스텀 태그 생성 - 중복 이름이면 기존 태그 반환")
     void createCustomTag_DuplicateName() {
         // given
         UUID profileId = UUID.randomUUID();
         String name = "중복태그";
+        EmotionTag existing = EmotionTag.builder()
+                .profileId(profileId)
+                .name(name)
+                .isDefault(false)
+                .category(EmotionCategory.NEGATIVE)
+                .build();
 
-        given(emotionTagRepository.existsByProfileIdAndName(profileId, name)).willReturn(true);
+        given(emotionTagRepository.findByProfileIdAndName(profileId, name)).willReturn(Optional.of(existing));
+
+        // when
+        EmotionTag result = tagService.createCustomTag(profileId, name, "#000", EmotionCategory.NEGATIVE);
+
+        // then
+        assertThat(result).isEqualTo(existing);
+        verify(emotionTagRepository, never()).save(any(EmotionTag.class));
+    }
+
+    @Test
+    @DisplayName("커스텀 태그 삭제 - 성공")
+    void deleteCustomTag_Success() {
+        // given
+        UUID profileId = UUID.randomUUID();
+        Long tagId = 1L;
+        EmotionTag customTag = EmotionTag.builder()
+                .profileId(profileId)
+                .name("삭제대상")
+                .isDefault(false)
+                .category(EmotionCategory.NEUTRAL)
+                .build();
+
+        given(emotionTagRepository.findByIdAndProfileId(tagId, profileId)).willReturn(Optional.of(customTag));
+
+        // when
+        tagService.deleteCustomTag(profileId, tagId);
+
+        // then
+        verify(emotionTagRepository).delete(customTag);
+    }
+
+    @Test
+    @DisplayName("커스텀 태그 삭제 - 기본 태그는 삭제할 수 없다")
+    void deleteCustomTag_DefaultTag() {
+        // given
+        UUID profileId = UUID.randomUUID();
+        Long tagId = 1L;
+        EmotionTag defaultTag = EmotionTag.builder()
+                .profileId(profileId)
+                .name("기본")
+                .isDefault(true)
+                .category(EmotionCategory.POSITIVE)
+                .build();
+
+        given(emotionTagRepository.findByIdAndProfileId(tagId, profileId)).willReturn(Optional.of(defaultTag));
 
         // when & then
-        assertThatThrownBy(() -> tagService.createCustomTag(profileId, name, "#000", EmotionCategory.NEGATIVE))
+        assertThatThrownBy(() -> tagService.deleteCustomTag(profileId, tagId))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("이미 존재하는 태그 이름입니다.");
+                .hasMessage("기본 태그는 삭제할 수 없습니다.");
+
+        verify(emotionTagRepository, never()).delete(any(EmotionTag.class));
+    }
+
+    @Test
+    @DisplayName("커스텀 태그 삭제 - 내 태그가 아니면 실패")
+    void deleteCustomTag_NotFound() {
+        // given
+        UUID profileId = UUID.randomUUID();
+        Long tagId = 99L;
+        given(emotionTagRepository.findByIdAndProfileId(tagId, profileId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> tagService.deleteCustomTag(profileId, tagId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("삭제할 태그를 찾을 수 없습니다.");
     }
 }

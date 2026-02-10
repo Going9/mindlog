@@ -53,4 +53,18 @@ public class TagController {
 
     // 요청 데이터를 받을 DTO
     public record CreateTagRequest(String name, String color, EmotionCategory category) {}
+
+    // 커스텀 태그 삭제 (DELETE /api/tags/{tagId})
+    @DeleteMapping("/{tagId}")
+    public ResponseEntity<?> deleteTag(
+            @CurrentProfileId UUID profileId,
+            @PathVariable Long tagId
+    ) {
+        try {
+            tagService.deleteCustomTag(profileId, tagId);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(e.getMessage());
+        }
+    }
 }

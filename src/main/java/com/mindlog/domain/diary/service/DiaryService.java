@@ -34,9 +34,9 @@ public class DiaryService {
   private final DiaryTagRepository diaryTagRepository;
   private final EmotionTagRepository emotionTagRepository;
 
-  public List<DiaryListItemResponse> getMonthlyDiaries(UUID profileId, int year, int month) {
+  public List<DiaryListItemResponse> getMonthlyDiaries(UUID profileId, int year, int month, boolean newestFirst) {
     YearMonth yearMonth = resolveYearMonth(year, month);
-    List<DiaryMonthlySummary> diaries = findDiariesByMonth(profileId, yearMonth);
+    List<DiaryMonthlySummary> diaries = findDiariesByMonth(profileId, yearMonth, newestFirst);
     if (diaries.isEmpty()) {
       return List.of();
     }
@@ -66,9 +66,12 @@ public class DiaryService {
         .toList();
   }
 
-  private List<DiaryMonthlySummary> findDiariesByMonth(UUID profileId, YearMonth yearMonth) {
+  private List<DiaryMonthlySummary> findDiariesByMonth(UUID profileId, YearMonth yearMonth, boolean newestFirst) {
     LocalDate start = yearMonth.atDay(1);
     LocalDate end = yearMonth.atEndOfMonth();
+    if (newestFirst) {
+      return diaryRepository.findMonthlySummaryByProfileIdAndDateBetweenDesc(profileId, start, end);
+    }
     return diaryRepository.findMonthlySummaryByProfileIdAndDateBetween(profileId, start, end);
   }
 
