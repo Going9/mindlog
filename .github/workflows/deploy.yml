@@ -45,6 +45,8 @@ jobs:
                   value: ${{ secrets.SERVER_PORT }}
                 - name: SPRING_PROFILES_ACTIVE
                   value: ${{ secrets.SPRING_PROFILES_ACTIVE }}
+                - name: REDIS_URL
+                  value: ${{ secrets.REDIS_URL }}
               args: []
             context:
               git:
