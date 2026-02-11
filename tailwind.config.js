@@ -23,7 +23,7 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ['Noto Sans KR', 'sans-serif'],
+        sans: ['SUIT', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
       },
     },
   },
