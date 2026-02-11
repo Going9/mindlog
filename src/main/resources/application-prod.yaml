@@ -9,7 +9,7 @@ server:
         secure: true      # [Prod] HTTPS 환경이므로 true 필수 (안드로이드 이슈 해결 핵심)
         same-site: lax
         path: /
-        domain: .mindlog.blog
+        domain: ${SESSION_COOKIE_DOMAIN:mindlog.blog}
 
 spring:
   datasource:
