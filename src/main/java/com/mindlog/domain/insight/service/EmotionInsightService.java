@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,10 +32,6 @@ public class EmotionInsightService {
 
     private final DiaryEmotionRepository diaryEmotionRepository;
 
-    @Cacheable(
-            cacheNames = "emotionAnalysis",
-            key = "#profileId.toString() + '|' + (#fromDate == null ? 'null' : #fromDate.toString()) + '|' + (#toDate == null ? 'null' : #toDate.toString()) + '|' + (#topN == null ? 'null' : #topN)"
-    )
     public EmotionAnalysisResponse getEmotionAnalysis(
             UUID profileId,
             @Nullable LocalDate fromDate,
