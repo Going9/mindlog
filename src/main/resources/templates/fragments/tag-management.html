@@ -4,6 +4,10 @@
 
     <div th:fragment="tag-management">
         <label class="form-label">감정 태그</label>
+        <div class="hidden mb-3 rounded-lg border px-3 py-2 text-sm"
+             data-tag-target="notice"
+             role="status"
+             aria-live="polite"></div>
 
         <!-- 선택된 태그의 hidden input들이 여기에 저장됨 -->
         <div id="selected-tags-container" data-tag-target="selectedContainer">
@@ -29,6 +33,7 @@
                     data-action="click->tag#deleteTag"
                     th:if="${!tag.isDefault}"
                     th:data-tag-id="${tag.id}"
+                    th:data-tag-name="${tag.name}"
                     th:title="${tag.name + ' 태그 삭제'}"
                     type="button">
                     <span aria-hidden="true">×</span>

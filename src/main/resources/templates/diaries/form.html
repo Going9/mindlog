@@ -107,7 +107,9 @@
                     <a class="btn-secondary"
                         th:data-turbo-frame="${diaryId == null ? '_top' : ''}"
                         th:href="@{${diaryId == null ? '/diaries' : '/diaries/' + diaryId}}">
-                        취소
+                        <th:block th:replace="~{fragments/spinner :: loading-spinner('text-stone-700')}"></th:block>
+                        <span class="loading-hide">취소</span>
+                        <span class="hidden turbo-loading-show">취소 중...</span>
                     </a>
                     <button id="submit-btn"
                         class="btn-primary disabled:opacity-50 disabled:pointer-events-none"

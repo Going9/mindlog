@@ -33,6 +33,7 @@ if (window.__mindlogTurboInitialized) {
 
     // ===== 전역 Turbo 로딩 피드백 상태 =====
     let currentLoadingElement = null
+    let toastTimer = null
 
     function setLoadingState(element) {
         if (!element) return
@@ -42,12 +43,14 @@ if (window.__mindlogTurboInitialized) {
 
         currentLoadingElement = element
         element.classList.add('turbo-loading')
+        element.setAttribute('data-mindlog-busy', 'true')
         element.setAttribute('aria-busy', 'true')
     }
 
     function clearLoadingState() {
         if (currentLoadingElement) {
             currentLoadingElement.classList.remove('turbo-loading')
+            currentLoadingElement.removeAttribute('data-mindlog-busy')
             currentLoadingElement.removeAttribute('aria-busy')
             currentLoadingElement = null
         }
@@ -55,9 +58,68 @@ if (window.__mindlogTurboInitialized) {
         // 모든 로딩 상태 요소 해제 (안전장치)
         document.querySelectorAll('.turbo-loading').forEach(el => {
             el.classList.remove('turbo-loading')
+            el.removeAttribute('data-mindlog-busy')
             el.removeAttribute('aria-busy')
         })
     }
+
+    function showToast(message, options = {}) {
+        const toast = document.querySelector('#mindlog-toast')
+        const content = document.querySelector('#mindlog-toast-content')
+        const messageElement = document.querySelector('#mindlog-toast-message')
+        if (!toast || !content || !messageElement) return
+
+        const tone = options.tone || 'info'
+        const duration = options.duration || 2600
+        const toneClass = tone === 'success'
+            ? 'mindlog-toast-success'
+            : tone === 'error'
+                ? 'mindlog-toast-error'
+                : 'mindlog-toast-info'
+
+        toast.classList.remove('hidden', 'mindlog-toast-success', 'mindlog-toast-error', 'mindlog-toast-info')
+        toast.classList.add(toneClass)
+        messageElement.textContent = message
+
+        if (toastTimer) {
+            clearTimeout(toastTimer)
+            toastTimer = null
+        }
+
+        toastTimer = setTimeout(() => {
+            toast.classList.add('hidden')
+        }, duration)
+    }
+
+    function consumeNoticeCodeFromUrl() {
+        const params = new URLSearchParams(window.location.search)
+        const noticeCode = params.get('noticeCode')
+        if (!noticeCode) return
+
+        const messageByCode = {
+            'diary-created': '일기를 저장했어요.',
+            'diary-updated': '일기를 수정했어요.',
+            'diary-deleted': '일기를 삭제했어요.'
+        }
+
+        const message = messageByCode[noticeCode]
+        if (message) {
+            showToast(message, { tone: 'success' })
+        }
+
+        params.delete('noticeCode')
+        const query = params.toString()
+        const nextUrl = `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`
+        window.history.replaceState({}, '', nextUrl)
+    }
+
+    window.MindlogToast = showToast
+    window.addEventListener('mindlog:toast', (event) => {
+        const detail = event.detail || {}
+        if (detail.message) {
+            showToast(detail.message, { tone: detail.tone || 'info', duration: detail.duration || 2600 })
+        }
+    })
 
     // 3. 화면 로드 시 로깅 + Preline 재초기화
     document.addEventListener("turbo:load", () => {
@@ -68,6 +130,7 @@ if (window.__mindlogTurboInitialized) {
         }
 
         clearLoadingState()
+        consumeNoticeCodeFromUrl()
     })
 
     // 4. 인증 만료 처리
@@ -83,54 +146,73 @@ if (window.__mindlogTurboInitialized) {
         }
     })
 
-    // 5. 커스텀 삭제 확인 모달 (Preline UI)
-    // 역할: data-turbo-confirm 속성이 있는 요소 클릭 시 기본 confirm() 대신 Preline 모달을 띄움.
-    // Native 앱 환경에서는 시스템 다이얼로그를 사용하도록 유지함.
-    document.addEventListener("turbo:confirm", (event) => {
-        // Turbo Native(Android/iOS) 환경에서는 네이티브 다이얼로그를 사용하도록 내버려둠
-        if (document.body.classList.contains('is-native')) {
-            return
-        }
-
-        // 웹 환경에서는 커스텀 Preline 모달 사용
-        event.preventDefault()
-
-        const message = event.detail.message
+    // 5. 커스텀 확인 모달 (Turbo + Stimulus 공용)
+    // 역할:
+    //  - Turbo data-turbo-confirm 이벤트
+    //  - Stimulus(fetch 기반) 삭제 확인
+    // 모두 동일한 UX를 사용하도록 통합.
+    const mindlogConfirm = (message) => {
         const modalElement = document.querySelector('#turbo-confirm-modal')
         const messageElement = document.querySelector('#turbo-confirm-message')
         const confirmButton = document.querySelector('#turbo-confirm-button')
 
-        if (modalElement && messageElement && confirmButton) {
+        if (!modalElement || !messageElement || !confirmButton) {
+            return Promise.resolve(window.confirm(message))
+        }
+
+        return new Promise((resolve) => {
             messageElement.textContent = message
 
-            // 확인 버튼 리스너 설정 (이전 리스너 제거를 위해 복제 후 교체)
             const newConfirmButton = confirmButton.cloneNode(true)
             confirmButton.parentNode.replaceChild(newConfirmButton, confirmButton)
 
+            const handleCancel = () => {
+                modalElement.removeEventListener('click', handleBackdropCancel, true)
+                resolve(false)
+            }
+
+            const handleBackdropCancel = (e) => {
+                const target = e.target
+                if (target?.hasAttribute?.('data-hs-overlay')) {
+                    handleCancel()
+                }
+            }
+
+            modalElement.addEventListener('click', handleBackdropCancel, true)
+
             newConfirmButton.addEventListener('click', () => {
-                // Preline 모달 닫기 (HSOverlay가 있으면 사용, 없으면 직접 class 조작)
+                modalElement.removeEventListener('click', handleBackdropCancel, true)
                 if (window.HSOverlay) {
                     window.HSOverlay.close(modalElement)
                 } else {
                     modalElement.classList.add('hidden')
                 }
-
-                // Turbo 작업 재개
-                event.detail.resume()
+                resolve(true)
             }, { once: true })
 
-            // Preline 모달 열기
             if (window.HSOverlay) {
                 window.HSOverlay.open(modalElement)
             } else {
                 modalElement.classList.remove('hidden')
             }
-        } else {
-            // 모달 요소가 없으면 기본 confirm 사용 (최종 폴백)
-            if (window.confirm(message)) {
+        })
+    }
+
+    window.MindlogConfirm = mindlogConfirm
+
+    // Turbo 표준 confirm 훅에 연결 (Turbo 8+)
+    if (Turbo?.config?.forms) {
+        Turbo.config.forms.confirm = (message, _element) => mindlogConfirm(message)
+    }
+
+    document.addEventListener("turbo:confirm", (event) => {
+        // 웹 환경에서는 커스텀 모달로 Turbo 확인 처리
+        event.preventDefault()
+        mindlogConfirm(event.detail.message).then((confirmed) => {
+            if (confirmed) {
                 event.detail.resume()
             }
-        }
+        })
     })
 
     // 6. Turbo 링크 클릭 시 즉시 로딩 상태 표시

@@ -15,6 +15,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -102,7 +103,11 @@ public class DiaryController {
 
         try {
             Long id = diaryService.createDiary(profileId, request);
-            return new RedirectView("/diaries/" + id, true, false, false);
+            var redirectUrl = UriComponentsBuilder.fromPath("/diaries/{id}")
+                    .queryParam("noticeCode", "diary-created")
+                    .buildAndExpand(id)
+                    .toUriString();
+            return new RedirectView(redirectUrl, true, false, false);
         } catch (com.mindlog.domain.diary.exception.DuplicateDiaryDateException e) {
             bindingResult.rejectValue("date", "duplicate", e.getMessage());
             response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
@@ -144,7 +149,11 @@ public class DiaryController {
 
         try {
             diaryService.updateDiary(profileId, id, request);
-            return new RedirectView("/diaries/" + id, true, false, false);
+            var redirectUrl = UriComponentsBuilder.fromPath("/diaries/{id}")
+                    .queryParam("noticeCode", "diary-updated")
+                    .buildAndExpand(id)
+                    .toUriString();
+            return new RedirectView(redirectUrl, true, false, false);
         } catch (com.mindlog.domain.diary.exception.DuplicateDiaryDateException e) {
             bindingResult.rejectValue("date", "duplicate", e.getMessage());
             response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
@@ -165,7 +174,10 @@ public class DiaryController {
             @PathVariable Long id) {
         diaryService.deleteDiary(profileId, id);
         // 삭제 후 목록으로 303 리다이렉트
-        return new RedirectView("/diaries", true, false, false);
+        var redirectUrl = UriComponentsBuilder.fromPath("/diaries")
+                .queryParam("noticeCode", "diary-deleted")
+                .toUriString();
+        return new RedirectView(redirectUrl, true, false, false);
     }
 
     // Ajax 검증용 (Turbo와 무관하게 유지)

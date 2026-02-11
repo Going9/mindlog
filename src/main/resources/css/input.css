@@ -11,6 +11,19 @@
     --surface-strong: rgba(248, 248, 245, 0.92);
     --line: rgba(110, 114, 120, 0.17);
     --line-strong: rgba(110, 114, 120, 0.32);
+
+    /* Emotion Palette (Insights) */
+    --emotion-positive: #6d9f7f;
+    --emotion-positive-strong: #3f6f52;
+    --emotion-positive-soft: #b7d7bf;
+
+    --emotion-negative: #bf7a88;
+    --emotion-negative-strong: #8a4f5c;
+    --emotion-negative-soft: #e2c0c7;
+
+    --emotion-neutral: #8a817c;
+    --emotion-neutral-strong: #57534e;
+    --emotion-neutral-soft: #d6d3d1;
   }
 
   body {
@@ -123,6 +136,45 @@
   .tag-delete-btn:hover {
     background: rgba(28, 25, 23, 1);
   }
+
+  .mindlog-toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(1.25rem + env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    z-index: 90;
+    width: min(92vw, 26rem);
+    pointer-events: none;
+  }
+
+  .mindlog-toast-content {
+    border-radius: 0.9rem;
+    border: 1px solid var(--line);
+    background: rgba(248, 248, 245, 0.95);
+    color: #44403c;
+    box-shadow: 0 14px 26px -20px rgba(24, 24, 27, 0.42);
+    backdrop-filter: blur(10px);
+    padding: 0.75rem 0.9rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .mindlog-toast-success .mindlog-toast-content {
+    border-color: var(--emotion-positive-soft);
+    color: var(--emotion-positive-strong);
+    background: linear-gradient(180deg, rgba(248, 251, 248, 0.97) 0%, rgba(242, 248, 243, 0.97) 100%);
+  }
+
+  .mindlog-toast-error .mindlog-toast-content {
+    border-color: var(--emotion-negative-soft);
+    color: var(--emotion-negative-strong);
+    background: linear-gradient(180deg, rgba(251, 247, 248, 0.97) 0%, rgba(249, 242, 244, 0.97) 100%);
+  }
+
+  .mindlog-toast-info .mindlog-toast-content {
+    border-color: var(--emotion-neutral-soft);
+    color: var(--emotion-neutral-strong);
+  }
 }
 
 @layer utilities {
@@ -148,7 +200,7 @@
 /* @layer 밖에서 정의하여 항상 포함되도록 함 */
 
 /* 로딩 중 상태 - 클릭 비활성화 및 시각적 피드백 */
-[aria-busy="true"] {
+[data-mindlog-busy="true"] {
   pointer-events: none;
   opacity: 0.7;
 }
@@ -167,14 +219,14 @@
 
 /* 로딩 중일 때 스피너 표시 및 회전 애니메이션 */
 .turbo-loading .loading-spinner,
-[aria-busy="true"] .loading-spinner {
+[data-mindlog-busy="true"] .loading-spinner {
   display: inline-block !important;
   animation: spin 1s linear infinite;
 }
 
 /* 로딩 중일 때 원래 텍스트/아이콘 숨김 */
 .turbo-loading .loading-hide,
-[aria-busy="true"] .loading-hide {
+[data-mindlog-busy="true"] .loading-hide {
   display: none !important;
 }
 
@@ -184,6 +236,6 @@
 }
 
 .turbo-loading .turbo-loading-show,
-[aria-busy="true"] .turbo-loading-show {
+[data-mindlog-busy="true"] .turbo-loading-show {
   display: inline !important;
 }

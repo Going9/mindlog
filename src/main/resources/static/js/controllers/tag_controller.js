@@ -46,7 +46,8 @@ export default class extends Controller {
         "errorMessage",
         "submitBtn",
         "spinner",
-        "submitText"
+        "submitText",
+        "notice"
     ]
 
     static values = {
@@ -66,6 +67,7 @@ export default class extends Controller {
     connect() {
         this.isCreating = false
         this.deletingTagIds = new Set()
+        this.noticeTimer = null
 
         // 이미 선택된 태그가 있다면(hidden inputs), 버튼의 시각적 상태(Ring, Border)를 동기화합니다.
         // 이는 수정 페이지(edit.html) 등에서 서버가 렌더링한 초기 상태를 반영하기 위함입니다.
@@ -191,14 +193,17 @@ export default class extends Controller {
                 this._setLoading(false)
                 this.closeModal()
                 this._addTagToList(newTag)
+                this._showNotice('새 감정 태그를 추가했어요.', 'success')
             } else {
                 const errorText = await response.text()
                 this._showError(errorText || '태그 생성 실패')
+                this._showNotice(errorText || '태그 생성에 실패했어요.', 'error')
                 this._setLoading(false)
             }
         } catch (e) {
             console.error(e)
             this._showError('오류가 발생했습니다: ' + e.message)
+            this._showNotice('요청 처리 중 오류가 발생했어요.', 'error')
             this._setLoading(false)
         } finally {
             this.isCreating = false
@@ -214,9 +219,11 @@ export default class extends Controller {
 
         const btn = event.currentTarget
         const tagId = btn?.dataset?.tagId
+        const tagName = btn?.dataset?.tagName || '이 태그'
         if (!tagId || this.deletingTagIds.has(tagId)) return
 
-        if (!window.confirm('이 태그를 삭제할까요?')) {
+        const confirmed = await this._confirm(`"${tagName}" 태그를 삭제할까요?`)
+        if (!confirmed) {
             return
         }
 
@@ -236,14 +243,17 @@ export default class extends Controller {
                 this._removeTagFromSelection(tagId)
                 this._removeTagItem(tagId)
                 this._clearError()
+                this._showNotice(`"${tagName}" 태그를 삭제했어요.`, 'success')
             } else {
                 const errorText = await response.text()
                 this._showError(errorText || '태그 삭제 실패')
+                this._showNotice(errorText || '태그 삭제에 실패했어요.', 'error')
                 btn.disabled = false
             }
         } catch (e) {
             console.error(e)
             this._showError('오류가 발생했습니다: ' + e.message)
+            this._showNotice('요청 처리 중 오류가 발생했어요.', 'error')
             btn.disabled = false
         } finally {
             this.deletingTagIds.delete(tagId)
@@ -413,6 +423,42 @@ export default class extends Controller {
 
         this.errorMessageTarget.innerText = ''
         this.errorMessageTarget.classList.add('hidden')
+    }
+
+    _showNotice(message, type = 'info') {
+        if (typeof window.MindlogToast === 'function') {
+            const tone = type === 'success' ? 'success' : type === 'error' ? 'error' : 'info'
+            window.MindlogToast(message, { tone })
+            return
+        }
+
+        if (!this.hasNoticeTarget) return
+
+        if (this.noticeTimer) {
+            clearTimeout(this.noticeTimer)
+            this.noticeTimer = null
+        }
+
+        const baseClass = 'mb-3 rounded-lg border px-3 py-2 text-sm'
+        const successClass = 'border-emerald-200 bg-emerald-50/80 text-emerald-800'
+        const errorClass = 'border-rose-200 bg-rose-50/80 text-rose-800'
+        const infoClass = 'border-stone-200 bg-white/80 text-stone-700'
+
+        this.noticeTarget.className = `${baseClass} ${type === 'success' ? successClass : type === 'error' ? errorClass : infoClass}`
+        this.noticeTarget.textContent = message
+        this.noticeTarget.classList.remove('hidden')
+
+        this.noticeTimer = setTimeout(() => {
+            this.noticeTarget.classList.add('hidden')
+            this.noticeTarget.textContent = ''
+        }, 2500)
+    }
+
+    async _confirm(message) {
+        if (typeof window.MindlogConfirm === 'function') {
+            return await window.MindlogConfirm(message)
+        }
+        return window.confirm(message)
     }
 
     /**

@@ -5,10 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap"
-        rel="stylesheet">
 
     <link rel="stylesheet" th:href="@{/css/output.css}">
 
@@ -98,19 +94,32 @@
 
     <th:block layout:fragment="script"></th:block>
 
+    <!-- Global Toast -->
+    <div id="mindlog-toast"
+         class="mindlog-toast hidden"
+         role="status"
+         aria-live="polite"
+         aria-atomic="true">
+        <div id="mindlog-toast-content" class="mindlog-toast-content">
+            <span id="mindlog-toast-message">완료되었습니다.</span>
+        </div>
+    </div>
+
     <!-- Global Turbo Confirm Modal (Preline) -->
     <div id="turbo-confirm-modal"
         class="hs-overlay hidden size-full fixed top-0 start-0 z-[80] overflow-x-hidden overflow-y-auto pointer-events-none"
         role="dialog" tabindex="-1" aria-labelledby="turbo-confirm-modal-label">
         <div
             class="hs-overlay-open:mt-7 hs-overlay-open:opacity-100 hs-overlay-open:duration-500 mt-0 opacity-0 ease-out transition-all sm:max-w-lg sm:w-full m-3 sm:mx-auto">
-            <div class="flex flex-col bg-white border border-stone-200 shadow-sm rounded-2xl pointer-events-auto">
-                <div class="flex justify-between items-center py-3 px-4 border-b border-stone-200">
+            <div class="flex flex-col border rounded-2xl pointer-events-auto backdrop-blur-md"
+                 style="background: rgba(248, 248, 245, 0.96); border-color: var(--line); box-shadow: 0 20px 36px -26px rgba(24,24,27,0.45), 0 10px 20px -18px rgba(24,24,27,0.3);">
+                <div class="flex justify-between items-center py-3 px-4 border-b"
+                     style="border-color: var(--line);">
                     <h3 id="turbo-confirm-modal-label" class="font-bold text-stone-800">
                         확인
                     </h3>
                     <button type="button"
-                        class="inline-flex justify-center items-center size-8 text-sm font-semibold rounded-full border border-transparent text-stone-800 hover:bg-stone-100 focus:outline-none focus:bg-stone-100 disabled:opacity-50 disabled:pointer-events-none"
+                        class="inline-flex justify-center items-center size-8 text-sm font-semibold rounded-full text-stone-700 hover:bg-stone-200/60 focus:outline-none focus:bg-stone-200/60 disabled:opacity-50 disabled:pointer-events-none"
                         aria-label="Close" data-hs-overlay="#turbo-confirm-modal">
                         <span class="sr-only">Close</span>
                         <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
@@ -126,14 +135,17 @@
                         정말로 진행하시겠습니까?
                     </p>
                 </div>
-                <div class="flex justify-end items-center gap-x-2 py-3 px-4 border-t border-stone-200">
+                <div class="flex justify-end items-center gap-x-2 py-3 px-4 border-t"
+                     style="border-color: var(--line);">
                     <button type="button"
-                        class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-xl border border-stone-200 bg-white text-stone-800 shadow-sm hover:bg-stone-50 focus:outline-none focus:bg-stone-50 disabled:opacity-50 disabled:pointer-events-none"
+                        class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-xl border text-stone-700 disabled:opacity-50 disabled:pointer-events-none"
+                        style="border-color: var(--line); background: rgba(248,248,245,0.82);"
                         data-hs-overlay="#turbo-confirm-modal">
                         취소
                     </button>
                     <button id="turbo-confirm-button" type="button"
-                        class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-xl border border-transparent bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:bg-red-700 disabled:opacity-50 disabled:pointer-events-none">
+                        class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-xl border disabled:opacity-50 disabled:pointer-events-none"
+                        style="border-color: var(--emotion-negative-soft); background: var(--emotion-negative); color: #fff;">
                         확인
                     </button>
                 </div>
