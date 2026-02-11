@@ -23,6 +23,12 @@ public class HttpWarmupRunner implements ApplicationRunner {
     @Value("${mindlog.performance.warmup-http-paths:/}")
     private String warmupHttpPaths;
 
+    @Value("${mindlog.performance.warmup-http-connect-timeout-ms:2000}")
+    private long warmupHttpConnectTimeoutMs;
+
+    @Value("${mindlog.performance.warmup-http-request-timeout-ms:3000}")
+    private long warmupHttpRequestTimeoutMs;
+
     @Value("${server.port:8080}")
     private int serverPort;
 
@@ -43,7 +49,7 @@ public class HttpWarmupRunner implements ApplicationRunner {
         }
 
         var client = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(2))
+                .connectTimeout(Duration.ofMillis(warmupHttpConnectTimeoutMs))
                 .build();
 
         try {
@@ -60,7 +66,7 @@ public class HttpWarmupRunner implements ApplicationRunner {
         var uri = URI.create("http://127.0.0.1:" + serverPort + normalizeContextPath() + path);
         var request = HttpRequest.newBuilder(uri)
                 .GET()
-                .timeout(Duration.ofSeconds(3))
+                .timeout(Duration.ofMillis(warmupHttpRequestTimeoutMs))
                 .header("Accept", "text/html")
                 .header("User-Agent", "mindlog-warmup/1.0")
                 .build();
