@@ -28,6 +28,9 @@ import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +41,7 @@ public class DiaryService {
   private static final String DIARY_NOT_FOUND_MESSAGE = "Diary not found";
   private static final String UNAUTHORIZED_ACCESS_MESSAGE = "Unauthorized access";
   private static final long YEAR_OPTIONS_CACHE_TTL_MS = 5 * 60 * 1000;
+  private static final long SEARCH_DEFAULT_RANGE_DAYS = 365;
 
   private final DiaryRepository diaryRepository;
   private final DiaryEmotionRepository diaryEmotionRepository;
@@ -49,7 +53,11 @@ public class DiaryService {
       cacheNames = "monthlyDiaries",
       key = "#profileId.toString() + '|' + #year + '|' + #month + '|' + #newestFirst"
   )
-  public List<DiaryListItemResponse> getMonthlyDiaries(UUID profileId, int year, int month, boolean newestFirst) {
+  public List<DiaryListItemResponse> getMonthlyDiaries(
+      UUID profileId,
+      int year,
+      int month,
+      boolean newestFirst) {
     YearMonth yearMonth = resolveYearMonth(year, month);
     List<DiaryMonthlySummary> diaries = findDiariesByMonth(profileId, yearMonth, newestFirst);
     if (diaries.isEmpty()) {
@@ -91,13 +99,97 @@ public class DiaryService {
     return availableYears;
   }
 
-  private List<DiaryMonthlySummary> findDiariesByMonth(UUID profileId, YearMonth yearMonth, boolean newestFirst) {
+  private List<DiaryMonthlySummary> findDiariesByMonth(
+      UUID profileId,
+      YearMonth yearMonth,
+      boolean newestFirst) {
     LocalDate start = yearMonth.atDay(1);
     LocalDate end = yearMonth.atEndOfMonth();
     if (newestFirst) {
-      return diaryRepository.findMonthlySummaryByProfileIdAndDateBetweenDesc(profileId, start, end);
+      return diaryRepository.findMonthlySummaryByProfileIdAndDateBetweenDesc(profileId, start, end)
+          .stream()
+          .map(DiaryRepository.DiaryMonthlySummaryRow::toSummary)
+          .toList();
     }
-    return diaryRepository.findMonthlySummaryByProfileIdAndDateBetween(profileId, start, end);
+    return diaryRepository.findMonthlySummaryByProfileIdAndDateBetween(profileId, start, end)
+        .stream()
+        .map(DiaryRepository.DiaryMonthlySummaryRow::toSummary)
+        .toList();
+  }
+
+  public Page<DiaryListItemResponse> searchDiaries(
+      UUID profileId,
+      @Nullable String keyword,
+      @Nullable LocalDate fromDate,
+      @Nullable LocalDate toDate,
+      boolean newestFirst,
+      int page,
+      int size) {
+    var normalizedKeyword = normalizeKeyword(keyword);
+    if (normalizedKeyword == null) {
+      return Page.empty(PageRequest.of(page, size));
+    }
+
+    var normalizedDateRange = normalizeDateRange(fromDate, toDate);
+    var pageable = PageRequest.of(page, size);
+    Page<DiaryRepository.DiaryMonthlySummaryRow> summaryRows;
+    if (newestFirst) {
+      summaryRows = diaryRepository.searchByKeywordOrderByDateDesc(
+          profileId,
+          normalizedKeyword,
+          normalizedDateRange.fromDate(),
+          normalizedDateRange.toDate(),
+          pageable);
+    } else {
+      summaryRows = diaryRepository.searchByKeywordOrderByDateAsc(
+          profileId,
+          normalizedKeyword,
+          normalizedDateRange.fromDate(),
+          normalizedDateRange.toDate(),
+          pageable);
+    }
+
+    var summaries = summaryRows.getContent().stream()
+        .map(DiaryRepository.DiaryMonthlySummaryRow::toSummary)
+        .toList();
+    if (summaries.isEmpty()) {
+      return new PageImpl<>(List.of(), pageable, summaryRows.getTotalElements());
+    }
+
+    Map<Long, List<TagResponse>> tagsByDiaryId = fetchAndGroupTags(extractDiaryIds(summaries));
+    var responses = buildDiaryListResponses(summaries, tagsByDiaryId);
+    return new PageImpl<>(responses, pageable, summaryRows.getTotalElements());
+  }
+
+  @Nullable
+  private String normalizeKeyword(@Nullable String keyword) {
+    if (keyword == null) {
+      return null;
+    }
+    var trimmed = keyword.trim();
+    if (trimmed.isEmpty()) {
+      return null;
+    }
+    return trimmed;
+  }
+
+  private DateRange normalizeDateRange(@Nullable LocalDate fromDate, @Nullable LocalDate toDate) {
+    if (fromDate == null && toDate == null) {
+      var resolvedTo = LocalDate.now();
+      var resolvedFrom = resolvedTo.minusDays(SEARCH_DEFAULT_RANGE_DAYS - 1);
+      return new DateRange(resolvedFrom, resolvedTo);
+    }
+    if (fromDate == null) {
+      var resolvedTo = Objects.requireNonNull(toDate);
+      return new DateRange(resolvedTo.minusDays(SEARCH_DEFAULT_RANGE_DAYS - 1), resolvedTo);
+    }
+    if (toDate == null) {
+      return new DateRange(fromDate, LocalDate.now());
+    }
+    if (fromDate.isAfter(toDate)) {
+      return new DateRange(toDate, fromDate);
+    }
+    return new DateRange(fromDate, toDate);
   }
 
   private Map<Long, List<TagResponse>> fetchAndGroupTags(List<Long> diaryIds) {
@@ -321,5 +413,8 @@ public class DiaryService {
     private boolean isExpired() {
       return System.currentTimeMillis() > expiresAtMs;
     }
+  }
+
+  private record DateRange(@Nullable LocalDate fromDate, @Nullable LocalDate toDate) {
   }
 }

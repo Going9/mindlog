@@ -36,10 +36,13 @@ public class GlobalModelAdvice {
     }
 
     @ModelAttribute("userName")
-    public String userName(HttpSession session, Authentication authentication) {
-        String cachedName = (String) session.getAttribute("USER_NAME");
-        if (cachedName != null && !cachedName.isBlank()) {
-            return cachedName;
+    public String userName(HttpServletRequest request, Authentication authentication) {
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            String cachedName = (String) session.getAttribute("USER_NAME");
+            if (cachedName != null && !cachedName.isBlank()) {
+                return cachedName;
+            }
         }
 
         if (authentication == null || !authentication.isAuthenticated()
@@ -55,7 +58,9 @@ public class GlobalModelAdvice {
             if (profile != null) {
                 String name = profile.getName();
                 if (name != null && !name.isBlank()) {
-                    session.setAttribute("USER_NAME", name);
+                    if (session != null) {
+                        session.setAttribute("USER_NAME", name);
+                    }
                     return name;
                 }
             }

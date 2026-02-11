@@ -6,6 +6,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
@@ -13,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 import com.mindlog.domain.diary.dto.DiaryFormDTO;
+import com.mindlog.domain.diary.dto.DiaryListItemResponse;
 import com.mindlog.domain.diary.dto.DiaryRequest;
 import com.mindlog.domain.diary.exception.DuplicateDiaryDateException;
 import com.mindlog.domain.diary.service.DiaryFormService;
@@ -21,6 +23,7 @@ import com.mindlog.global.security.CurrentProfileId;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.domain.PageImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -53,6 +56,41 @@ class DiaryControllerWebMvcTest {
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setCustomArgumentResolvers(new FixedProfileIdResolver(profileId))
                 .build();
+    }
+
+    @Test
+    void index_WhenCalled_PassesMonthParamsToService() throws Exception {
+        when(diaryService.getMonthlyDiaries(eq(profileId), eq(2026), eq(2), eq(true)))
+                .thenReturn(List.<DiaryListItemResponse>of());
+        when(diaryService.getAvailableYears(eq(profileId), eq(2026))).thenReturn(List.of(2026));
+
+        mockMvc.perform(get("/diaries")
+                        .param("year", "2026")
+                        .param("month", "2")
+                        .param("sort", "latest"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("diaries/index"));
+
+        verify(diaryService).getMonthlyDiaries(eq(profileId), eq(2026), eq(2), eq(true));
+    }
+
+    @Test
+    void search_WhenCalled_PassesSearchParamsToService() throws Exception {
+        when(diaryService.searchDiaries(
+                eq(profileId), eq("행복"), eq(null), eq(null),
+                eq(true), eq(0), eq(12)))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        mockMvc.perform(get("/diaries")
+                        .param("q", "행복")
+                        .param("sort", "latest")
+                        .param("page", "0"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("diaries/index"));
+
+        verify(diaryService).searchDiaries(
+                eq(profileId), eq("행복"), eq(null), eq(null),
+                eq(true), eq(0), eq(12));
     }
 
     @Test
