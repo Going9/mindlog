@@ -26,6 +26,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,6 +45,10 @@ public class DiaryService {
   private final EmotionTagRepository emotionTagRepository;
   private final Map<UUID, YearOptionsCacheEntry> yearOptionsCache = new ConcurrentHashMap<>();
 
+  @Cacheable(
+      cacheNames = "monthlyDiaries",
+      key = "#profileId.toString() + '|' + #year + '|' + #month + '|' + #newestFirst"
+  )
   public List<DiaryListItemResponse> getMonthlyDiaries(UUID profileId, int year, int month, boolean newestFirst) {
     YearMonth yearMonth = resolveYearMonth(year, month);
     List<DiaryMonthlySummary> diaries = findDiariesByMonth(profileId, yearMonth, newestFirst);
@@ -142,6 +148,7 @@ public class DiaryService {
   }
 
   @Transactional
+  @CacheEvict(cacheNames = {"monthlyDiaries", "emotionAnalysis"}, allEntries = true)
   public Long createDiary(UUID profileId, DiaryRequest request) {
     validateDiaryNotExists(profileId, request.date());
 
@@ -176,6 +183,7 @@ public class DiaryService {
   }
 
   @Transactional
+  @CacheEvict(cacheNames = {"monthlyDiaries", "emotionAnalysis"}, allEntries = true)
   public void updateDiary(UUID profileId, Long id, DiaryRequest request) {
     var diary = findOwnedDiary(profileId, id);
 
@@ -198,6 +206,7 @@ public class DiaryService {
   }
 
   @Transactional
+  @CacheEvict(cacheNames = {"monthlyDiaries", "emotionAnalysis"}, allEntries = true)
   public void deleteDiary(UUID profileId, Long id) {
     var diary = findOwnedDiary(profileId, id);
     diary.softDelete();

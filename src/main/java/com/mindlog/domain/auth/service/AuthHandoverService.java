@@ -1,10 +1,17 @@
 package com.mindlog.domain.auth.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -19,7 +26,10 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class AuthHandoverService {
+    private static final String TOKEN_KEY_PREFIX = "auth:handover:";
+    private static final Duration TOKEN_TTL = Duration.ofSeconds(60);
 
     // 토큰과 함께 필요한 데이터를 저장하는 내부 클래스
     private record HandoverData(
@@ -28,8 +38,17 @@ public class AuthHandoverService {
             Instant createdAt) {
     }
 
-    // 운영 환경에서는 Redis로 대체 권장 (TTL 1분 설정)
-    private final Map<String, HandoverData> tokenStore = new ConcurrentHashMap<>();
+    private record StoredHandoverData(
+            String principal,
+            List<String> authorities,
+            Map<String, Object> sessionAttributes,
+            Instant createdAt
+    ) {
+    }
+
+    private final StringRedisTemplate redisTemplate;
+    private final ObjectMapper objectMapper;
+    private final Map<String, HandoverData> fallbackTokenStore = new ConcurrentHashMap<>();
 
     // 토큰 유효 시간: 60초
     private static final long TOKEN_TTL_SECONDS = 60;
@@ -43,11 +62,20 @@ public class AuthHandoverService {
      */
     public String createOneTimeToken(Authentication authentication, Map<String, Object> sessionAttributes) {
         var token = UUID.randomUUID().toString();
-        tokenStore.put(token, new HandoverData(authentication, sessionAttributes, Instant.now()));
-        log.info("Handover 토큰 생성: {} (사용자: {})", token.substring(0, 8) + "...", authentication.getName());
+        var now = Instant.now();
+        var stored = new StoredHandoverData(
+                String.valueOf(authentication.getPrincipal()),
+                authentication.getAuthorities().stream().map(authority -> authority.getAuthority()).toList(),
+                sessionAttributes,
+                now
+        );
 
-        // 간단한 만료된 토큰 정리 (백그라운드 스레드 대신 호출 시점에 정리)
-        cleanupExpiredTokens();
+        if (!saveToRedis(token, stored)) {
+            fallbackTokenStore.put(token, new HandoverData(authentication, sessionAttributes, now));
+            cleanupExpiredFallbackTokens();
+        }
+
+        log.info("Handover 토큰 생성: {} (사용자: {})", token.substring(0, 8) + "...", authentication.getName());
 
         return token;
     }
@@ -59,30 +87,81 @@ public class AuthHandoverService {
      * @return 인증 정보와 세션 속성을 담은 맵, 유효하지 않으면 null
      */
     public HandoverResult consumeToken(String token) {
-        var data = tokenStore.remove(token);
+        var fromRedis = consumeFromRedis(token);
+        if (fromRedis != null) {
+            if (Instant.now().isAfter(fromRedis.createdAt().plusSeconds(TOKEN_TTL_SECONDS))) {
+                log.warn("Handover 토큰 만료: {} (생성: {})", token.substring(0, 8) + "...", fromRedis.createdAt());
+                return null;
+            }
+            var authentication = new UsernamePasswordAuthenticationToken(
+                    fromRedis.principal(),
+                    "N/A",
+                    fromRedis.authorities().stream().map(SimpleGrantedAuthority::new).toList()
+            );
+            log.info("Handover 토큰 교환 성공: {} (사용자: {})", token.substring(0, 8) + "...", authentication.getName());
+            return new HandoverResult(authentication, fromRedis.sessionAttributes());
+        }
 
-        if (data == null) {
+        var fallback = fallbackTokenStore.remove(token);
+        if (fallback == null) {
             log.warn("Handover 토큰 조회 실패: 존재하지 않는 토큰");
             return null;
         }
 
-        // 만료 확인
-        if (Instant.now().isAfter(data.createdAt().plusSeconds(TOKEN_TTL_SECONDS))) {
-            log.warn("Handover 토큰 만료: {} (생성: {})", token.substring(0, 8) + "...", data.createdAt());
+        if (Instant.now().isAfter(fallback.createdAt().plusSeconds(TOKEN_TTL_SECONDS))) {
+            log.warn("Handover 토큰 만료: {} (생성: {})", token.substring(0, 8) + "...", fallback.createdAt());
             return null;
         }
 
-        log.info("Handover 토큰 교환 성공: {} (사용자: {})", token.substring(0, 8) + "...", data.authentication().getName());
-        return new HandoverResult(data.authentication(), data.sessionAttributes());
+        log.info("Handover 토큰 교환 성공: {} (사용자: {})", token.substring(0, 8) + "...", fallback.authentication().getName());
+        return new HandoverResult(fallback.authentication(), fallback.sessionAttributes());
     }
 
     /**
      * 만료된 토큰 정리
      */
-    private void cleanupExpiredTokens() {
+    private void cleanupExpiredFallbackTokens() {
         var now = Instant.now();
-        tokenStore.entrySet()
+        fallbackTokenStore.entrySet()
                 .removeIf(entry -> now.isAfter(entry.getValue().createdAt().plusSeconds(TOKEN_TTL_SECONDS * 2)));
+    }
+
+    private boolean saveToRedis(String token, StoredHandoverData payload) {
+        try {
+            var serialized = objectMapper.writeValueAsString(payload);
+            redisTemplate.opsForValue().set(TOKEN_KEY_PREFIX + token, serialized, TOKEN_TTL);
+            return true;
+        } catch (Exception e) {
+            log.warn("Handover 토큰 Redis 저장 실패: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    private StoredHandoverData consumeFromRedis(String token) {
+        try {
+            var key = TOKEN_KEY_PREFIX + token;
+            var payload = redisTemplate.opsForValue().getAndDelete(key);
+            if (payload == null || payload.isBlank()) {
+                return null;
+            }
+            return objectMapper.readValue(payload, StoredHandoverData.class);
+        } catch (UnsupportedOperationException unsupportedOperationException) {
+            try {
+                var key = TOKEN_KEY_PREFIX + token;
+                var payload = redisTemplate.opsForValue().get(key);
+                if (payload == null || payload.isBlank()) {
+                    return null;
+                }
+                redisTemplate.delete(key);
+                return objectMapper.readValue(payload, StoredHandoverData.class);
+            } catch (Exception e) {
+                log.warn("Handover 토큰 Redis 조회 실패: {}", e.getMessage());
+                return null;
+            }
+        } catch (Exception e) {
+            log.warn("Handover 토큰 Redis 조회 실패: {}", e.getMessage());
+            return null;
+        }
     }
 
     /**

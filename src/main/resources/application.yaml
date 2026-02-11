@@ -40,6 +40,11 @@ spring:
       repositories:
         enabled: false
 
+  cache:
+    type: redis
+    redis:
+      cache-null-values: false
+
   # JPA 및 Hibernate 설정
   jpa:
     open-in-view: false
