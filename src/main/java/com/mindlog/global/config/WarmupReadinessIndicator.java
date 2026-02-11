@@ -11,6 +11,9 @@ public class WarmupReadinessIndicator implements HealthIndicator {
     @Value("${mindlog.performance.warmup-http-on-startup:false}")
     private boolean warmupHttpEnabled;
 
+    @Value("${mindlog.performance.warmup-supabase-on-startup:false}")
+    private boolean warmupSupabaseEnabled;
+
     private final WarmupStatus warmupStatus;
 
     public WarmupReadinessIndicator(WarmupStatus warmupStatus) {
@@ -19,22 +22,24 @@ public class WarmupReadinessIndicator implements HealthIndicator {
 
     @Override
     public Health health() {
-        if (!warmupHttpEnabled) {
-            return Health.up()
-                    .withDetail("warmupEnabled", false)
-                    .build();
-        }
+        boolean httpDone = !warmupHttpEnabled || warmupStatus.isHttpWarmupCompleted();
+        boolean supabaseDone = !warmupSupabaseEnabled || warmupStatus.isSupabaseWarmupCompleted();
+        boolean allDone = httpDone && supabaseDone;
 
-        if (warmupStatus.isHttpWarmupCompleted()) {
+        if (allDone) {
             return Health.up()
-                    .withDetail("warmupEnabled", true)
-                    .withDetail("httpWarmupCompleted", true)
+                    .withDetail("httpWarmupEnabled", warmupHttpEnabled)
+                    .withDetail("httpWarmupCompleted", httpDone)
+                    .withDetail("supabaseWarmupEnabled", warmupSupabaseEnabled)
+                    .withDetail("supabaseWarmupCompleted", supabaseDone)
                     .build();
         }
 
         return Health.outOfService()
-                .withDetail("warmupEnabled", true)
-                .withDetail("httpWarmupCompleted", false)
+                .withDetail("httpWarmupEnabled", warmupHttpEnabled)
+                .withDetail("httpWarmupCompleted", httpDone)
+                .withDetail("supabaseWarmupEnabled", warmupSupabaseEnabled)
+                .withDetail("supabaseWarmupCompleted", supabaseDone)
                 .build();
     }
 }

@@ -72,8 +72,12 @@ mindlog:
   performance:
     warmup-db-on-startup: true
     warmup-http-on-startup: false
+    warmup-supabase-on-startup: false
     reject-traffic-until-warmup-complete: false
     warmup-http-paths: /,/auth/login
+    warmup-supabase-path: /auth/v1/settings
+    warmup-supabase-connect-timeout-ms: 2000
+    warmup-supabase-request-timeout-ms: 5000
   logging:
     request:
       slow-threshold-ms: 1500
