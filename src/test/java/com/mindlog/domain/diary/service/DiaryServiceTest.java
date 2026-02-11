@@ -7,6 +7,7 @@ import com.mindlog.domain.diary.exception.DuplicateDiaryDateException;
 import com.mindlog.domain.diary.repository.DiaryRepository;
 import com.mindlog.domain.tag.entity.DiaryTag;
 import com.mindlog.domain.tag.entity.EmotionTag;
+import com.mindlog.domain.tag.repository.DiaryEmotionRepository;
 import com.mindlog.domain.tag.repository.DiaryTagRepository;
 import com.mindlog.domain.tag.repository.EmotionTagRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -33,6 +34,8 @@ class DiaryServiceTest {
 
     @Mock
     private DiaryRepository diaryRepository;
+    @Mock
+    private DiaryEmotionRepository diaryEmotionRepository;
     @Mock
     private DiaryTagRepository diaryTagRepository;
     @Mock
@@ -104,6 +107,7 @@ class DiaryServiceTest {
 
         given(diaryRepository.findById(diaryId)).willReturn(Optional.of(diary));
         given(diaryTagRepository.findByDiaryId(diaryId)).willReturn(List.of());
+        given(diaryEmotionRepository.findByDiaryId(diaryId)).willReturn(List.of());
 
         // when
         DiaryResponse response = diaryService.getDiary(profileId, diaryId);

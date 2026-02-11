@@ -7,6 +7,7 @@
 CREATE TYPE user_role AS ENUM ('USER', 'ADMIN');
 CREATE TYPE auth_provider AS ENUM ('GOOGLE', 'KAKAO', 'APPLE', 'EMAIL');
 CREATE TYPE emotion_category AS ENUM ('POSITIVE', 'NEGATIVE', 'NEUTRAL');
+CREATE TYPE emotion_source AS ENUM ('MANUAL', 'AI');
 
 -- ============================================
 -- Table: profiles
@@ -99,6 +100,35 @@ CREATE INDEX idx_diary_tags_emotion_tag_id ON diary_tags(emotion_tag_id);
 CREATE UNIQUE INDEX idx_diary_tags_diary_emotion_unique ON diary_tags(diary_id, emotion_tag_id);
 
 -- ============================================
+-- Table: diary_emotions
+-- ============================================
+CREATE TABLE diary_emotions (
+    id BIGSERIAL NOT NULL,
+    diary_id BIGINT NOT NULL,
+    profile_id UUID NOT NULL,
+    diary_date DATE NOT NULL,
+    emotion_tag_id BIGINT NOT NULL,
+    category_snapshot emotion_category NOT NULL,
+    tag_name_snapshot TEXT NOT NULL,
+    color_snapshot TEXT,
+    intensity INTEGER NOT NULL DEFAULT 3,
+    source emotion_source NOT NULL DEFAULT 'MANUAL',
+    confidence DOUBLE PRECISION,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT diary_emotions_pkey PRIMARY KEY (id),
+    CONSTRAINT diary_emotions_diary_id_fkey FOREIGN KEY (diary_id) REFERENCES diaries(id) ON DELETE CASCADE,
+    CONSTRAINT diary_emotions_emotion_tag_id_fkey FOREIGN KEY (emotion_tag_id) REFERENCES emotion_tags(id) ON DELETE CASCADE,
+    CONSTRAINT diary_emotions_intensity_check CHECK (intensity BETWEEN 1 AND 5),
+    CONSTRAINT diary_emotions_diary_emotion_source_unique UNIQUE (diary_id, emotion_tag_id, source)
+);
+
+CREATE INDEX idx_diary_emotions_diary_id ON diary_emotions(diary_id);
+CREATE INDEX idx_diary_emotions_emotion_tag_id ON diary_emotions(emotion_tag_id);
+CREATE INDEX idx_diary_emotions_profile_date ON diary_emotions(profile_id, diary_date);
+CREATE INDEX idx_diary_emotions_profile_category_date ON diary_emotions(profile_id, category_snapshot, diary_date);
+
+-- ============================================
 -- Table: notification_settings
 -- ============================================
 CREATE TABLE notification_settings (
@@ -125,6 +155,7 @@ COMMENT ON TABLE profiles IS '사용자 프로필 정보';
 COMMENT ON TABLE diaries IS '감정 일기';
 COMMENT ON TABLE emotion_tags IS '감정 태그 (기본 태그와 커스텀 태그)';
 COMMENT ON TABLE diary_tags IS '일기와 감정 태그의 연결 테이블';
+COMMENT ON TABLE diary_emotions IS '감정 분석을 위한 일기 감정 기록 테이블';
 COMMENT ON TABLE notification_settings IS '알림 설정';
 
 COMMENT ON COLUMN emotion_tags.profile_id IS 'null이면 기본 태그, 값이 있으면 해당 프로필의 커스텀 태그';

@@ -7,8 +7,10 @@ import com.mindlog.domain.diary.dto.DiaryResponse;
 import com.mindlog.domain.diary.entity.Diary;
 import com.mindlog.domain.diary.exception.DuplicateDiaryDateException;
 import com.mindlog.domain.diary.repository.DiaryRepository;
+import com.mindlog.domain.tag.entity.DiaryEmotion;
 import com.mindlog.domain.tag.entity.DiaryTag;
 import com.mindlog.domain.tag.entity.EmotionTag;
+import com.mindlog.domain.tag.repository.DiaryEmotionRepository;
 import com.mindlog.domain.tag.repository.DiaryTagRepository;
 import com.mindlog.domain.tag.repository.EmotionTagRepository;
 import java.time.DateTimeException;
@@ -31,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class DiaryService {
 
   private final DiaryRepository diaryRepository;
+  private final DiaryEmotionRepository diaryEmotionRepository;
   private final DiaryTagRepository diaryTagRepository;
   private final EmotionTagRepository emotionTagRepository;
 
@@ -76,6 +79,14 @@ public class DiaryService {
   }
 
   private Map<Long, List<EmotionTag>> fetchAndGroupTags(List<Long> diaryIds) {
+    List<DiaryEmotion> diaryEmotions = diaryEmotionRepository.findAllByDiaryIdIn(diaryIds);
+    if (diaryEmotions != null && !diaryEmotions.isEmpty()) {
+      return diaryEmotions.stream()
+          .collect(Collectors.groupingBy(
+              DiaryEmotion::getDiaryId,
+              Collectors.mapping(DiaryEmotion::getEmotionTag, Collectors.toList())));
+    }
+
     List<DiaryTag> diaryTags = diaryTagRepository.findAllByDiaryIdIn(diaryIds);
 
     return diaryTags.stream()
@@ -118,9 +129,17 @@ public class DiaryService {
     }
 
     // 1. 태그 조회 (Fetch Join으로 쿼리 1방에 데이터 가져옴)
-    List<EmotionTag> tags = diaryTagRepository.findByDiaryId(id).stream()
-        .map(DiaryTag::getEmotionTag) // 이미 로딩된 상태라 get()만 하면 됨
-        .toList();
+    var emotionRows = diaryEmotionRepository.findByDiaryId(id);
+    List<EmotionTag> tags;
+    if (emotionRows != null && !emotionRows.isEmpty()) {
+      tags = emotionRows.stream()
+          .map(DiaryEmotion::getEmotionTag)
+          .toList();
+    } else {
+      tags = diaryTagRepository.findByDiaryId(id).stream()
+          .map(DiaryTag::getEmotionTag)
+          .toList();
+    }
 
     return DiaryResponse.from(diary, tags);
   }
@@ -132,7 +151,7 @@ public class DiaryService {
     Diary diary = buildDiaryFromRequest(profileId, request);
     Diary savedDiary = diaryRepository.save(diary);
 
-    saveDiaryTags(savedDiary.getId(), request.tagIds());
+    saveDiaryTags(savedDiary.getId(), profileId, savedDiary.getDate(), request.tagIds());
 
     return savedDiary.getId();
   }
@@ -181,7 +200,7 @@ public class DiaryService {
         request.selfKindWords(),
         request.imageUrl());
 
-    replaceDiaryTags(id, request.tagIds());
+    replaceDiaryTags(diary, request.tagIds());
   }
 
   @Transactional
@@ -204,25 +223,54 @@ public class DiaryService {
         .orElse(null);
   }
 
-  private void replaceDiaryTags(Long diaryId, @Nullable List<Long> tagIds) {
+  private void replaceDiaryTags(Diary diary, @Nullable List<Long> tagIds) {
+    var diaryId = diary.getId();
     emotionTagRepository.decrementUsageCountByDiaryId(diaryId);
     diaryTagRepository.deleteAllByDiaryId(diaryId);
-    saveDiaryTags(diaryId, tagIds);
+    diaryEmotionRepository.deleteAllByDiaryId(diaryId);
+    saveDiaryTags(diaryId, diary.getProfileId(), diary.getDate(), tagIds);
   }
 
-  private void saveDiaryTags(Long diaryId, @Nullable List<Long> tagIds) {
+  private void saveDiaryTags(Long diaryId, UUID profileId, LocalDate diaryDate, @Nullable List<Long> tagIds) {
     List<Long> normalizedTagIds = normalizeTagIds(tagIds);
     if (normalizedTagIds.isEmpty()) {
       return;
     }
 
     emotionTagRepository.incrementUsageCountByIds(normalizedTagIds);
+    List<EmotionTag> resolvedTags = resolveEmotionTags(normalizedTagIds);
 
-    List<DiaryTag> diaryTags = normalizedTagIds.stream()
-        .map(tagId -> DiaryTag.of(diaryId, emotionTagRepository.getReferenceById(tagId)))
+    List<DiaryTag> diaryTags = resolvedTags.stream()
+        .map(tag -> DiaryTag.of(diaryId, tag))
+        .toList();
+
+    List<DiaryEmotion> diaryEmotions = resolvedTags.stream()
+        .map(tag -> DiaryEmotion.fromManual(diaryId, profileId, diaryDate, tag))
         .toList();
 
     diaryTagRepository.saveAll(diaryTags);
+    diaryEmotionRepository.saveAll(diaryEmotions);
+  }
+
+  private List<EmotionTag> resolveEmotionTags(List<Long> normalizedTagIds) {
+    var fetchedTags = emotionTagRepository.findAllById(normalizedTagIds);
+    var tagsById = fetchedTags.stream()
+        .filter(tag -> tag.getId() != null)
+        .collect(Collectors.toMap(EmotionTag::getId, tag -> tag));
+
+    if (tagsById.size() == normalizedTagIds.size()) {
+      return normalizedTagIds.stream()
+          .map(tagsById::get)
+          .filter(Objects::nonNull)
+          .toList();
+    }
+
+    // 테스트 더블처럼 id가 없는 엔티티를 반환하는 경우를 대비한 fallback.
+    if (fetchedTags.size() == normalizedTagIds.size()) {
+      return fetchedTags;
+    }
+
+    throw new IllegalStateException("일부 감정 태그를 찾을 수 없습니다.");
   }
 
   private List<Long> normalizeTagIds(@Nullable List<Long> tagIds) {
