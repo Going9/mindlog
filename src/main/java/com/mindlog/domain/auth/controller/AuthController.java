@@ -57,8 +57,8 @@ public class AuthController {
                 maskSessionId(request.getRequestedSessionId()));
 
         if (isAlreadyAuthenticated()) {
-            log.debug("[AUTH] 이미 로그인됨 - /diaries로 리다이렉트");
-            return "redirect:/diaries";
+            log.debug("[AUTH] 이미 로그인됨 - /로 리다이렉트");
+            return "redirect:/";
         }
 
         var verifier = PkceUtil.generateCodeVerifier();
@@ -150,8 +150,8 @@ public class AuthController {
                 log.debug("[AUTH] 웹 로그인 처리 시작...");
                 authLoginService.processLogin(code, verifier, request, response);
                 session.removeAttribute(PKCE_VERIFIER_KEY);
-                log.info("[AUTH] 웹 로그인 성공! /diaries로 리다이렉트");
-                return "redirect:/diaries";
+                log.info("[AUTH] 웹 로그인 성공! /로 리다이렉트");
+                return "redirect:/";
             }
 
         } catch (Exception e) {

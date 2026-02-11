@@ -71,6 +71,6 @@ public class AuthExchangeController {
         log.info("WebView 세션 생성 완료: 사용자 {}", result.authentication().getName());
 
         // 5. 로그인 완료 후 홈으로 이동
-        return "redirect:/diaries";
+        return "redirect:/";
     }
 }
