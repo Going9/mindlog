@@ -209,6 +209,9 @@ public class DiaryService {
   @CacheEvict(cacheNames = {"monthlyDiaries", "emotionAnalysis"}, allEntries = true)
   public void deleteDiary(UUID profileId, Long id) {
     var diary = findOwnedDiary(profileId, id);
+    emotionTagRepository.decrementUsageCountByDiaryId(id);
+    diaryTagRepository.deleteAllByDiaryId(id);
+    diaryEmotionRepository.deleteAllByDiaryId(id);
     diary.softDelete();
     invalidateYearOptionsCache(profileId);
   }

@@ -45,6 +45,12 @@ public interface DiaryEmotionRepository extends JpaRepository<DiaryEmotion, Long
             FROM DiaryEmotion de
             WHERE de.profileId = :profileId
               AND de.diaryDate BETWEEN :fromDate AND :toDate
+              AND EXISTS (
+                  SELECT 1
+                  FROM Diary d
+                  WHERE d.id = de.diaryId
+                    AND d.isDeleted = false
+              )
             GROUP BY de.categorySnapshot
             """)
     List<CategoryCountView> countByCategoryInRange(
@@ -62,6 +68,12 @@ public interface DiaryEmotionRepository extends JpaRepository<DiaryEmotion, Long
             FROM DiaryEmotion de
             WHERE de.profileId = :profileId
               AND de.diaryDate BETWEEN :fromDate AND :toDate
+              AND EXISTS (
+                  SELECT 1
+                  FROM Diary d
+                  WHERE d.id = de.diaryId
+                    AND d.isDeleted = false
+              )
             GROUP BY de.emotionTag.id, de.tagNameSnapshot, de.colorSnapshot, de.categorySnapshot
             ORDER BY COUNT(de) DESC, de.tagNameSnapshot ASC
             """)
@@ -82,6 +94,12 @@ public interface DiaryEmotionRepository extends JpaRepository<DiaryEmotion, Long
             FROM DiaryEmotion de
             WHERE de.profileId = :profileId
               AND de.diaryDate BETWEEN :fromDate AND :toDate
+              AND EXISTS (
+                  SELECT 1
+                  FROM Diary d
+                  WHERE d.id = de.diaryId
+                    AND d.isDeleted = false
+              )
             GROUP BY de.diaryDate
             ORDER BY de.diaryDate ASC
             """)
