@@ -7,6 +7,7 @@ import com.mindlog.domain.diary.dto.DiaryResponse;
 import com.mindlog.domain.diary.entity.Diary;
 import com.mindlog.domain.diary.exception.DuplicateDiaryDateException;
 import com.mindlog.domain.diary.repository.DiaryRepository;
+import com.mindlog.domain.tag.dto.TagResponse;
 import com.mindlog.domain.tag.entity.DiaryEmotion;
 import com.mindlog.domain.tag.entity.DiaryTag;
 import com.mindlog.domain.tag.entity.EmotionTag;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
@@ -31,11 +33,15 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class DiaryService {
+  private static final String DIARY_NOT_FOUND_MESSAGE = "Diary not found";
+  private static final String UNAUTHORIZED_ACCESS_MESSAGE = "Unauthorized access";
+  private static final long YEAR_OPTIONS_CACHE_TTL_MS = 5 * 60 * 1000;
 
   private final DiaryRepository diaryRepository;
   private final DiaryEmotionRepository diaryEmotionRepository;
   private final DiaryTagRepository diaryTagRepository;
   private final EmotionTagRepository emotionTagRepository;
+  private final Map<UUID, YearOptionsCacheEntry> yearOptionsCache = new ConcurrentHashMap<>();
 
   public List<DiaryListItemResponse> getMonthlyDiaries(UUID profileId, int year, int month, boolean newestFirst) {
     YearMonth yearMonth = resolveYearMonth(year, month);
@@ -44,29 +50,39 @@ public class DiaryService {
       return List.of();
     }
 
-    Map<Long, List<EmotionTag>> tagsByDiaryId = fetchAndGroupTags(extractDiaryIds(diaries));
+    Map<Long, List<TagResponse>> tagsByDiaryId = fetchAndGroupTags(extractDiaryIds(diaries));
 
     return buildDiaryListResponses(diaries, tagsByDiaryId);
   }
 
   public List<Integer> getAvailableYears(UUID profileId, int selectedYear) {
-    LocalDate minDate = diaryRepository.findMinDateByProfileId(profileId);
-    LocalDate maxDate = diaryRepository.findMaxDateByProfileId(profileId);
+    var cachedEntry = yearOptionsCache.get(profileId);
+    if (cachedEntry != null && !cachedEntry.isExpired()) {
+      return cachedEntry.years();
+    }
+
+    var dateRange = diaryRepository.findDateRangeByProfileId(profileId);
+    LocalDate minDate = dateRange != null ? dateRange.getMinDate() : null;
+    LocalDate maxDate = dateRange != null ? dateRange.getMaxDate() : null;
 
     if (minDate == null || maxDate == null) {
-      return IntStream.rangeClosed(selectedYear - 2, selectedYear + 2)
+      var fallbackYears = IntStream.rangeClosed(selectedYear - 2, selectedYear + 2)
           .boxed()
           .sorted((a, b) -> Integer.compare(b, a))
           .toList();
+      yearOptionsCache.put(profileId, YearOptionsCacheEntry.of(fallbackYears));
+      return fallbackYears;
     }
 
     int startYear = Math.min(minDate.getYear(), selectedYear);
     int endYear = Math.max(maxDate.getYear(), selectedYear);
 
-    return IntStream.rangeClosed(startYear, endYear)
+    var availableYears = IntStream.rangeClosed(startYear, endYear)
         .boxed()
         .sorted((a, b) -> Integer.compare(b, a))
         .toList();
+    yearOptionsCache.put(profileId, YearOptionsCacheEntry.of(availableYears));
+    return availableYears;
   }
 
   private List<DiaryMonthlySummary> findDiariesByMonth(UUID profileId, YearMonth yearMonth, boolean newestFirst) {
@@ -78,21 +94,20 @@ public class DiaryService {
     return diaryRepository.findMonthlySummaryByProfileIdAndDateBetween(profileId, start, end);
   }
 
-  private Map<Long, List<EmotionTag>> fetchAndGroupTags(List<Long> diaryIds) {
-    List<DiaryEmotion> diaryEmotions = diaryEmotionRepository.findAllByDiaryIdIn(diaryIds);
-    if (diaryEmotions != null && !diaryEmotions.isEmpty()) {
-      return diaryEmotions.stream()
+  private Map<Long, List<TagResponse>> fetchAndGroupTags(List<Long> diaryIds) {
+    var emotionTagSummaries = diaryEmotionRepository.findTagSummaryByDiaryIds(diaryIds);
+    if (emotionTagSummaries != null && !emotionTagSummaries.isEmpty()) {
+      return emotionTagSummaries.stream()
           .collect(Collectors.groupingBy(
-              DiaryEmotion::getDiaryId,
-              Collectors.mapping(DiaryEmotion::getEmotionTag, Collectors.toList())));
+              summary -> summary.diaryId(),
+              Collectors.mapping(summary -> summary.toTagResponse(), Collectors.toList())));
     }
 
-    List<DiaryTag> diaryTags = diaryTagRepository.findAllByDiaryIdIn(diaryIds);
-
-    return diaryTags.stream()
+    var diaryTagSummaries = diaryTagRepository.findTagSummaryByDiaryIds(diaryIds);
+    return diaryTagSummaries.stream()
         .collect(Collectors.groupingBy(
-            DiaryTag::getDiaryId,
-            Collectors.mapping(DiaryTag::getEmotionTag, Collectors.toList())));
+            summary -> summary.diaryId(),
+            Collectors.mapping(summary -> summary.toTagResponse(), Collectors.toList())));
   }
 
   private List<Long> extractDiaryIds(List<DiaryMonthlySummary> diaries) {
@@ -103,10 +118,10 @@ public class DiaryService {
 
   private List<DiaryListItemResponse> buildDiaryListResponses(
       List<DiaryMonthlySummary> diaries,
-      Map<Long, List<EmotionTag>> tagsByDiaryId) {
+      Map<Long, List<TagResponse>> tagsByDiaryId) {
     return diaries.stream()
         .map(diary -> {
-          List<EmotionTag> tags = tagsByDiaryId.getOrDefault(diary.id(), List.of());
+          List<TagResponse> tags = tagsByDiaryId.getOrDefault(diary.id(), List.of());
           return DiaryListItemResponse.from(diary, tags);
         })
         .toList();
@@ -121,26 +136,8 @@ public class DiaryService {
   }
 
   public DiaryResponse getDiary(UUID profileId, Long id) {
-    Diary diary = diaryRepository.findById(id)
-        .orElseThrow(() -> new IllegalArgumentException("Diary not found"));
-
-    if (!diary.getProfileId().equals(profileId)) {
-      throw new IllegalArgumentException("Unauthorized access");
-    }
-
-    // 1. 태그 조회 (Fetch Join으로 쿼리 1방에 데이터 가져옴)
-    var emotionRows = diaryEmotionRepository.findByDiaryId(id);
-    List<EmotionTag> tags;
-    if (emotionRows != null && !emotionRows.isEmpty()) {
-      tags = emotionRows.stream()
-          .map(DiaryEmotion::getEmotionTag)
-          .toList();
-    } else {
-      tags = diaryTagRepository.findByDiaryId(id).stream()
-          .map(DiaryTag::getEmotionTag)
-          .toList();
-    }
-
+    var diary = findOwnedDiary(profileId, id);
+    var tags = findEmotionTagsByDiaryId(id);
     return DiaryResponse.from(diary, tags);
   }
 
@@ -152,6 +149,7 @@ public class DiaryService {
     Diary savedDiary = diaryRepository.save(diary);
 
     saveDiaryTags(savedDiary.getId(), profileId, savedDiary.getDate(), request.tagIds());
+    invalidateYearOptionsCache(profileId);
 
     return savedDiary.getId();
   }
@@ -179,12 +177,7 @@ public class DiaryService {
 
   @Transactional
   public void updateDiary(UUID profileId, Long id, DiaryRequest request) {
-    Diary diary = diaryRepository.findById(id)
-        .orElseThrow(() -> new IllegalArgumentException("Diary not found"));
-
-    if (!diary.getProfileId().equals(profileId)) {
-      throw new IllegalArgumentException("Unauthorized access");
-    }
+    var diary = findOwnedDiary(profileId, id);
 
     if (diaryRepository.existsByProfileIdAndDateAndIdNot(profileId, request.date(), id)) {
       throw new DuplicateDiaryDateException("이미 해당 날짜에 일기가 존재합니다");
@@ -201,18 +194,18 @@ public class DiaryService {
         request.imageUrl());
 
     replaceDiaryTags(diary, request.tagIds());
+    invalidateYearOptionsCache(profileId);
   }
 
   @Transactional
   public void deleteDiary(UUID profileId, Long id) {
-    Diary diary = diaryRepository.findById(id)
-        .orElseThrow(() -> new IllegalArgumentException("Diary not found"));
-
-    if (!diary.getProfileId().equals(profileId)) {
-      throw new IllegalArgumentException("Unauthorized access");
-    }
-
+    var diary = findOwnedDiary(profileId, id);
     diary.softDelete();
+    invalidateYearOptionsCache(profileId);
+  }
+
+  private void invalidateYearOptionsCache(UUID profileId) {
+    yearOptionsCache.remove(profileId);
   }
 
   @Transactional(readOnly = true)
@@ -281,5 +274,40 @@ public class DiaryService {
         .filter(Objects::nonNull)
         .distinct()
         .toList();
+  }
+
+  private Diary findOwnedDiary(UUID profileId, Long diaryId) {
+    var diary = diaryRepository.findById(diaryId)
+        .orElseThrow(() -> new IllegalArgumentException(DIARY_NOT_FOUND_MESSAGE));
+    validateOwner(profileId, diary);
+    return diary;
+  }
+
+  private void validateOwner(UUID profileId, Diary diary) {
+    if (!diary.getProfileId().equals(profileId)) {
+      throw new IllegalArgumentException(UNAUTHORIZED_ACCESS_MESSAGE);
+    }
+  }
+
+  private List<EmotionTag> findEmotionTagsByDiaryId(Long diaryId) {
+    var emotionRows = diaryEmotionRepository.findByDiaryId(diaryId);
+    if (emotionRows != null && !emotionRows.isEmpty()) {
+      return emotionRows.stream()
+          .map(DiaryEmotion::getEmotionTag)
+          .toList();
+    }
+    return diaryTagRepository.findByDiaryId(diaryId).stream()
+        .map(DiaryTag::getEmotionTag)
+        .toList();
+  }
+
+  private record YearOptionsCacheEntry(List<Integer> years, long expiresAtMs) {
+    private static YearOptionsCacheEntry of(List<Integer> years) {
+      return new YearOptionsCacheEntry(years, System.currentTimeMillis() + YEAR_OPTIONS_CACHE_TTL_MS);
+    }
+
+    private boolean isExpired() {
+      return System.currentTimeMillis() > expiresAtMs;
+    }
   }
 }

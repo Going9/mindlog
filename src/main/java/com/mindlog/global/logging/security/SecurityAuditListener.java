@@ -7,6 +7,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.security.authentication.event.AbstractAuthenticationFailureEvent;
 import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
 import org.springframework.security.authorization.event.AuthorizationDeniedEvent;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 import static net.logstash.logback.argument.StructuredArguments.kv;
@@ -28,14 +29,16 @@ public class SecurityAuditListener {
         var authentication = event.getAuthentication();
         String principal = extractPrincipal(authentication.getPrincipal());
 
-        // MDC에 profileId 설정 (이후 로깅에서 사용)
         MDC.put("profileId", principal);
-
-        log.info("Authentication successful",
-                kv("event", "AUTH_SUCCESS"),
-                kv("principal", principal),
-                kv("authorities", authentication.getAuthorities().toString())
-        );
+        try {
+            log.info("Authentication successful",
+                    kv("event", "AUTH_SUCCESS"),
+                    kv("principal", principal),
+                    kv("authorities", authentication.getAuthorities().toString())
+            );
+        } finally {
+            MDC.remove("profileId");
+        }
     }
 
     /**
@@ -60,8 +63,17 @@ public class SecurityAuditListener {
      */
     @EventListener
     public void onAuthorizationDenied(AuthorizationDeniedEvent<?> event) {
-        var authentication = event.getAuthentication().get();
-        String principal = extractPrincipal(authentication.getPrincipal());
+        Authentication authentication = event.getAuthentication() != null ? event.getAuthentication().get() : null;
+        String principal = authentication == null ? "anonymous" : extractPrincipal(authentication.getPrincipal());
+        boolean anonymous = "anonymous".equalsIgnoreCase(principal) || "anonymousUser".equals(principal);
+
+        if (anonymous) {
+            log.debug("Authorization denied",
+                    kv("event", "AUTHZ_DENIED"),
+                    kv("principal", principal)
+            );
+            return;
+        }
 
         log.warn("Authorization denied",
                 kv("event", "AUTHZ_DENIED"),

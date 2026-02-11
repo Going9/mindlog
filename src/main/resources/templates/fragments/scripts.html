@@ -10,10 +10,10 @@
             const SUPABASE_ANON_KEY = /*[[${supabaseAnonKey != null ? supabaseAnonKey : @environment.getProperty('mindlog.supabase.anon-key')}]]*/ '';
             /*]]>*/
 
-            // [수정] 직접 createClient 하지 않고, turbo-init.js의 함수를 호출합니다.
-            // turbo-init.js 내부에서 이미 싱글톤 체크를 하므로 안전합니다.
             if (typeof window.initSupabaseForTurbo === 'function') {
                 window.initSupabaseForTurbo(SUPABASE_URL, SUPABASE_ANON_KEY);
+            } else if (!window.supabaseClient && window.supabase?.createClient) {
+                window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             }
         })();
     </script>

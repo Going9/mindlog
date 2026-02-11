@@ -1,19 +1,37 @@
-spring:
-  session:
-    cookie:
-      name: SESSION
-      http-only: true
-      secure: false     # [Local] localhost는 HTTP이므로 false여야 함
-      same-site: lax
-      path: /
+server:
+  servlet:
+    session:
+      cookie:
+        name: SESSION
+        http-only: true
+        secure: false     # [Local] localhost는 HTTP이므로 false여야 함
+        same-site: lax
+        path: /
 
+spring:
   thymeleaf:
     cache: false        # [Local] 개발 중 수정 사항 즉시 반영
 
 logging:
   level:
     p6spy: INFO         # [Local] 개발 중 쿼리 파라미터 확인 필요
+    com.mindlog.domain.auth.controller.AuthController: DEBUG
+    com.mindlog.global.logging.aspect.PerformanceLoggingAspect: INFO
+    com.mindlog.global.logging.filter.RequestLoggingFilter: INFO
+    org.springframework.boot: WARN
+    org.springframework.data: WARN
+    org.hibernate.orm: WARN
+    org.apache.catalina: WARN
+    com.zaxxer.hikari: WARN
+    io.netty.resolver.dns.DnsServerAddressStreamProviders: ERROR
 
 mindlog:
+  logging:
+    request:
+      include-query-string: true
+      slow-threshold-ms: 1200
+    performance:
+      controller-slow-threshold-ms: 1000
+      service-slow-threshold-ms: 1200
   security:
     require-https: false

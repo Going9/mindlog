@@ -1,5 +1,27 @@
 import * as Turbo from "@hotwired/turbo"
 
+function initSupabaseForTurbo(supabaseUrl, supabaseAnonKey) {
+    if (!supabaseUrl || !supabaseAnonKey) {
+        return null
+    }
+
+    if (window.supabaseClient) {
+        return window.supabaseClient
+    }
+
+    const createClient = window.supabase?.createClient
+    if (typeof createClient !== "function") {
+        console.warn("[Mindlog] Supabase SDK를 찾을 수 없어 클라이언트를 초기화하지 못했습니다.")
+        return null
+    }
+
+    const client = createClient(supabaseUrl, supabaseAnonKey)
+    window.supabaseClient = client
+    return client
+}
+
+window.initSupabaseForTurbo = initSupabaseForTurbo
+
 if (window.__mindlogTurboInitialized) {
     window.Turbo = Turbo
     console.log("[Mindlog] Turbo 재초기화 요청 감지 - 기존 인스턴스 재사용")
@@ -61,6 +83,22 @@ if (window.__mindlogTurboInitialized) {
             el.removeAttribute('data-mindlog-busy')
             el.removeAttribute('aria-busy')
         })
+    }
+
+    function closeNativeMenuIfNeeded() {
+        if (!document.body.classList.contains("is-native")) return
+
+        const menu = document.getElementById("native-navbar-menu")
+        if (menu) {
+            menu.classList.add("hidden")
+            menu.classList.remove("open")
+        }
+
+        const toggleBtn = document.querySelector('[data-hs-collapse="#native-navbar-menu"]')
+        if (toggleBtn) {
+            toggleBtn.classList.remove("open")
+            toggleBtn.setAttribute("aria-expanded", "false")
+        }
     }
 
     function showToast(message, options = {}) {
@@ -129,8 +167,13 @@ if (window.__mindlogTurboInitialized) {
             HSStaticMethods.autoInit()
         }
 
+        closeNativeMenuIfNeeded()
         clearLoadingState()
         consumeNoticeCodeFromUrl()
+    })
+
+    document.addEventListener("turbo:before-render", () => {
+        closeNativeMenuIfNeeded()
     })
 
     // 4. 인증 만료 처리

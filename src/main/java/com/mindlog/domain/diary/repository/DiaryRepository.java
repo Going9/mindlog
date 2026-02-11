@@ -49,14 +49,24 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
             @Param("end") LocalDate end);
 
     @Nullable
-    @Query("SELECT MIN(d.date) FROM Diary d WHERE d.profileId = :profileId")
-    LocalDate findMinDateByProfileId(@Param("profileId") UUID profileId);
-
-    @Nullable
-    @Query("SELECT MAX(d.date) FROM Diary d WHERE d.profileId = :profileId")
-    LocalDate findMaxDateByProfileId(@Param("profileId") UUID profileId);
+    @Query("""
+            SELECT
+              MIN(d.date) AS minDate,
+              MAX(d.date) AS maxDate
+            FROM Diary d
+            WHERE d.profileId = :profileId
+            """)
+    DateRangeView findDateRangeByProfileId(@Param("profileId") UUID profileId);
 
     Optional<Diary> findByProfileIdAndDate(UUID profileId, LocalDate date);
     boolean existsByProfileIdAndDate(UUID profileId, LocalDate date);
     boolean existsByProfileIdAndDateAndIdNot(UUID profileId, LocalDate date, Long id);
+
+    interface DateRangeView {
+        @Nullable
+        LocalDate getMinDate();
+
+        @Nullable
+        LocalDate getMaxDate();
+    }
 }

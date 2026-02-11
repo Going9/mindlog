@@ -14,7 +14,6 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.PageRequest;
@@ -39,34 +38,65 @@ public class EmotionInsightService {
             @Nullable LocalDate toDate,
             @Nullable Integer topN
     ) {
+        var dateRange = resolveDateRange(fromDate, toDate);
+        var resolvedFromDate = dateRange.fromDate();
+        var resolvedToDate = dateRange.toDate();
+
+        var normalizedTopN = normalizeTopN(topN);
+
+        var dailyTrend = loadDailyTrend(profileId, resolvedFromDate, resolvedToDate);
+        var totalMentions = calculateTotalMentions(dailyTrend);
+        var categoryStats = toCategoryStats(dailyTrend, totalMentions);
+        var topTags = loadTopTags(profileId, resolvedFromDate, resolvedToDate, normalizedTopN);
+        var weeklyTrend = buildWeeklyTrend(dailyTrend);
+
+        return new EmotionAnalysisResponse(
+                resolvedFromDate,
+                resolvedToDate,
+                totalMentions,
+                categoryStats,
+                topTags,
+                dailyTrend,
+                weeklyTrend
+        );
+    }
+
+    private DateRange resolveDateRange(@Nullable LocalDate fromDate, @Nullable LocalDate toDate) {
         var resolvedToDate = (toDate != null) ? toDate : LocalDate.now();
         var resolvedFromDate = (fromDate != null) ? fromDate : resolvedToDate.minusDays(DEFAULT_RANGE_DAYS - 1L);
         if (resolvedFromDate.isAfter(resolvedToDate)) {
             throw new IllegalArgumentException("from 날짜는 to 날짜보다 늦을 수 없습니다.");
         }
+        return new DateRange(resolvedFromDate, resolvedToDate);
+    }
 
-        var normalizedTopN = normalizeTopN(topN);
+    private long calculateTotalMentions(List<DailyTrendPoint> dailyTrend) {
+        return dailyTrend.stream().mapToLong(DailyTrendPoint::totalCount).sum();
+    }
 
-        var categoryCounts = diaryEmotionRepository.countByCategoryInRange(profileId, resolvedFromDate, resolvedToDate);
-        var totalMentions = categoryCounts.stream().mapToLong(it -> nonNullLong(it.getCount())).sum();
-        var categoryCountMap = categoryCounts.stream()
-                .collect(Collectors.toMap(
-                        DiaryEmotionRepository.CategoryCountView::getCategory,
-                        it -> nonNullLong(it.getCount())
-                ));
+    private List<CategoryStat> toCategoryStats(List<DailyTrendPoint> dailyTrend, long totalMentions) {
+        long positiveCount = dailyTrend.stream().mapToLong(DailyTrendPoint::positiveCount).sum();
+        long negativeCount = dailyTrend.stream().mapToLong(DailyTrendPoint::negativeCount).sum();
+        long neutralCount = dailyTrend.stream().mapToLong(DailyTrendPoint::neutralCount).sum();
 
-        var categoryStats = Arrays.stream(EmotionCategory.values())
+        return Arrays.stream(EmotionCategory.values())
                 .map(category -> {
-                    var count = categoryCountMap.getOrDefault(category, 0L);
+                    var count = switch (category) {
+                        case POSITIVE -> positiveCount;
+                        case NEGATIVE -> negativeCount;
+                        case NEUTRAL -> neutralCount;
+                    };
                     var ratio = (totalMentions == 0L) ? 0.0 : (double) count / (double) totalMentions;
                     return new CategoryStat(category.name(), count, ratio);
                 })
                 .toList();
+    }
 
-        var topTags = diaryEmotionRepository.findTopTagsInRange(
+    private List<TagStat> loadTopTags(UUID profileId, LocalDate fromDate, LocalDate toDate, int normalizedTopN) {
+        return diaryEmotionRepository.findTopTagsInRange(
                         profileId,
-                        resolvedFromDate,
-                        resolvedToDate,
+                        fromDate,
+                        toDate,
                         PageRequest.of(0, normalizedTopN))
                 .stream()
                 .map(it -> new TagStat(
@@ -76,11 +106,13 @@ public class EmotionInsightService {
                         it.getCategory().name(),
                         nonNullLong(it.getCount())))
                 .toList();
+    }
 
-        var dailyTrend = diaryEmotionRepository.findDailyTrendInRange(
+    private List<DailyTrendPoint> loadDailyTrend(UUID profileId, LocalDate fromDate, LocalDate toDate) {
+        return diaryEmotionRepository.findDailyTrendInRange(
                         profileId,
-                        resolvedFromDate,
-                        resolvedToDate,
+                        fromDate,
+                        toDate,
                         EmotionCategory.POSITIVE,
                         EmotionCategory.NEGATIVE,
                         EmotionCategory.NEUTRAL)
@@ -93,18 +125,6 @@ public class EmotionInsightService {
                         nonNullLong(it.getTotalCount()),
                         (it.getAvgIntensity() == null) ? 0.0 : it.getAvgIntensity()))
                 .toList();
-
-        var weeklyTrend = buildWeeklyTrend(dailyTrend);
-
-        return new EmotionAnalysisResponse(
-                resolvedFromDate,
-                resolvedToDate,
-                totalMentions,
-                categoryStats,
-                topTags,
-                dailyTrend,
-                weeklyTrend
-        );
     }
 
     private List<WeeklyTrendPoint> buildWeeklyTrend(List<DailyTrendPoint> dailyTrend) {
@@ -163,5 +183,8 @@ public class EmotionInsightService {
         private long neutralCount;
         private long totalCount;
         private double intensityWeightedSum;
+    }
+
+    private record DateRange(LocalDate fromDate, LocalDate toDate) {
     }
 }

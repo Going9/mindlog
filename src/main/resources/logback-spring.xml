@@ -1,18 +1,82 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml" />
 
-    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - [%X{requestId:-no-id}, %X{profileId:-guest}] %msg%n</pattern>
-        </encoder>
-    </appender>
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="mindlog" />
 
-    <root level="INFO">
-        <appender-ref ref="CONSOLE"/>
-    </root>
+    <springProfile name="local">
+        <appender name="CONSOLE_PLAIN" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+                <pattern>
+                    %d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{requestId:-no-id}] [%X{profileId:-guest}] [%X{clientIp:-unknown}] %logger{36} - %msg %kvp%n
+                </pattern>
+            </encoder>
+        </appender>
 
-    <logger name="com.mindlog" level="DEBUG" />
-    <logger name="p6spy" level="INFO" />
-    <logger name="org.springframework.web" level="INFO" />
+        <root level="INFO">
+            <appender-ref ref="CONSOLE_PLAIN" />
+        </root>
+
+        <logger name="com.mindlog" level="INFO" />
+        <logger name="org.springframework.security" level="WARN" />
+        <logger name="org.springframework.web" level="WARN" />
+        <logger name="org.hibernate.SQL" level="OFF" />
+        <logger name="org.hibernate.orm.jdbc.bind" level="OFF" />
+        <logger name="p6spy" level="INFO" />
+    </springProfile>
+
+    <springProfile name="prod">
+        <appender name="CONSOLE_JSON" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+                <providers>
+                    <timestamp>
+                        <timeZone>UTC</timeZone>
+                    </timestamp>
+                    <pattern>
+                        <pattern>
+                            {
+                            "app":"${APP_NAME}",
+                            "level":"%level",
+                            "logger":"%logger",
+                            "thread":"%thread",
+                            "message":"%message"
+                            }
+                        </pattern>
+                    </pattern>
+                    <mdc />
+                    <arguments />
+                    <stackTrace />
+                </providers>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE_JSON" />
+        </root>
+
+        <logger name="com.mindlog" level="INFO" />
+        <logger name="org.springframework" level="WARN" />
+        <logger name="org.springframework.data" level="WARN" />
+        <logger name="org.hibernate.orm" level="WARN" />
+        <logger name="org.hibernate.SQL" level="OFF" />
+        <logger name="org.hibernate.orm.jdbc.bind" level="OFF" />
+        <logger name="org.apache.catalina" level="WARN" />
+        <logger name="com.zaxxer.hikari" level="WARN" />
+        <logger name="io.netty.resolver.dns.DnsServerAddressStreamProviders" level="ERROR" />
+        <logger name="p6spy" level="WARN" />
+    </springProfile>
+
+    <springProfile name="!local &amp; !prod">
+        <appender name="CONSOLE_PLAIN" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+                <pattern>
+                    %d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{requestId:-no-id}] [%X{profileId:-guest}] [%X{clientIp:-unknown}] %logger{36} - %msg %kvp%n
+                </pattern>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE_PLAIN" />
+        </root>
+    </springProfile>
 </configuration>

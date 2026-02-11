@@ -6,8 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <th:block th:replace="~{fragments/head :: head}"></th:block>
 
-    <link rel="stylesheet" th:href="@{/css/output.css}">
-
     <meta name="_csrf" th:content="${_csrf?.token}" th:if="${_csrf}" />
     <meta name="_csrf_header" th:content="${_csrf?.headerName}" th:if="${_csrf}" />
 
@@ -153,31 +151,6 @@
         </div>
     </div>
 
-    <!-- Turbo 네비게이션 시 네이티브 메뉴 닫기 -->
-    <script th:if="${isNative}">
-        document.addEventListener('turbo:before-render', function () {
-            // 네이티브 메뉴를 항상 닫힌 상태로 초기화
-            var menu = document.getElementById('native-navbar-menu');
-            if (menu) {
-                menu.classList.add('hidden');
-                menu.classList.remove('open');
-            }
-            // Preline collapse 상태도 리셋
-            var toggleBtn = document.querySelector('[data-hs-collapse="#native-navbar-menu"]');
-            if (toggleBtn) {
-                toggleBtn.classList.remove('open');
-                toggleBtn.setAttribute('aria-expanded', 'false');
-            }
-        });
-
-        // 페이지 로드 시에도 메뉴 닫기
-        document.addEventListener('turbo:load', function () {
-            var menu = document.getElementById('native-navbar-menu');
-            if (menu) {
-                menu.classList.add('hidden');
-            }
-        });
-    </script>
 </body>
 
 </html>

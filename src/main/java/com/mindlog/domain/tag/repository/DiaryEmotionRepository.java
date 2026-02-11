@@ -1,5 +1,6 @@
 package com.mindlog.domain.tag.repository;
 
+import com.mindlog.domain.tag.dto.DiaryTagSummary;
 import com.mindlog.domain.tag.entity.DiaryEmotion;
 import com.mindlog.domain.tag.entity.EmotionCategory;
 import java.time.LocalDate;
@@ -18,6 +19,20 @@ public interface DiaryEmotionRepository extends JpaRepository<DiaryEmotion, Long
 
     @Query("SELECT de FROM DiaryEmotion de JOIN FETCH de.emotionTag WHERE de.diaryId IN :diaryIds")
     List<DiaryEmotion> findAllByDiaryIdIn(@Param("diaryIds") List<Long> diaryIds);
+
+    @Query("""
+            SELECT new com.mindlog.domain.tag.dto.DiaryTagSummary(
+                de.diaryId,
+                de.emotionTag.id,
+                de.tagNameSnapshot,
+                de.colorSnapshot,
+                de.categorySnapshot,
+                false
+            )
+            FROM DiaryEmotion de
+            WHERE de.diaryId IN :diaryIds
+            """)
+    List<DiaryTagSummary> findTagSummaryByDiaryIds(@Param("diaryIds") List<Long> diaryIds);
 
     @Modifying
     @Query("DELETE FROM DiaryEmotion de WHERE de.diaryId = :diaryId")

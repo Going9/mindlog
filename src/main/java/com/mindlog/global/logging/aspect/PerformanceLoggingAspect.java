@@ -6,6 +6,7 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import static net.logstash.logback.argument.StructuredArguments.kv;
@@ -20,56 +21,47 @@ public class PerformanceLoggingAspect {
 
     private static final Logger log = LoggerFactory.getLogger(PerformanceLoggingAspect.class);
 
-    /**
-     * 느린 메서드로 간주하는 임계값 (밀리초)
-     */
-    private static final long SLOW_EXECUTION_THRESHOLD_MS = 500;
+    @Value("${mindlog.logging.performance.enabled:true}")
+    private boolean enabled;
 
-    /**
-     * Controller 레이어 포인트컷
-     */
-    @Pointcut("within(@org.springframework.web.bind.annotation.RestController *) || " +
-              "within(@org.springframework.stereotype.Controller *)")
-    public void controllerMethods() {}
+    @Value("${mindlog.logging.performance.controller-slow-threshold-ms:1200}")
+    private long controllerSlowThresholdMs;
 
-    /**
-     * Service 레이어 포인트컷
-     */
-    @Pointcut("within(@org.springframework.stereotype.Service *)")
-    public void serviceMethods() {}
+    @Value("${mindlog.logging.performance.service-slow-threshold-ms:1500}")
+    private long serviceSlowThresholdMs;
 
-    /**
-     * Controller 메서드 실행 시간 측정
-     */
+    @Value("${mindlog.logging.performance.log-success-debug:false}")
+    private boolean logSuccessDebug;
+
+    @Pointcut("within(com.mindlog..*) && (within(@org.springframework.web.bind.annotation.RestController *) || " +
+              "within(@org.springframework.stereotype.Controller *))")
+    public void controllerMethods() {
+    }
+
+    @Pointcut("within(com.mindlog..*) && within(@org.springframework.stereotype.Service *)")
+    public void serviceMethods() {
+    }
+
     @Around("controllerMethods()")
     public Object logControllerPerformance(ProceedingJoinPoint joinPoint) throws Throwable {
-        return measureAndLog(joinPoint, "controller");
+        return measureAndLog(joinPoint, "controller", controllerSlowThresholdMs);
     }
 
-    /**
-     * Service 메서드 실행 시간 측정
-     */
     @Around("serviceMethods()")
     public Object logServicePerformance(ProceedingJoinPoint joinPoint) throws Throwable {
-        return measureAndLog(joinPoint, "service");
+        return measureAndLog(joinPoint, "service", serviceSlowThresholdMs);
     }
 
-    /**
-     * 메서드 실행 시간 측정 및 로깅
-     * ProceedingJoinPoint: 실행 대상 메서드 정보
-     * joinPoint.proceed(): 실제 메서드 실행
-     * layer: Controller 또는 Service
-     * duration: 메서드 실행 시간
-     * success: 메서드 실행 성공 여부
-     * errorType: 메서드 실행 오류 타입
-     * fullMethodName: 메서드 전체 이름 (클래스명.메서드명)
-     * logExecution: 메서드 실행 로깅
-     */
-    private Object measureAndLog(ProceedingJoinPoint joinPoint, String layer) throws Throwable {
+    private Object measureAndLog(ProceedingJoinPoint joinPoint, String layer, long slowThresholdMs) throws Throwable {
+        if (!enabled) {
+            return joinPoint.proceed();
+        }
+
         String className = joinPoint.getTarget().getClass().getSimpleName();
         String methodName = joinPoint.getSignature().getName();
+        String fullMethodName = className + "." + methodName;
 
-        long startTime = System.currentTimeMillis();
+        long startTime = System.nanoTime();
         boolean success = true;
         String errorType = null;
 
@@ -82,58 +74,43 @@ public class PerformanceLoggingAspect {
             errorType = ex.getClass().getSimpleName();
             throw ex;
         } finally {
-            long duration = System.currentTimeMillis() - startTime;
-            logExecution(className, methodName, layer, duration, success, errorType);
+            long durationMs = (System.nanoTime() - startTime) / 1_000_000;
+            logExecution(fullMethodName, layer, durationMs, slowThresholdMs, success, errorType);
         }
     }
 
-    /**
-     * 메서드 실행 로깅
-     * className: 메서드가 속한 클래스명
-     * methodName: 메서드명
-     * layer: Controller 또는 Service
-     * duration: 메서드 실행 시간
-     * success: 메서드 실행 성공 여부
-     * errorType: 메서드 실행 오류 타입
-     * fullMethodName: 메서드 전체 이름 (클래스명.메서드명)
-     * logExecution: 메서드 실행 로깅
-     * log.warn: 메서드 실행 실패 로깅
-     * log.warn: 느린 메서드 실행 감지 로깅
-     * log.debug: 메서드 실행 완료 로깅
-     * kv: 로깅 인수 구조화
-     * duration: 메서드 실행 시간
-     * success: 메서드 실행 성공 여부
-     * errorType: 메서드 실행 오류 타입
-     * fullMethodName: 메서드 전체 이름 (클래스명.메서드명)
-     */
-    private void logExecution(String className, String methodName, String layer,
-                              long duration, boolean success, String errorType) {
-        String fullMethodName = className + "." + methodName;
-
+    private void logExecution(String fullMethodName, String layer, long durationMs, long slowThresholdMs,
+                              boolean success, String errorType) {
         if (!success) {
-            log.warn("Method execution failed: {} ({}ms) - Error: {}", 
-                    fullMethodName, duration, errorType,
+            log.error("Method execution failed: {} ({}ms, layer={})",
+                    fullMethodName, durationMs, layer,
                     kv("method", fullMethodName),
                     kv("layer", layer),
-                    kv("duration", duration),
+                    kv("durationMs", durationMs),
                     kv("success", false),
                     kv("errorType", errorType)
             );
-        } else if (duration >= SLOW_EXECUTION_THRESHOLD_MS) {
-            log.warn("Slow method execution: {} took {}ms (Threshold: {}ms)", 
-                    fullMethodName, duration, SLOW_EXECUTION_THRESHOLD_MS,
+            return;
+        }
+
+        if (durationMs >= slowThresholdMs) {
+            log.warn("Slow method execution: {} took {}ms (threshold={}ms, layer={})",
+                    fullMethodName, durationMs, slowThresholdMs, layer,
                     kv("method", fullMethodName),
                     kv("layer", layer),
-                    kv("duration", duration),
-                    kv("threshold", SLOW_EXECUTION_THRESHOLD_MS),
+                    kv("durationMs", durationMs),
+                    kv("thresholdMs", slowThresholdMs),
                     kv("success", true)
             );
-        } else {
-            log.debug("Method execution completed: {} ({}ms)", 
-                    fullMethodName, duration,
+            return;
+        }
+
+        if (logSuccessDebug && log.isDebugEnabled()) {
+            log.debug("Method execution completed: {} ({}ms, layer={})",
+                    fullMethodName, durationMs, layer,
                     kv("method", fullMethodName),
                     kv("layer", layer),
-                    kv("duration", duration),
+                    kv("durationMs", durationMs),
                     kv("success", true)
             );
         }

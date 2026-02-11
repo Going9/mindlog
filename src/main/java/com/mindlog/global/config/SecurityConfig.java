@@ -41,6 +41,7 @@ public class SecurityConfig {
                                 .authorizeHttpRequests(auth -> auth
                                                 // 정적 파일 및 로그인 관련 경로는 모두 허용
                                                 .requestMatchers("/", "/auth/**", "/js/**", "/css/**", "/images/**",
+                                                                "/actuator/health", "/actuator/health/**",
                                                                 "/favicon.ico", "/error")
                                                 .permitAll()
                                                 // 그 외 모든 페이지(일기장 등)는 로그인해야 접근 가능

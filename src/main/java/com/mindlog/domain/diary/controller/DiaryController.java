@@ -1,7 +1,9 @@
 package com.mindlog.domain.diary.controller;
 
 import com.mindlog.domain.diary.dto.DiaryListItemResponse;
+import com.mindlog.domain.diary.dto.DiaryFormDTO;
 import com.mindlog.domain.diary.dto.DiaryRequest;
+import com.mindlog.domain.diary.exception.DuplicateDiaryDateException;
 import com.mindlog.domain.diary.service.DiaryFormService;
 import com.mindlog.domain.diary.service.DiaryService;
 import com.mindlog.global.security.CurrentProfileId;
@@ -29,6 +31,7 @@ import java.util.stream.IntStream;
 @RequiredArgsConstructor
 public class DiaryController {
     private static final DateTimeFormatter MONTH_FORMATTER = DateTimeFormatter.ofPattern("yyyy년 M월");
+    private static final String FORM_VIEW = "diaries/form";
 
     private final DiaryService diaryService;
     private final DiaryFormService diaryFormService;
@@ -95,25 +98,17 @@ public class DiaryController {
             Model model,
             HttpServletResponse response) {
         if (bindingResult.hasErrors()) {
-            response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
             var formData = diaryFormService.getFormOnError(profileId, request, null);
-            populateModel(model, formData);
-            return "diaries/form";
+            return renderUnprocessableForm(response, model, formData);
         }
 
         try {
-            Long id = diaryService.createDiary(profileId, request);
-            var redirectUrl = UriComponentsBuilder.fromPath("/diaries/{id}")
-                    .queryParam("noticeCode", "diary-created")
-                    .buildAndExpand(id)
-                    .toUriString();
-            return new RedirectView(redirectUrl, true, false, false);
-        } catch (com.mindlog.domain.diary.exception.DuplicateDiaryDateException e) {
+            var id = diaryService.createDiary(profileId, request);
+            return redirectToDiaryDetail(id, "diary-created");
+        } catch (DuplicateDiaryDateException e) {
             bindingResult.rejectValue("date", "duplicate", e.getMessage());
-            response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
             var formData = diaryFormService.getFormOnError(profileId, request, null);
-            populateModel(model, formData);
-            return "diaries/form";
+            return renderUnprocessableForm(response, model, formData);
         }
     }
 
@@ -141,25 +136,17 @@ public class DiaryController {
             Model model,
             HttpServletResponse response) {
         if (bindingResult.hasErrors()) {
-            response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
             var formData = diaryFormService.getFormOnError(profileId, request, id);
-            populateModel(model, formData);
-            return "diaries/form";
+            return renderUnprocessableForm(response, model, formData);
         }
 
         try {
             diaryService.updateDiary(profileId, id, request);
-            var redirectUrl = UriComponentsBuilder.fromPath("/diaries/{id}")
-                    .queryParam("noticeCode", "diary-updated")
-                    .buildAndExpand(id)
-                    .toUriString();
-            return new RedirectView(redirectUrl, true, false, false);
-        } catch (com.mindlog.domain.diary.exception.DuplicateDiaryDateException e) {
+            return redirectToDiaryDetail(id, "diary-updated");
+        } catch (DuplicateDiaryDateException e) {
             bindingResult.rejectValue("date", "duplicate", e.getMessage());
-            response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
             var formData = diaryFormService.getFormOnError(profileId, request, id);
-            populateModel(model, formData);
-            return "diaries/form";
+            return renderUnprocessableForm(response, model, formData);
         }
     }
 
@@ -173,11 +160,7 @@ public class DiaryController {
             @CurrentProfileId UUID profileId,
             @PathVariable Long id) {
         diaryService.deleteDiary(profileId, id);
-        // 삭제 후 목록으로 303 리다이렉트
-        var redirectUrl = UriComponentsBuilder.fromPath("/diaries")
-                .queryParam("noticeCode", "diary-deleted")
-                .toUriString();
-        return new RedirectView(redirectUrl, true, false, false);
+        return redirectToDiaryList("diary-deleted");
     }
 
     // Ajax 검증용 (Turbo와 무관하게 유지)
@@ -191,10 +174,34 @@ public class DiaryController {
 
     // --- Private Helper Methods ---
 
-    private void populateModel(Model model, com.mindlog.domain.diary.dto.DiaryFormDTO formData) {
+    private void populateModel(Model model, DiaryFormDTO formData) {
         model.addAttribute("diaryRequest", formData.diaryRequest());
         model.addAttribute("tags", formData.tags());
         model.addAttribute("diaryId", formData.diaryId());
+    }
+
+    private String renderUnprocessableForm(
+            HttpServletResponse response,
+            Model model,
+            DiaryFormDTO formData) {
+        response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
+        populateModel(model, formData);
+        return FORM_VIEW;
+    }
+
+    private RedirectView redirectToDiaryDetail(Long id, String noticeCode) {
+        var redirectUrl = UriComponentsBuilder.fromPath("/diaries/{id}")
+                .queryParam("noticeCode", noticeCode)
+                .buildAndExpand(id)
+                .toUriString();
+        return new RedirectView(redirectUrl, true, false, false);
+    }
+
+    private RedirectView redirectToDiaryList(String noticeCode) {
+        var redirectUrl = UriComponentsBuilder.fromPath("/diaries")
+                .queryParam("noticeCode", noticeCode)
+                .toUriString();
+        return new RedirectView(redirectUrl, true, false, false);
     }
 
     private YearMonth resolveYearMonth(Integer year, Integer month) {

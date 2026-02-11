@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>로그아웃 - Mindlog</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -78,21 +79,16 @@
 
         async function handleLogout() {
             try {
-                if (typeof window.initSupabaseForTurbo !== 'function') {
-                    setTimeout(handleLogout, 50);
-                    return;
+                if (!window.supabaseClient && window.supabase?.createClient) {
+                    window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                 }
 
-                window.initSupabaseForTurbo(SUPABASE_URL, SUPABASE_ANON_KEY);
                 const client = window.supabaseClient;
 
-                if (!client) {
-                    setTimeout(handleLogout, 50);
-                    return;
+                if (client?.auth?.signOut) {
+                    // Supabase 세션 종료 시도 (실패해도 무관)
+                    await client.auth.signOut().catch(e => console.warn("SignOut failed", e));
                 }
-
-                // Supabase 세션 종료 시도 (실패해도 무관)
-                await client.auth.signOut().catch(e => console.warn("SignOut failed", e));
 
                 performLocalCleanup();
             } catch (err) {

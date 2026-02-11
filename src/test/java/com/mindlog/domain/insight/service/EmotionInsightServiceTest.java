@@ -17,8 +17,10 @@ import org.springframework.data.domain.Pageable;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class EmotionInsightServiceTest {
@@ -74,6 +76,30 @@ class EmotionInsightServiceTest {
         assertThatThrownBy(() -> emotionInsightService.getEmotionAnalysis(profileId, from, to, 10))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("from 날짜");
+    }
+
+    @Test
+    @DisplayName("감정 분석 - topN은 최소 1, 최대 30으로 보정된다")
+    void getEmotionAnalysis_TopNClamp() {
+        UUID profileId = UUID.randomUUID();
+        LocalDate from = LocalDate.of(2026, 2, 1);
+        LocalDate to = LocalDate.of(2026, 2, 10);
+
+        given(diaryEmotionRepository.countByCategoryInRange(profileId, from, to)).willReturn(List.of());
+        given(diaryEmotionRepository.findTopTagsInRange(eq(profileId), eq(from), eq(to), any(Pageable.class)))
+                .willReturn(List.of());
+        given(diaryEmotionRepository.findDailyTrendInRange(
+                profileId, from, to, EmotionCategory.POSITIVE, EmotionCategory.NEGATIVE, EmotionCategory.NEUTRAL
+        )).willReturn(List.of());
+
+        emotionInsightService.getEmotionAnalysis(profileId, from, to, 999);
+
+        verify(diaryEmotionRepository).findTopTagsInRange(
+                eq(profileId),
+                eq(from),
+                eq(to),
+                argThat(pageable -> pageable.getPageNumber() == 0 && pageable.getPageSize() == 30)
+        );
     }
 
     private DiaryEmotionRepository.CategoryCountView categoryCount(EmotionCategory category, Long count) {

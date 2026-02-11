@@ -2,6 +2,10 @@ spring:
   application:
     name: mindlog
 
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration
+
   # 기본적으로 'local' 프로필을 활성화 (IntelliJ 등에서 바로 실행 시 적용됨)
   profiles:
     active: local
@@ -39,7 +43,6 @@ spring:
   # JPA 및 Hibernate 설정
   jpa:
     open-in-view: false
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: none
     properties:
@@ -47,8 +50,8 @@ spring:
         format_sql: false
         show_sql: false  # P6Spy로 대체
         default_batch_fetch_size: 100
-        temp:
-          use_jdbc_metadata_defaults: false
+        boot:
+          allow_jdbc_metadata_access: true
 
   # Thymeleaf 공통 설정 (캐시는 환경별 분리)
   thymeleaf:
@@ -68,6 +71,17 @@ mindlog:
   serverPort: ${SERVER_PORT}
   performance:
     warmup-db-on-startup: true
+    warmup-http-on-startup: false
+    warmup-http-paths: /,/auth/login
+  logging:
+    request:
+      slow-threshold-ms: 1500
+      include-query-string: false
+    performance:
+      enabled: true
+      controller-slow-threshold-ms: 1200
+      service-slow-threshold-ms: 1500
+      log-success-debug: false
 
 # 로깅 공통 설정
 logging:
@@ -78,3 +92,23 @@ logging:
     org.hibernate.SQL: OFF
     org.hibernate.orm.jdbc.bind: OFF
     org.springframework.security: WARN
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,warmup
+        liveness:
+          include: livenessState
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true

@@ -1,20 +1,20 @@
 server:
   # 클라우드타입 프록시 서버가 보내는 X-Forwarded-Proto, X-Forwarded-For 헤더를 신뢰함
   forward-headers-strategy: framework
+  servlet:
+    session:
+      cookie:
+        name: SESSION
+        http-only: true
+        secure: true      # [Prod] HTTPS 환경이므로 true 필수 (안드로이드 이슈 해결 핵심)
+        same-site: lax
+        path: /
+        domain: .mindlog.blog
 
 spring:
   datasource:
     hikari:
       minimum-idle: 3
-
-  session:
-    cookie:
-      name: SESSION
-      http-only: true
-      secure: true      # [Prod] HTTPS 환경이므로 true 필수 (안드로이드 이슈 해결 핵심)
-      same-site: lax
-      path: /
-      domain: .mindlog.blog
 
   thymeleaf:
     cache: true         # [Prod] 템플릿 컴파일 비용 절약 (성능 향상)
@@ -22,7 +22,20 @@ spring:
 logging:
   level:
     p6spy: WARN         # [Prod] 운영에서는 SQL 로그를 남기지 않음 (성능 저하 방지)
+    com.mindlog.domain.auth.controller.AuthController: INFO
+    com.mindlog.global.logging.aspect.PerformanceLoggingAspect: INFO
+    com.mindlog.global.logging.filter.RequestLoggingFilter: INFO
 
 mindlog:
+  performance:
+    warmup-http-on-startup: true
+  logging:
+    request:
+      include-query-string: false
+      slow-threshold-ms: 1200
+    performance:
+      enabled: true
+      controller-slow-threshold-ms: 1200
+      service-slow-threshold-ms: 1500
   security:
     require-https: true

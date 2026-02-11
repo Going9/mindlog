@@ -7,12 +7,14 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Set;
 import java.util.UUID;
 
 import static net.logstash.logback.argument.StructuredArguments.kv;
@@ -30,12 +32,46 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
     private static final String REQUEST_ID_HEADER = "X-Request-ID";
     private static final String MDC_REQUEST_ID = "requestId";
     private static final String MDC_CLIENT_IP = "clientIp";
+    private static final Set<String> SKIP_PREFIXES = Set.of(
+            "/actuator",
+            "/health",
+            "/favicon",
+            "/css/",
+            "/js/",
+            "/images/",
+            "/webjars/"
+    );
+
+    @Value("${mindlog.logging.request.slow-threshold-ms:1500}")
+    private long slowRequestThresholdMs;
+
+    @Value("${mindlog.logging.request.include-query-string:false}")
+    private boolean includeQueryString;
+
+    @Value("${mindlog.logging.request.log-normal-info:false}")
+    private boolean logNormalInfo;
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        if (uri == null || uri.isBlank()) {
+            return false;
+        }
+
+        for (String prefix : SKIP_PREFIXES) {
+            if (uri.startsWith(prefix)) {
+                return true;
+            }
+        }
+
+        return hasStaticExtension(uri);
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        long startTime = System.currentTimeMillis();
+        long startTime = System.nanoTime();
 
         // 요청 ID 생성 또는 헤더에서 추출
         String requestId = extractOrGenerateRequestId(request);
@@ -49,18 +85,10 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
         response.setHeader(REQUEST_ID_HEADER, requestId);
 
         try {
-            // 요청 시작 로깅
-            logRequestStart(request, requestId, clientIp);
-
-            // 다음 필터 실행
             filterChain.doFilter(request, response);
-
         } finally {
-            // 요청 완료 로깅
-            long duration = System.currentTimeMillis() - startTime;
-            logRequestComplete(request, response, duration);
-
-            // MDC 정리
+            long durationMs = (System.nanoTime() - startTime) / 1_000_000;
+            logRequestComplete(request, response, durationMs);
             MDC.remove(MDC_REQUEST_ID);
             MDC.remove(MDC_CLIENT_IP);
         }
@@ -89,55 +117,58 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
         return request.getRemoteAddr();
     }
 
-    private void logRequestStart(HttpServletRequest request, String requestId, String clientIp) {
-        if (shouldSkipLogging(request)) {
-            return;
-        }
-
-        log.info("HTTP Request started",
-                kv("method", request.getMethod()),
-                kv("uri", request.getRequestURI()),
-                kv("queryString", maskSensitiveParams(request.getQueryString())),
-                kv("userAgent", request.getHeader("User-Agent"))
-        );
-    }
-
-    private void logRequestComplete(HttpServletRequest request, HttpServletResponse response, long duration) {
-        if (shouldSkipLogging(request)) {
-            return;
-        }
-
+    private void logRequestComplete(HttpServletRequest request, HttpServletResponse response, long durationMs) {
         int status = response.getStatus();
-        String message = "HTTP Request completed";
+        String message = "HTTP access";
 
         if (status >= 500) {
             log.error(message,
                     kv("method", request.getMethod()),
                     kv("uri", request.getRequestURI()),
                     kv("status", status),
-                    kv("duration", duration)
+                    kv("durationMs", durationMs),
+                    kv("queryString", resolveQueryString(request))
             );
-        } else if (status >= 400) {
+        } else if (durationMs >= slowRequestThresholdMs) {
             log.warn(message,
                     kv("method", request.getMethod()),
                     kv("uri", request.getRequestURI()),
                     kv("status", status),
-                    kv("duration", duration)
+                    kv("durationMs", durationMs),
+                    kv("queryString", resolveQueryString(request))
             );
-        } else {
+        } else if (logNormalInfo) {
             log.info(message,
                     kv("method", request.getMethod()),
                     kv("uri", request.getRequestURI()),
                     kv("status", status),
-                    kv("duration", duration)
+                    kv("durationMs", durationMs),
+                    kv("queryString", resolveQueryString(request))
             );
         }
     }
 
-    private boolean shouldSkipLogging(HttpServletRequest request) {
-        String uri = request.getRequestURI();
-        // 헬스체크 등 불필요한 로깅 제외
-        return uri.equals("/health") || uri.equals("/actuator/health") || uri.startsWith("/actuator/");
+    private String resolveQueryString(HttpServletRequest request) {
+        if (!includeQueryString) {
+            return null;
+        }
+        return maskSensitiveParams(request.getQueryString());
+    }
+
+    private boolean hasStaticExtension(String uri) {
+        String normalized = uri.toLowerCase();
+        return normalized.endsWith(".css")
+                || normalized.endsWith(".js")
+                || normalized.endsWith(".map")
+                || normalized.endsWith(".png")
+                || normalized.endsWith(".jpg")
+                || normalized.endsWith(".jpeg")
+                || normalized.endsWith(".gif")
+                || normalized.endsWith(".svg")
+                || normalized.endsWith(".ico")
+                || normalized.endsWith(".woff")
+                || normalized.endsWith(".woff2")
+                || normalized.endsWith(".ttf");
     }
 
     private String maskSensitiveParams(String queryString) {

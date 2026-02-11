@@ -1,0 +1,14 @@
+.git
+.gradle
+.idea
+build
+out
+node_modules
+*.iml
+
+# Local docs/temp artifacts
+docs
+tmp
+
+# OS files
+.DS_Store

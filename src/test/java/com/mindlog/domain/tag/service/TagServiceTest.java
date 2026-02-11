@@ -104,6 +104,31 @@ class TagServiceTest {
     }
 
     @Test
+    @DisplayName("커스텀 태그 생성 - 이름 앞뒤 공백을 제거한다")
+    void createCustomTag_TrimsName() {
+        UUID profileId = UUID.randomUUID();
+        String rawName = "  새태그  ";
+        String normalizedName = "새태그";
+
+        given(emotionTagRepository.findByProfileIdAndName(profileId, normalizedName)).willReturn(Optional.empty());
+        given(emotionTagRepository.save(any(EmotionTag.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        EmotionTag result = tagService.createCustomTag(profileId, rawName, "#fff", EmotionCategory.NEUTRAL);
+
+        assertThat(result.getName()).isEqualTo(normalizedName);
+    }
+
+    @Test
+    @DisplayName("커스텀 태그 생성 - 카테고리가 없으면 실패")
+    void createCustomTag_Fail_WhenCategoryMissing() {
+        UUID profileId = UUID.randomUUID();
+
+        assertThatThrownBy(() -> tagService.createCustomTag(profileId, "태그", "#000", null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("카테고리를 선택해주세요.");
+    }
+
+    @Test
     @DisplayName("커스텀 태그 삭제 - 성공")
     void deleteCustomTag_Success() {
         // given

@@ -5,24 +5,28 @@ import com.mindlog.global.security.PkceUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.util.UriUtils;
 import org.springframework.web.bind.annotation.*;
-
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Optional;
+import org.springframework.web.util.UriUtils;
 
 @Slf4j
 @Controller
 @RequestMapping("/auth")
 @RequiredArgsConstructor
 public class AuthController {
+
+    private static final String APP_SOURCE = "app";
+    private static final String PKCE_VERIFIER_KEY = "pkce_verifier";
+    private static final String LOGIN_SOURCE_KEY = "login_source";
 
     private final AuthLoginService authLoginService;
 
@@ -31,7 +35,7 @@ public class AuthController {
 
     @GetMapping("/login")
     public String loginPage() {
-        log.info("[AUTH] 로그인 페이지 요청");
+        log.debug("[AUTH] 로그인 페이지 요청");
         return "auth/login";
     }
 
@@ -40,59 +44,47 @@ public class AuthController {
             @RequestParam(name = "source", required = false) String source,
             HttpServletRequest request,
             HttpSession session) {
-        log.info("[AUTH] ===== 소셜 로그인 시작 =====");
-        log.info("[AUTH] provider={}, source={}", provider, source);
-        log.info("[AUTH] request host/proto - host={}, x-forwarded-host={}, scheme={}, x-forwarded-proto={}",
+        log.debug("[AUTH] ===== 소셜 로그인 시작 =====");
+        log.debug("[AUTH] provider={}, source={}", provider, source);
+        log.debug("[AUTH] request host/proto - host={}, x-forwarded-host={}, scheme={}, x-forwarded-proto={}",
                 request.getHeader("Host"),
                 request.getHeader("X-Forwarded-Host"),
                 request.getScheme(),
                 request.getHeader("X-Forwarded-Proto"));
-        log.info("[AUTH] session - id={}, isNew={}, requestedSessionId={}",
+        log.debug("[AUTH] session - id={}, isNew={}, requestedSessionId={}",
                 maskSessionId(session.getId()),
                 session.isNew(),
                 maskSessionId(request.getRequestedSessionId()));
 
-        // 이미 로그인된 경우 리다이렉트
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
-            log.info("[AUTH] 이미 로그인됨 - /diaries로 리다이렉트");
+        if (isAlreadyAuthenticated()) {
+            log.debug("[AUTH] 이미 로그인됨 - /diaries로 리다이렉트");
             return "redirect:/diaries";
         }
 
-        String verifier = PkceUtil.generateCodeVerifier();
-        String challenge = PkceUtil.generateCodeChallenge(verifier);
-        session.setAttribute("pkce_verifier", verifier);
-        log.info("[AUTH] PKCE verifier 생성 완료 (길이: {})", verifier.length());
+        var verifier = PkceUtil.generateCodeVerifier();
+        var challenge = PkceUtil.generateCodeChallenge(verifier);
+        session.setAttribute(PKCE_VERIFIER_KEY, verifier);
+        log.debug("[AUTH] PKCE verifier 생성 완료 (길이: {})", verifier.length());
 
-        // 네이티브 앱에서 요청한 경우 source를 세션에 저장 (WebView용 백업)
-        boolean isNativeApp = "app".equals(source);
+        var isNativeApp = APP_SOURCE.equals(source);
         if (isNativeApp) {
-            session.setAttribute("login_source", "app");
-            log.info("[AUTH] 네이티브 앱 요청 - source=app");
+            session.setAttribute(LOGIN_SOURCE_KEY, APP_SOURCE);
+            log.debug("[AUTH] 네이티브 앱 요청 - source=app");
         }
 
-        String prompt = "google".equalsIgnoreCase(provider) ? "select_account" : "login";
+        var prompt = "google".equalsIgnoreCase(provider) ? "select_account" : "login";
 
-        // redirect_to URL에 source 파라미터 포함 (Custom Tab은 별도 세션이므로)
-        String redirectUri = buildRedirectUri(request);
-        log.info("[AUTH] 기본 redirectUri: {}", redirectUri);
+        var redirectUri = buildRedirectUri(request);
+        log.debug("[AUTH] 기본 redirectUri: {}", redirectUri);
 
         if (isNativeApp) {
-            // 앱용: verifier를 URL에 포함 (Custom Tab은 세션을 공유하지 않으므로)
-            // Base64 인코딩하여 URL-safe하게 전달
-            String encodedVerifier = java.util.Base64.getUrlEncoder().withoutPadding()
-                    .encodeToString(verifier.getBytes());
-            redirectUri += "?source=app&v=" + encodedVerifier;
-            log.info("[AUTH] 앱용 redirectUri 생성 완료 (verifier 포함)");
+            redirectUri = appendNativeSourceAndVerifier(redirectUri, verifier);
+            log.debug("[AUTH] 앱용 redirectUri 생성 완료 (verifier 포함)");
         }
 
-        String encodedRedirectUri = UriUtils.encode(redirectUri, StandardCharsets.UTF_8);
-        String encodedChallenge = UriUtils.encode(challenge, StandardCharsets.UTF_8);
-        String authUrl = String.format(
-                "%s/auth/v1/authorize?provider=%s&redirect_to=%s&code_challenge=%s&code_challenge_method=S256&flow_type=pkce&prompt=%s",
-                supabaseUrl, provider, encodedRedirectUri, encodedChallenge, prompt);
+        var authUrl = buildAuthUrl(provider, redirectUri, challenge, prompt);
 
-        log.info("[AUTH] OAuth URL로 리다이렉트: {}", authUrl.substring(0, Math.min(100, authUrl.length())) + "...");
+        log.debug("[AUTH] OAuth URL로 리다이렉트");
         return "redirect:" + authUrl;
     }
 
@@ -105,13 +97,13 @@ public class AuthController {
             HttpServletResponse response,
             org.springframework.ui.Model model) {
 
-        log.info("[AUTH] ===== OAuth 콜백 수신 =====");
-        log.info("[AUTH] code={}, error={}, source={}, v(verifier)={}",
+        log.debug("[AUTH] ===== OAuth 콜백 수신 =====");
+        log.debug("[AUTH] code={}, error={}, source={}, v(verifier)={}",
                 code != null ? "있음(길이:" + code.length() + ")" : "없음",
                 error,
                 source,
                 encodedVerifier != null ? "있음(길이:" + encodedVerifier.length() + ")" : "없음");
-        log.info("[AUTH] callback request - host={}, scheme={}, sessionCookie={}, requestedSessionId={}, requestedSessionIdValid={}",
+        log.debug("[AUTH] callback request - host={}, scheme={}, sessionCookie={}, requestedSessionId={}, requestedSessionIdValid={}",
                 request.getHeader("Host"),
                 request.getScheme(),
                 maskSessionId(extractSessionCookieValue(request)),
@@ -124,22 +116,19 @@ public class AuthController {
         }
 
         HttpSession session = request.getSession();
-        log.info("[AUTH] callback session - id={}, isNew={}", maskSessionId(session.getId()), session.isNew());
+        log.debug("[AUTH] callback session - id={}, isNew={}", maskSessionId(session.getId()), session.isNew());
 
         // 네이티브 앱 여부 판별 (source 파라미터 또는 User-Agent로 판단)
-        boolean isNativeApp = "app".equals(source) || isNativeAppRequest(request);
-        log.info("[AUTH] 네이티브 앱 여부: {}", isNativeApp);
+        var isNativeApp = APP_SOURCE.equals(source) || isNativeAppRequest(request);
+        log.debug("[AUTH] 네이티브 앱 여부: {}", isNativeApp);
 
-        // verifier 결정: URL 파라미터 > 세션
         String verifier;
         if (encodedVerifier != null && !encodedVerifier.isEmpty()) {
-            // 앱용: URL에서 verifier 디코딩
-            verifier = new String(java.util.Base64.getUrlDecoder().decode(encodedVerifier));
-            log.info("[AUTH] URL 파라미터에서 verifier 추출 성공 (길이: {})", verifier.length());
+            verifier = new String(Base64.getUrlDecoder().decode(encodedVerifier));
+            log.debug("[AUTH] URL 파라미터에서 verifier 추출 성공 (길이: {})", verifier.length());
         } else {
-            // 웹용: 세션에서 verifier 추출
-            verifier = (String) session.getAttribute("pkce_verifier");
-            log.info("[AUTH] 세션에서 verifier 추출: {}", verifier != null ? "성공" : "실패");
+            verifier = (String) session.getAttribute(PKCE_VERIFIER_KEY);
+            log.debug("[AUTH] 세션에서 verifier 추출: {}", verifier != null ? "성공" : "실패");
         }
 
         if (verifier == null) {
@@ -149,23 +138,18 @@ public class AuthController {
 
         try {
             if (isNativeApp) {
-                log.info("[AUTH] 네이티브 앱 로그인 처리 시작...");
-                // 네이티브 앱: 일회용 토큰을 생성하고 딥링크로 리다이렉트
-                String handoverToken = authLoginService.processLoginForNativeApp(code, verifier);
-                session.removeAttribute("pkce_verifier");
+                log.debug("[AUTH] 네이티브 앱 로그인 처리 시작...");
+                var handoverToken = authLoginService.processLoginForNativeApp(code, verifier);
+                session.removeAttribute(PKCE_VERIFIER_KEY);
 
                 log.info("[AUTH] 네이티브 앱 로그인 성공! handoverToken 생성 완료");
-                log.info("[AUTH] 딥링크 URL: mindlog://auth/callback?token={}...",
-                        handoverToken.substring(0, Math.min(10, handoverToken.length())));
 
-                // Custom Tab에서 딥링크가 작동하도록 HTML 페이지 반환
                 model.addAttribute("deepLinkUrl", "mindlog://auth/callback?token=" + handoverToken);
                 return "auth/app-callback";
             } else {
-                log.info("[AUTH] 웹 로그인 처리 시작...");
-                // 웹: 기존대로 처리
+                log.debug("[AUTH] 웹 로그인 처리 시작...");
                 authLoginService.processLogin(code, verifier, request, response);
-                session.removeAttribute("pkce_verifier");
+                session.removeAttribute(PKCE_VERIFIER_KEY);
                 log.info("[AUTH] 웹 로그인 성공! /diaries로 리다이렉트");
                 return "redirect:/diaries";
             }
@@ -181,7 +165,7 @@ public class AuthController {
      */
     private boolean isNativeAppRequest(HttpServletRequest request) {
         String userAgent = request.getHeader("User-Agent");
-        log.info("[AUTH] User-Agent: {}", userAgent);
+        log.debug("[AUTH] User-Agent: {}", userAgent);
         if (userAgent == null) {
             return false;
         }
@@ -189,9 +173,9 @@ public class AuthController {
         // 일반적으로 Custom Tab은 Chrome과 동일한 User-Agent를 사용하므로
         // 세션에 앱 식별자를 저장하는 방식으로 보완
         boolean isWebView = userAgent.contains("wv");
-        String loginSource = (String) request.getSession().getAttribute("login_source");
-        log.info("[AUTH] WebView 여부: {}, 세션 login_source: {}", isWebView, loginSource);
-        return isWebView || "app".equals(loginSource);
+        String loginSource = (String) request.getSession().getAttribute(LOGIN_SOURCE_KEY);
+        log.debug("[AUTH] WebView 여부: {}, 세션 login_source: {}", isWebView, loginSource);
+        return isWebView || APP_SOURCE.equals(loginSource);
     }
 
     /**
@@ -226,7 +210,7 @@ public class AuthController {
     }
 
     private String buildLoginErrorRedirect(String error, String source) {
-        if ("app".equals(source)) {
+        if (APP_SOURCE.equals(source)) {
             return "redirect:/auth/login?source=app&error=" + error;
         }
         return "redirect:/auth/login?error=" + error;
@@ -258,5 +242,25 @@ public class AuthController {
         return Optional.ofNullable(sessionId)
                 .map(id -> id.length() <= 12 ? id : id.substring(0, 6) + "..." + id.substring(id.length() - 4))
                 .orElse("null");
+    }
+
+    private boolean isAlreadyAuthenticated() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal());
+    }
+
+    private String appendNativeSourceAndVerifier(String redirectUri, String verifier) {
+        var encodedVerifier = Base64.getUrlEncoder()
+                .withoutPadding()
+                .encodeToString(verifier.getBytes(StandardCharsets.UTF_8));
+        return redirectUri + "?source=app&v=" + encodedVerifier;
+    }
+
+    private String buildAuthUrl(String provider, String redirectUri, String challenge, String prompt) {
+        var encodedRedirectUri = UriUtils.encode(redirectUri, StandardCharsets.UTF_8);
+        var encodedChallenge = UriUtils.encode(challenge, StandardCharsets.UTF_8);
+        return String.format(
+                "%s/auth/v1/authorize?provider=%s&redirect_to=%s&code_challenge=%s&code_challenge_method=S256&flow_type=pkce&prompt=%s",
+                supabaseUrl, provider, encodedRedirectUri, encodedChallenge, prompt);
     }
 }

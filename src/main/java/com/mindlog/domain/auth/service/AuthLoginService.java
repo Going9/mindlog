@@ -28,6 +28,10 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class AuthLoginService {
+    private static final String ROLE_USER = "ROLE_USER";
+    private static final String ACCESS_TOKEN_KEY = "ACCESS_TOKEN";
+    private static final String USER_NAME_KEY = "USER_NAME";
+    private static final String REFRESH_TOKEN_KEY = "REFRESH_TOKEN";
 
     private final SupabaseAuthService supabaseAuthService;
     private final ProfileRepository profileRepository;
@@ -38,39 +42,12 @@ public class AuthLoginService {
     @Transactional
     public String processLogin(String code, String verifier, HttpServletRequest request, HttpServletResponse response)
             throws Exception {
+        var loginContext = authenticateWithSupabase(code, verifier);
+        var auth = createAuthentication(loginContext.userId(), loginContext.accessToken());
 
-        Map<String, Object> tokenData = supabaseAuthService.exchangeCodeForToken(code, verifier);
-        String accessToken = (String) tokenData.get("access_token");
-        String refreshToken = (String) tokenData.get("refresh_token");
-
-        Map<String, Object> userMap = (Map<String, Object>) tokenData.get("user");
-        String userIdStr = (String) userMap.get("id");
-        String email = (String) userMap.get("email");
-        UUID profileId = UUID.fromString(userIdStr);
-
-        // 사용자 메타데이터 추출 (중복 제거)
-        UserMetadata metadata = extractUserMetadata(email, userMap);
-
-        // 프로필 동기화 (중복 제거)
-        syncUserProfile(profileId, email, metadata.name(), metadata.avatar());
-
-        SecurityContext context = SecurityContextHolder.createEmptyContext();
-        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                userIdStr,
-                accessToken,
-                List.of(new SimpleGrantedAuthority("ROLE_USER")));
-        context.setAuthentication(auth);
-        SecurityContextHolder.setContext(context);
-        securityContextRepository.saveContext(context, request, response);
-
-        HttpSession session = request.getSession();
-        session.setAttribute("ACCESS_TOKEN", accessToken);
-        session.setAttribute("USER_NAME", metadata.name());
-        if (refreshToken != null) {
-            session.setAttribute("REFRESH_TOKEN", refreshToken);
-        }
-
-        return userIdStr;
+        saveSecurityContext(auth, request, response);
+        storeSessionAttributes(request.getSession(), loginContext.metadata().name(), loginContext.accessToken(), loginContext.refreshToken());
+        return loginContext.userId();
     }
 
     /**
@@ -85,36 +62,9 @@ public class AuthLoginService {
      */
     @Transactional
     public String processLoginForNativeApp(String code, String verifier) throws Exception {
-        Map<String, Object> tokenData = supabaseAuthService.exchangeCodeForToken(code, verifier);
-        String accessToken = (String) tokenData.get("access_token");
-        String refreshToken = (String) tokenData.get("refresh_token");
-
-        Map<String, Object> userMap = (Map<String, Object>) tokenData.get("user");
-        String userIdStr = (String) userMap.get("id");
-        String email = (String) userMap.get("email");
-        UUID profileId = UUID.fromString(userIdStr);
-
-        // 사용자 메타데이터 추출 (중복 제거)
-        UserMetadata metadata = extractUserMetadata(email, userMap);
-
-        // 프로필 동기화 (중복 제거)
-        syncUserProfile(profileId, email, metadata.name(), metadata.avatar());
-
-        // 인증 객체 생성
-        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                userIdStr,
-                accessToken,
-                List.of(new SimpleGrantedAuthority("ROLE_USER")));
-
-        // 세션에 저장할 속성들
-        Map<String, Object> sessionAttributes = new HashMap<>();
-        sessionAttributes.put("ACCESS_TOKEN", accessToken);
-        sessionAttributes.put("USER_NAME", metadata.name());
-        if (refreshToken != null) {
-            sessionAttributes.put("REFRESH_TOKEN", refreshToken);
-        }
-
-        // 일회용 토큰 생성 및 반환
+        var loginContext = authenticateWithSupabase(code, verifier);
+        var auth = createAuthentication(loginContext.userId(), loginContext.accessToken());
+        var sessionAttributes = createSessionAttributes(loginContext.metadata().name(), loginContext.accessToken(), loginContext.refreshToken());
         return authHandoverService.createOneTimeToken(auth, sessionAttributes);
     }
 
@@ -140,6 +90,53 @@ public class AuthLoginService {
         }
 
         return new UserMetadata(name, avatar);
+    }
+
+    private LoginContext authenticateWithSupabase(String code, String verifier) throws Exception {
+        Map<String, Object> tokenData = supabaseAuthService.exchangeCodeForToken(code, verifier);
+        var accessToken = (String) tokenData.get("access_token");
+        var refreshToken = (String) tokenData.get("refresh_token");
+
+        Map<String, Object> userMap = (Map<String, Object>) tokenData.get("user");
+        var userId = (String) userMap.get("id");
+        var email = (String) userMap.get("email");
+        var profileId = UUID.fromString(userId);
+        var metadata = extractUserMetadata(email, userMap);
+
+        syncUserProfile(profileId, email, metadata.name(), metadata.avatar());
+        return new LoginContext(userId, accessToken, refreshToken, metadata);
+    }
+
+    private UsernamePasswordAuthenticationToken createAuthentication(String userId, String accessToken) {
+        return new UsernamePasswordAuthenticationToken(
+                userId,
+                accessToken,
+                List.of(new SimpleGrantedAuthority(ROLE_USER)));
+    }
+
+    private void saveSecurityContext(
+            Authentication authentication,
+            HttpServletRequest request,
+            HttpServletResponse response) {
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(authentication);
+        SecurityContextHolder.setContext(context);
+        securityContextRepository.saveContext(context, request, response);
+    }
+
+    private void storeSessionAttributes(HttpSession session, String userName, String accessToken, String refreshToken) {
+        var sessionAttributes = createSessionAttributes(userName, accessToken, refreshToken);
+        sessionAttributes.forEach(session::setAttribute);
+    }
+
+    private Map<String, Object> createSessionAttributes(String userName, String accessToken, String refreshToken) {
+        Map<String, Object> sessionAttributes = new HashMap<>();
+        sessionAttributes.put(ACCESS_TOKEN_KEY, accessToken);
+        sessionAttributes.put(USER_NAME_KEY, userName);
+        if (refreshToken != null) {
+            sessionAttributes.put(REFRESH_TOKEN_KEY, refreshToken);
+        }
+        return sessionAttributes;
     }
 
     /**
@@ -171,5 +168,12 @@ public class AuthLoginService {
      * 사용자 메타데이터를 담는 Record
      */
     private record UserMetadata(String name, String avatar) {
+    }
+
+    private record LoginContext(
+            String userId,
+            String accessToken,
+            String refreshToken,
+            UserMetadata metadata) {
     }
 }

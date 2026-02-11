@@ -1,5 +1,6 @@
 package com.mindlog.domain.tag.repository;
 
+import com.mindlog.domain.tag.dto.DiaryTagSummary;
 import com.mindlog.domain.tag.entity.DiaryTag;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -16,6 +17,21 @@ public interface DiaryTagRepository extends JpaRepository<DiaryTag, Long> {
   // [추가] 목록 조회용 Fetch Join (N+1 문제 해결)
   @Query("SELECT dt FROM DiaryTag dt JOIN FETCH dt.emotionTag WHERE dt.diaryId IN :diaryIds")
   List<DiaryTag> findAllByDiaryIdIn(@Param("diaryIds") List<Long> diaryIds);
+
+  @Query("""
+      SELECT new com.mindlog.domain.tag.dto.DiaryTagSummary(
+          dt.diaryId,
+          et.id,
+          et.name,
+          et.color,
+          et.category,
+          et.isDefault
+      )
+      FROM DiaryTag dt
+      JOIN dt.emotionTag et
+      WHERE dt.diaryId IN :diaryIds
+      """)
+  List<DiaryTagSummary> findTagSummaryByDiaryIds(@Param("diaryIds") List<Long> diaryIds);
 
   // [추가] 특정 일기의 모든 태그 연결 삭제
   @Modifying

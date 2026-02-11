@@ -1,66 +1,59 @@
-# 1단계: 빌드 스테이지
+# syntax=docker/dockerfile:1.7
+
+#############################################
+# 1) Build stage
+#############################################
 FROM eclipse-temurin:25-jdk-alpine AS builder
 WORKDIR /app
 
-# 빌드에 필요한 시스템 종속성 추가 (Node.js 및 npm 설치)
-# Alpine 환경이므로 apk를 사용
 RUN apk add --no-cache nodejs npm
 
-# 1) Gradle Wrapper 및 설정 파일 복사 (캐시 효율화)
 COPY gradlew .
 COPY gradle gradle
 COPY build.gradle settings.gradle ./
-
-# 2) Node.js/Tailwind 관련 설정 파일 복사
-# npmInstall 및 프론트엔드 빌드를 위해 반드시 필요
 COPY package.json package-lock.json* tailwind.config.js* ./
 
-# 실행 권한 부여
 RUN chmod +x ./gradlew
 
-# 3) 의존성 다운로드 (Java 라이브러리)
-RUN ./gradlew dependencies --no-daemon
+RUN --mount=type=cache,target=/root/.gradle \
+    ./gradlew --no-daemon dependencies
 
-# 4) 소스 코드 전체 복사 및 빌드 수행
 COPY src src
-RUN ./gradlew clean bootJar --no-daemon
 
-# 2단계: 실행 스테이지
+RUN --mount=type=cache,target=/root/.gradle \
+    ./gradlew --no-daemon clean bootJar -x test
+
+#############################################
+# 2) Runtime stage
+#############################################
 FROM eclipse-temurin:25-jre-alpine AS runtime
 WORKDIR /app
 
-# 시스템 유저 생성 및 앱 폴더 소유권 부여
-RUN addgroup -S worker -g 1000 && \
-    adduser -S worker -u 1000 -G worker -D && \
-    chown -R worker:worker /app
+RUN addgroup -S worker -g 1000 \
+    && adduser -S worker -u 1000 -G worker -D \
+    && chown -R worker:worker /app
 
-# 빌드된 jar 복사 (소유권 반영)
-COPY --from=builder --chown=worker:worker /app/build/libs/*.jar app.jar
+COPY --from=builder --chown=worker:worker /app/build/libs/*.jar /app/app.jar
 
-# worker 유저로 전환 후 CDS 생성 작업을 수행
 USER worker
 
-# AppCDS 생성 (AOT)
-# 기본 GC(G1GC)를 사용하므로 별도의 GC 옵션 없이 실행
-# Dummy 환경 변수를 주입하여 컨텍스트 로딩 시 DB 에러 방지 (최소한의 로딩 유도)
-RUN DB_URL=jdbc:postgresql://localhost:5432/dummy \
-    DB_USERNAME=dummy \
-    DB_PASSWORD=dummy \
-    SUPABASE_URL=dummy \
-    SUPABASE_ANON_KEY=dummy \
-    SERVER_IP=127.0.0.1 \
-    SERVER_PORT=8080 \
-    java -XX:ArchiveClassesAtExit=app.jsa \
-         -Dspring.profiles.active=prod \
-         -Dspring.context.exit=onRefresh \
-         -jar app.jar || true
+ENV SPRING_PROFILES_ACTIVE=prod \
+    SPRING_THREADS_VIRTUAL_ENABLED=true \
+    SPRING_MVC_SERVLET_LOAD_ON_STARTUP=1 \
+    SPRING_MAIN_LAZY_INITIALIZATION=false \
+    MINDLOG_PERFORMANCE_WARMUP_DB_ON_STARTUP=true \
+    MINDLOG_LOGGING_REQUEST_LOG_NORMAL_INFO=false
 
-# 실행 옵션
-# -XX:SharedArchiveFile을 통해 위에서 생성한 app.jsa를 적용
-ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0 \
-               -XX:SharedArchiveFile=app.jsa \
-               -Dspring.profiles.active=prod"
+ENV JAVA_OPTS="-XX:InitialRAMPercentage=25.0 \
+               -XX:MaxRAMPercentage=75.0 \
+               -XX:+UseG1GC \
+               -XX:+UseStringDeduplication \
+               -Dfile.encoding=UTF-8 \
+               -Djava.security.egd=file:/dev/./urandom"
 
 EXPOSE 8080
 
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+HEALTHCHECK --interval=10s --timeout=3s --start-period=10s --retries=10 \
+  CMD wget -q -T 2 -O - http://127.0.0.1:8080/actuator/health/readiness | grep -q '"status":"UP"'
+
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]
