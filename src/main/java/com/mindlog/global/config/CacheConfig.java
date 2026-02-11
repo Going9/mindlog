@@ -1,6 +1,5 @@
 package com.mindlog.global.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import java.util.Map;
 import org.springframework.cache.annotation.EnableCaching;
@@ -9,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.JdkSerializationRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 
 @Configuration
@@ -17,23 +16,26 @@ import org.springframework.data.redis.serializer.RedisSerializationContext;
 public class CacheConfig {
 
     @Bean
-    public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory, ObjectMapper objectMapper) {
+    public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
         var valueSerializer = RedisSerializationContext.SerializationPair.fromSerializer(
-                new GenericJackson2JsonRedisSerializer(objectMapper)
+                new JdkSerializationRedisSerializer()
         );
 
         var defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
+                .prefixCacheNameWith("v2::")
                 .serializeValuesWith(valueSerializer)
                 .disableCachingNullValues();
 
         var cacheConfigs = Map.of(
                 "emotionAnalysis",
                 RedisCacheConfiguration.defaultCacheConfig()
+                        .prefixCacheNameWith("v2::")
                         .serializeValuesWith(valueSerializer)
                         .entryTtl(Duration.ofSeconds(90))
                         .disableCachingNullValues(),
                 "monthlyDiaries",
                 RedisCacheConfiguration.defaultCacheConfig()
+                        .prefixCacheNameWith("v2::")
                         .serializeValuesWith(valueSerializer)
                         .entryTtl(Duration.ofSeconds(60))
                         .disableCachingNullValues()

@@ -1,5 +1,6 @@
 package com.mindlog.domain.insight.dto;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 
 public record DailyTrendPoint(
@@ -9,5 +10,5 @@ public record DailyTrendPoint(
         long neutralCount,
         long totalCount,
         double avgIntensity
-) {
+) implements Serializable {
 }

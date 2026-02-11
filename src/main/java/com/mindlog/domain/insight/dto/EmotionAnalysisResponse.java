@@ -1,5 +1,6 @@
 package com.mindlog.domain.insight.dto;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -11,5 +12,5 @@ public record EmotionAnalysisResponse(
         List<TagStat> topTags,
         List<DailyTrendPoint> dailyTrend,
         List<WeeklyTrendPoint> weeklyTrend
-) {
+) implements Serializable {
 }
