@@ -29,6 +29,7 @@ logging:
 mindlog:
   performance:
     warmup-http-on-startup: true
+    reject-traffic-until-warmup-complete: true
     warmup-http-connect-timeout-ms: 3000
     warmup-http-request-timeout-ms: 30000
   logging:
