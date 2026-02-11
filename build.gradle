@@ -46,6 +46,7 @@ dependencies {
 
 	// Source: https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
 	implementation("com.fasterxml.jackson.core:jackson-databind:2.20.1")
+	implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
 
 	// Spring Session Redis
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
