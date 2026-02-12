@@ -1,6 +1,7 @@
 package com.mindlog.global.config;
 
 import com.mindlog.domain.auth.service.AuthHandoverService;
+import java.net.ConnectException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -41,6 +42,9 @@ public class BusinessWarmupRunner implements ApplicationRunner {
     @Value("${mindlog.performance.warmup-business-on-startup:true}")
     private boolean warmupEnabled;
 
+    @Value("${mindlog.performance.warmup-business-async:false}")
+    private boolean warmupAsync;
+
     @Value("${mindlog.performance.warmup-profile-id:}")
     private String warmupProfileId;
 
@@ -64,6 +68,16 @@ public class BusinessWarmupRunner implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
+        if (warmupAsync) {
+            Thread.ofVirtual().name("mindlog-biz-warmup").start(this::runWarmupSafely);
+            log.info("[BIZ-WARMUP] 비동기 워밍업을 시작합니다.");
+            return;
+        }
+
+        runWarmupSafely();
+    }
+
+    private void runWarmupSafely() {
         if (!warmupEnabled) {
             return;
         }
@@ -143,11 +157,14 @@ public class BusinessWarmupRunner implements ApplicationRunner {
 
     private void warmupPaths(HttpClient client, String csvPaths, String acceptHeader, String sessionCookie) {
         for (var path : parsePaths(csvPaths)) {
-            warmupPath(client, path, acceptHeader, sessionCookie);
+            var shouldContinue = warmupPath(client, path, acceptHeader, sessionCookie);
+            if (!shouldContinue) {
+                break;
+            }
         }
     }
 
-    private void warmupPath(HttpClient client, String path, String acceptHeader, String sessionCookie) {
+    private boolean warmupPath(HttpClient client, String path, String acceptHeader, String sessionCookie) {
         var uri = URI.create("http://127.0.0.1:" + serverPort + normalizeContextPath() + path);
         var request = HttpRequest.newBuilder(uri)
                 .GET()
@@ -168,6 +185,7 @@ public class BusinessWarmupRunner implements ApplicationRunner {
             } else {
                 log.info("[BIZ-WARMUP] 요청 완료 - path={}, status={}, elapsed={}ms", path, status, elapsed);
             }
+            return true;
         } catch (Exception e) {
             var elapsed = System.currentTimeMillis() - startedAt;
             if (e instanceof InterruptedException) {
@@ -179,6 +197,12 @@ public class BusinessWarmupRunner implements ApplicationRunner {
                     e.getClass().getSimpleName(),
                     e.getMessage());
             log.debug("[BIZ-WARMUP] 요청 예외 상세 - path={}", path, e);
+
+            if (e instanceof ConnectException) {
+                log.warn("[BIZ-WARMUP] 로컬 서버 연결 실패가 발생해 남은 워밍업 경로는 중단합니다.");
+                return false;
+            }
+            return true;
         }
     }
 

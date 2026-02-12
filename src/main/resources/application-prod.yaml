@@ -29,17 +29,16 @@ logging:
 mindlog:
   performance:
     warmup-profile-id: ${WARMUP_PROFILE_ID:}
-    warmup-redis-on-startup: true
+    warmup-redis-on-startup: false
     warmup-business-on-startup: true
-    warmup-http-on-startup: true
-    warmup-supabase-on-startup: true
+    warmup-business-async: true
+    warmup-business-paths: /diaries,/insights/emotions
+    warmup-static-paths:
+    warmup-http-on-startup: false
+    warmup-supabase-on-startup: false
     reject-traffic-until-warmup-complete: false
-    warmup-business-connect-timeout-ms: 600000
-    warmup-business-request-timeout-ms: 600000
-    warmup-http-connect-timeout-ms: 600000
-    warmup-http-request-timeout-ms: 600000
-    warmup-supabase-connect-timeout-ms: 600000
-    warmup-supabase-request-timeout-ms: 600000
+    warmup-business-connect-timeout-ms: 5000
+    warmup-business-request-timeout-ms: 90000
   logging:
     request:
       include-query-string: false

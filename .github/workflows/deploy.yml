@@ -27,7 +27,7 @@ jobs:
 
             options:
               ports: "8080"
-              healthz: /actuator/health/liveness
+              healthz: /healthz
               dockerfile: Dockerfile
               env:
                 - name: DB_URL
