@@ -41,6 +41,23 @@
     -webkit-tap-highlight-color: transparent;
     user-select: none;
   }
+
+  /* WebView 전환 시 깜빡임/버벅임 완화를 위한 네이티브 전용 최적화 */
+  .is-native .surface-panel,
+  .is-native .surface-panel-strong,
+  .is-native .backdrop-blur-sm,
+  .is-native .backdrop-blur-md,
+  .is-native .backdrop-filter {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .is-native .animate-fade-in-up,
+  .is-native .delay-100,
+  .is-native .delay-200 {
+    animation: none !important;
+    transition-delay: 0s !important;
+  }
 }
 
 @layer components {
