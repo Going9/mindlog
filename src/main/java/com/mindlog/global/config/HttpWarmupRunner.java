@@ -86,7 +86,15 @@ public class HttpWarmupRunner implements ApplicationRunner {
             }
         } catch (Exception e) {
             var elapsed = System.currentTimeMillis() - startedAt;
-            log.warn("[WARMUP] HTTP 워밍업 예외 - path={}, elapsed={}ms, message={}", path, elapsed, e.getMessage());
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            log.warn("[WARMUP] HTTP 워밍업 예외 - path={}, elapsed={}ms, exception={}, message={}",
+                    path,
+                    elapsed,
+                    e.getClass().getSimpleName(),
+                    e.getMessage());
+            log.debug("[WARMUP] HTTP 워밍업 예외 상세 - path={}", path, e);
         }
     }
 

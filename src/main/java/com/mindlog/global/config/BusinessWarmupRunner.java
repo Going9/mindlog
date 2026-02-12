@@ -92,10 +92,15 @@ public class BusinessWarmupRunner implements ApplicationRunner {
             log.info("[BIZ-WARMUP] 비즈니스 워밍업 완료 - profileId={}, elapsed={}ms", profileId, elapsed);
         } catch (Exception e) {
             var elapsed = System.currentTimeMillis() - startedAt;
-            log.warn("[BIZ-WARMUP] 비즈니스 워밍업 실패 - profileId={}, elapsed={}ms, message={}",
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            log.warn("[BIZ-WARMUP] 비즈니스 워밍업 실패 - profileId={}, elapsed={}ms, exception={}, message={}",
                     profileId,
                     elapsed,
+                    e.getClass().getSimpleName(),
                     e.getMessage());
+            log.debug("[BIZ-WARMUP] 비즈니스 워밍업 실패 상세", e);
         }
     }
 
@@ -165,7 +170,15 @@ public class BusinessWarmupRunner implements ApplicationRunner {
             }
         } catch (Exception e) {
             var elapsed = System.currentTimeMillis() - startedAt;
-            log.warn("[BIZ-WARMUP] 요청 예외 - path={}, elapsed={}ms, message={}", path, elapsed, e.getMessage());
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            log.warn("[BIZ-WARMUP] 요청 예외 - path={}, elapsed={}ms, exception={}, message={}",
+                    path,
+                    elapsed,
+                    e.getClass().getSimpleName(),
+                    e.getMessage());
+            log.debug("[BIZ-WARMUP] 요청 예외 상세 - path={}", path, e);
         }
     }
 

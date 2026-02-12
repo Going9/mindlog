@@ -73,7 +73,14 @@ public class SupabaseWarmupRunner implements ApplicationRunner {
             }
         } catch (Exception e) {
             long elapsed = System.currentTimeMillis() - startedAt;
-            log.warn("[SUPABASE] 워밍업 예외 - elapsed={}ms, message={}", elapsed, e.getMessage());
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            log.warn("[SUPABASE] 워밍업 예외 - elapsed={}ms, exception={}, message={}",
+                    elapsed,
+                    e.getClass().getSimpleName(),
+                    e.getMessage());
+            log.debug("[SUPABASE] 워밍업 예외 상세", e);
         } finally {
             warmupStatus.markSupabaseWarmupCompleted();
         }
