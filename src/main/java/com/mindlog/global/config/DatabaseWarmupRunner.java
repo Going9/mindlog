@@ -27,26 +27,26 @@ public class DatabaseWarmupRunner implements ApplicationRunner {
             return;
         }
 
-        executeWarmup();
+        executeWarmup("startup");
     }
 
     public void warmupNow() {
-        executeWarmup();
+        executeWarmup("manual");
     }
 
-    private void executeWarmup() {
+    private void executeWarmup(String source) {
         long startedAt = System.currentTimeMillis();
         try (Connection connection = dataSource.getConnection()) {
             boolean valid = connection.isValid(2);
             long elapsed = System.currentTimeMillis() - startedAt;
             if (valid) {
-                log.info("[DB] 커넥션 풀 워밍업 완료 ({}ms)", elapsed);
+                log.info("[DB] 커넥션 풀 워밍업 완료 - source={}, elapsed={}ms", source, elapsed);
                 return;
             }
-            log.warn("[DB] 커넥션 검증 실패 - 워밍업이 정상 완료되지 않았습니다 ({}ms)", elapsed);
+            log.warn("[DB] 커넥션 검증 실패 - source={}, 워밍업이 정상 완료되지 않았습니다 ({}ms)", source, elapsed);
         } catch (Exception e) {
             long elapsed = System.currentTimeMillis() - startedAt;
-            log.warn("[DB] 워밍업 실패 ({}ms): {}", elapsed, e.getMessage());
+            log.warn("[DB] 워밍업 실패 - source={}, elapsed={}ms, message={}", source, elapsed, e.getMessage());
         }
     }
 }
