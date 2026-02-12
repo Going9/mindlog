@@ -27,7 +27,6 @@ jobs:
 
             options:
               ports: "8080"
-              healthz: /healthz
               dockerfile: Dockerfile
               env:
                 - name: DB_URL
