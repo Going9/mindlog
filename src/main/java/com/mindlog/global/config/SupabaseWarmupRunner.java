@@ -48,6 +48,14 @@ public class SupabaseWarmupRunner implements ApplicationRunner {
             return;
         }
 
+        executeWarmup();
+    }
+
+    public void warmupNow() {
+        executeWarmup();
+    }
+
+    private void executeWarmup() {
         long startedAt = System.currentTimeMillis();
         try {
             var client = HttpClient.newBuilder()

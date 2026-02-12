@@ -50,8 +50,17 @@ jobs:
                   value: ${{ secrets.REDIS_URL }}
                 - name: WARMUP_PROFILE_ID
                   value: ${{ secrets.WARMUP_PROFILE_ID }}
+                - name: MANUAL_WARMUP_TOKEN
+                  value: ${{ secrets.MANUAL_WARMUP_TOKEN }}
               args: []
             context:
               git:
                 url: git@github.com:${{ github.repository }}.git
                 ref: ${{ github.ref }}
+      - name: Trigger manual warmup
+        if: ${{ secrets.WARMUP_TRIGGER_URL != '' && secrets.MANUAL_WARMUP_TOKEN != '' }}
+        run: |
+          curl --fail --show-error --silent \
+            -X POST "${{ secrets.WARMUP_TRIGGER_URL }}" \
+            -H "X-Warmup-Token: ${{ secrets.MANUAL_WARMUP_TOKEN }}" \
+            -H "Content-Type: application/json"

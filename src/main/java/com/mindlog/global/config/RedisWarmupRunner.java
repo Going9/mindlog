@@ -30,6 +30,14 @@ public class RedisWarmupRunner implements ApplicationRunner {
             return;
         }
 
+        executeWarmup();
+    }
+
+    public void warmupNow() {
+        executeWarmup();
+    }
+
+    private void executeWarmup() {
         var startedAt = System.currentTimeMillis();
         try {
             var pong = redisTemplate.execute((RedisCallback<String>) connection -> connection.ping());

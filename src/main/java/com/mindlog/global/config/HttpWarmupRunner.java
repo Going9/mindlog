@@ -50,6 +50,14 @@ public class HttpWarmupRunner implements ApplicationRunner {
             return;
         }
 
+        executeWarmup();
+    }
+
+    public void warmupNow() {
+        executeWarmup();
+    }
+
+    private void executeWarmup() {
         var client = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofMillis(warmupHttpConnectTimeoutMs))
                 .build();

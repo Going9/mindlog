@@ -78,7 +78,9 @@ mindlog:
     warmup-db-on-startup: true
     warmup-redis-on-startup: true
     warmup-business-on-startup: true
+    warmup-business-async: false
     warmup-profile-id: ${WARMUP_PROFILE_ID:}
+    manual-warmup-token: ${MANUAL_WARMUP_TOKEN:}
     warmup-business-paths: /diaries,/insights/emotions
     warmup-static-paths: /css/output.css,/js/turbo-init.js,/js/stimulus-init.js,/js/preline.js,/js/libs/turbo.js,/js/libs/stimulus.js,/images/logo-wordmark.svg
     warmup-business-connect-timeout-ms: 2000

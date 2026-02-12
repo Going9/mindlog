@@ -69,16 +69,20 @@ public class BusinessWarmupRunner implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) {
         if (warmupAsync) {
-            Thread.ofVirtual().name("mindlog-biz-warmup").start(this::runWarmupSafely);
+            Thread.ofVirtual().name("mindlog-biz-warmup").start(() -> runWarmupSafely(false));
             log.info("[BIZ-WARMUP] 비동기 워밍업을 시작합니다.");
             return;
         }
 
-        runWarmupSafely();
+        runWarmupSafely(false);
     }
 
-    private void runWarmupSafely() {
-        if (!warmupEnabled) {
+    public void warmupNow() {
+        runWarmupSafely(true);
+    }
+
+    private void runWarmupSafely(boolean forceRun) {
+        if (!forceRun && !warmupEnabled) {
             return;
         }
         if (!StringUtils.hasText(warmupProfileId)) {

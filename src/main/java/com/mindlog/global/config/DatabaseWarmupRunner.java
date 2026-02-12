@@ -27,6 +27,14 @@ public class DatabaseWarmupRunner implements ApplicationRunner {
             return;
         }
 
+        executeWarmup();
+    }
+
+    public void warmupNow() {
+        executeWarmup();
+    }
+
+    private void executeWarmup() {
         long startedAt = System.currentTimeMillis();
         try (Connection connection = dataSource.getConnection()) {
             boolean valid = connection.isValid(2);

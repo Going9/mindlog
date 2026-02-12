@@ -28,6 +28,11 @@ logging:
 mindlog:
   performance:
     warmup-profile-id: ${WARMUP_PROFILE_ID:}
+    warmup-db-on-startup: false
+    warmup-redis-on-startup: false
+    warmup-business-on-startup: false
+    warmup-http-on-startup: false
+    warmup-supabase-on-startup: false
   logging:
     request:
       include-query-string: true

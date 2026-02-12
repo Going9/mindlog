@@ -30,8 +30,9 @@ mindlog:
   performance:
     warmup-profile-id: ${WARMUP_PROFILE_ID:}
     warmup-redis-on-startup: false
-    warmup-business-on-startup: true
-    warmup-business-async: true
+    warmup-db-on-startup: false
+    warmup-business-on-startup: false
+    warmup-business-async: false
     warmup-business-paths: /diaries,/insights/emotions
     warmup-static-paths:
     warmup-http-on-startup: false
