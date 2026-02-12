@@ -27,6 +27,7 @@ jobs:
 
             options:
               ports: "8080"
+              healthz: /actuator/health/readiness
               dockerfile: Dockerfile
               env:
                 - name: DB_URL
@@ -47,6 +48,8 @@ jobs:
                   value: ${{ secrets.SPRING_PROFILES_ACTIVE }}
                 - name: REDIS_URL
                   value: ${{ secrets.REDIS_URL }}
+                - name: REDIS_URL
+                  value: ${{ secrets.WARMUP_PROFILE_ID }}
               args: []
             context:
               git:
