@@ -37,7 +37,10 @@ mindlog:
     warmup-static-paths:
     warmup-http-on-startup: false
     warmup-supabase-on-startup: false
-    reject-traffic-until-warmup-complete: false
+    startup-warmup-on-startup: true
+    startup-warmup-delay-seconds: 10
+    reject-traffic-until-warmup-complete: true
+    warmup-expected-wait-seconds: 90
     warmup-business-connect-timeout-ms: 5000
     warmup-business-request-timeout-ms: 90000
   logging:

@@ -8,6 +8,7 @@ public class WarmupStatus {
 
     private final AtomicBoolean httpWarmupCompleted = new AtomicBoolean(false);
     private final AtomicBoolean supabaseWarmupCompleted = new AtomicBoolean(false);
+    private final AtomicBoolean startupWarmupCompleted = new AtomicBoolean(false);
 
     public void markHttpWarmupCompleted() {
         httpWarmupCompleted.set(true);
@@ -23,5 +24,13 @@ public class WarmupStatus {
 
     public boolean isSupabaseWarmupCompleted() {
         return supabaseWarmupCompleted.get();
+    }
+
+    public void markStartupWarmupCompleted() {
+        startupWarmupCompleted.set(true);
+    }
+
+    public boolean isStartupWarmupCompleted() {
+        return startupWarmupCompleted.get();
     }
 }

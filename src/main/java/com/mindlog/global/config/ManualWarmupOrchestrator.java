@@ -15,6 +15,7 @@ public class ManualWarmupOrchestrator {
     private final BusinessWarmupRunner businessWarmupRunner;
     private final HttpWarmupRunner httpWarmupRunner;
     private final SupabaseWarmupRunner supabaseWarmupRunner;
+    private final WarmupStatus warmupStatus;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
 
@@ -26,11 +27,7 @@ public class ManualWarmupOrchestrator {
         Thread.ofVirtual().name("mindlog-manual-warmup").start(() -> {
             try {
                 log.info("[MANUAL-WARMUP] 수동 워밍업을 시작합니다.");
-                databaseWarmupRunner.warmupNow();
-                redisWarmupRunner.warmupNow();
-                businessWarmupRunner.warmupNow();
-                httpWarmupRunner.warmupNow();
-                supabaseWarmupRunner.warmupNow();
+                runWarmupSequence();
                 log.info("[MANUAL-WARMUP] 수동 워밍업을 완료했습니다.");
             } catch (Exception e) {
                 log.warn("[MANUAL-WARMUP] 수동 워밍업 실행 중 예외 - exception={}, message={}",
@@ -43,5 +40,34 @@ public class ManualWarmupOrchestrator {
         });
 
         return true;
+    }
+
+    public void runStartupWarmup() {
+        if (!running.compareAndSet(false, true)) {
+            log.info("[STARTUP-WARMUP] 이미 워밍업이 실행 중이라 추가 실행을 건너뜁니다.");
+            return;
+        }
+
+        try {
+            log.info("[STARTUP-WARMUP] 시작 직후 워밍업을 시작합니다.");
+            runWarmupSequence();
+            log.info("[STARTUP-WARMUP] 시작 직후 워밍업을 완료했습니다.");
+        } catch (Exception e) {
+            log.warn("[STARTUP-WARMUP] 실행 중 예외 - exception={}, message={}",
+                    e.getClass().getSimpleName(),
+                    e.getMessage());
+            log.debug("[STARTUP-WARMUP] 예외 상세", e);
+        } finally {
+            warmupStatus.markStartupWarmupCompleted();
+            running.set(false);
+        }
+    }
+
+    private void runWarmupSequence() {
+        databaseWarmupRunner.warmupNow();
+        redisWarmupRunner.warmupNow();
+        businessWarmupRunner.warmupNow();
+        httpWarmupRunner.warmupNow();
+        supabaseWarmupRunner.warmupNow();
     }
 }

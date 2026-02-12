@@ -87,7 +87,10 @@ mindlog:
     warmup-business-request-timeout-ms: 5000
     warmup-http-on-startup: false
     warmup-supabase-on-startup: false
+    startup-warmup-on-startup: false
+    startup-warmup-delay-seconds: 10
     reject-traffic-until-warmup-complete: false
+    warmup-expected-wait-seconds: 90
     warmup-http-paths: /,/auth/login
     warmup-supabase-path: /auth/v1/settings
     warmup-supabase-connect-timeout-ms: 2000
