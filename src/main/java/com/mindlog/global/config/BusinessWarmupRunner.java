@@ -1,8 +1,6 @@
 package com.mindlog.global.config;
 
 import com.mindlog.domain.auth.service.AuthHandoverService;
-import java.net.CookieManager;
-import java.net.CookiePolicy;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -12,6 +10,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +31,7 @@ import org.springframework.web.util.UriUtils;
 public class BusinessWarmupRunner implements ApplicationRunner {
 
     private static final String WARMUP_USER_AGENT = "mindlog-warmup/1.0";
+    private static final String SESSION_COOKIE_NAME = "SESSION";
     private static final String ACCESS_TOKEN_KEY = "ACCESS_TOKEN";
     private static final String USER_NAME_KEY = "USER_NAME";
     private static final String REFRESH_TOKEN_KEY = "REFRESH_TOKEN";
@@ -79,15 +79,14 @@ public class BusinessWarmupRunner implements ApplicationRunner {
 
         var client = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofMillis(connectTimeoutMs))
-                .cookieHandler(new CookieManager(null, CookiePolicy.ACCEPT_ALL))
                 .build();
 
         var startedAt = System.currentTimeMillis();
 
         try {
-            bootstrapAuthenticatedSession(client, profileId);
-            warmupPaths(client, warmupBusinessPaths, "text/html");
-            warmupPaths(client, warmupStaticPaths, "*/*");
+            var sessionCookie = bootstrapAuthenticatedSession(client, profileId);
+            warmupPaths(client, warmupBusinessPaths, "text/html", sessionCookie);
+            warmupPaths(client, warmupStaticPaths, "*/*", sessionCookie);
 
             var elapsed = System.currentTimeMillis() - startedAt;
             log.info("[BIZ-WARMUP] 비즈니스 워밍업 완료 - profileId={}, elapsed={}ms", profileId, elapsed);
@@ -100,7 +99,7 @@ public class BusinessWarmupRunner implements ApplicationRunner {
         }
     }
 
-    private void bootstrapAuthenticatedSession(HttpClient client, UUID profileId) throws Exception {
+    private String bootstrapAuthenticatedSession(HttpClient client, UUID profileId) throws Exception {
         var auth = new UsernamePasswordAuthenticationToken(
                 profileId.toString(),
                 "N/A",
@@ -129,22 +128,28 @@ public class BusinessWarmupRunner implements ApplicationRunner {
         if (response.statusCode() >= 400) {
             throw new IllegalStateException("auth exchange failed: status=" + response.statusCode());
         }
+        var sessionCookie = extractSessionCookie(response);
+        if (sessionCookie == null) {
+            throw new IllegalStateException("auth exchange succeeded but SESSION cookie is missing");
+        }
         log.info("[BIZ-WARMUP] 인증 세션 생성 완료 - status={}, elapsed={}ms", response.statusCode(), elapsed);
+        return sessionCookie;
     }
 
-    private void warmupPaths(HttpClient client, String csvPaths, String acceptHeader) {
+    private void warmupPaths(HttpClient client, String csvPaths, String acceptHeader, String sessionCookie) {
         for (var path : parsePaths(csvPaths)) {
-            warmupPath(client, path, acceptHeader);
+            warmupPath(client, path, acceptHeader, sessionCookie);
         }
     }
 
-    private void warmupPath(HttpClient client, String path, String acceptHeader) {
+    private void warmupPath(HttpClient client, String path, String acceptHeader, String sessionCookie) {
         var uri = URI.create("http://127.0.0.1:" + serverPort + normalizeContextPath() + path);
         var request = HttpRequest.newBuilder(uri)
                 .GET()
                 .timeout(Duration.ofMillis(requestTimeoutMs))
                 .header("Accept", acceptHeader)
                 .header("User-Agent", WARMUP_USER_AGENT)
+                .header("Cookie", sessionCookie)
                 .build();
 
         var startedAt = System.currentTimeMillis();
@@ -153,7 +158,7 @@ public class BusinessWarmupRunner implements ApplicationRunner {
             var elapsed = System.currentTimeMillis() - startedAt;
             var status = response.statusCode();
 
-            if (status >= 400) {
+            if (status >= 300) {
                 log.warn("[BIZ-WARMUP] 요청 실패 - path={}, status={}, elapsed={}ms", path, status, elapsed);
             } else {
                 log.info("[BIZ-WARMUP] 요청 완료 - path={}, status={}, elapsed={}ms", path, status, elapsed);
@@ -194,5 +199,27 @@ public class BusinessWarmupRunner implements ApplicationRunner {
             return "";
         }
         return contextPath.startsWith("/") ? contextPath : "/" + contextPath;
+    }
+
+    private String extractSessionCookie(HttpResponse<?> response) {
+        return response.headers()
+                .allValues("set-cookie")
+                .stream()
+                .map(this::toCookieNameValue)
+                .flatMap(Optional::stream)
+                .filter(cookie -> cookie.startsWith(SESSION_COOKIE_NAME + "="))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private Optional<String> toCookieNameValue(String setCookieHeader) {
+        if (!StringUtils.hasText(setCookieHeader)) {
+            return Optional.empty();
+        }
+        var semicolonIndex = setCookieHeader.indexOf(';');
+        if (semicolonIndex <= 0) {
+            return Optional.of(setCookieHeader.trim());
+        }
+        return Optional.of(setCookieHeader.substring(0, semicolonIndex).trim());
     }
 }
