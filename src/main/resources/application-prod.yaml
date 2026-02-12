@@ -33,7 +33,7 @@ mindlog:
     warmup-business-on-startup: true
     warmup-http-on-startup: true
     warmup-supabase-on-startup: true
-    reject-traffic-until-warmup-complete: true
+    reject-traffic-until-warmup-complete: false
     warmup-business-connect-timeout-ms: 600000
     warmup-business-request-timeout-ms: 600000
     warmup-http-connect-timeout-ms: 600000
