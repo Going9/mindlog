@@ -17,7 +17,7 @@
         </a>
     </div>
 
-    <form method="get" th:action="@{/insights/emotions}" class="mb-6 surface-panel px-4 py-4 space-y-3">
+    <form method="get" th:action="@{/insights/emotions}" class="mb-6 surface-panel px-4 py-4 space-y-3" data-turbo-action="replace">
         <div class="flex flex-wrap items-end gap-3">
             <div class="flex items-center gap-2">
                 <label for="from-date" class="text-sm font-medium text-stone-600 whitespace-nowrap">시작일</label>

@@ -28,6 +28,7 @@
   <div class="mb-6 surface-panel px-4 py-4">
     <div class="grid grid-cols-[auto,1fr,auto] items-center gap-3">
       <a th:href="@{/diaries(year=${prevYear},month=${prevMonth},sort=${sort})}"
+         data-turbo-action="replace"
          class="btn-secondary whitespace-nowrap"
          aria-label="이전 달 보기">
         <span aria-hidden="true">←</span>
@@ -36,6 +37,7 @@
       <p class="text-xl md:text-2xl font-semibold text-stone-700 tracking-tight text-center whitespace-nowrap"
          th:text="${monthLabel}">2026년 2월</p>
       <a th:href="@{/diaries(year=${nextYear},month=${nextMonth},sort=${sort})}"
+         data-turbo-action="replace"
          class="btn-secondary whitespace-nowrap"
          aria-label="다음 달 보기">
         <span>다음 달</span>
@@ -45,7 +47,7 @@
   </div>
 
   <div class="mb-4 surface-panel px-4 py-4 space-y-4">
-    <form method="get" th:action="@{/diaries}" class="space-y-3">
+    <form method="get" th:action="@{/diaries}" class="space-y-3" data-turbo-action="replace">
       <input type="hidden" name="sort" th:value="${sort}">
       <div class="flex items-center gap-2.5 overflow-x-auto whitespace-nowrap pb-1">
         <span class="text-sm font-medium text-stone-600 whitespace-nowrap">연도</span>
@@ -77,19 +79,23 @@
       <div class="inline-flex items-center rounded-xl border border-stone-200/90 bg-white/70 p-1">
         <a th:if="${isSearchMode}"
            th:href="@{/diaries(q=${keyword},sort='latest',page=0)}"
+           data-turbo-action="replace"
            class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
            th:classappend="${sort == 'latest'} ? ' bg-stone-800 text-white' : ' text-stone-600 hover:text-stone-800'">최신순</a>
         <a th:unless="${isSearchMode}"
            th:href="@{/diaries(year=${year},month=${month},sort='latest')}"
+           data-turbo-action="replace"
            class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
            th:classappend="${sort == 'latest'} ? ' bg-stone-800 text-white' : ' text-stone-600 hover:text-stone-800'">최신순</a>
 
         <a th:if="${isSearchMode}"
            th:href="@{/diaries(q=${keyword},sort='oldest',page=0)}"
+           data-turbo-action="replace"
            class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
            th:classappend="${sort == 'oldest'} ? ' bg-stone-800 text-white' : ' text-stone-600 hover:text-stone-800'">오래된순</a>
         <a th:unless="${isSearchMode}"
            th:href="@{/diaries(year=${year},month=${month},sort='oldest')}"
+           data-turbo-action="replace"
            class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
            th:classappend="${sort == 'oldest'} ? ' bg-stone-800 text-white' : ' text-stone-600 hover:text-stone-800'">오래된순</a>
       </div>
@@ -105,7 +111,7 @@
       </div>
     </summary>
 
-    <form method="get" th:action="@{/diaries}" class="mt-4 space-y-4">
+    <form method="get" th:action="@{/diaries}" class="mt-4 space-y-4" data-turbo-action="replace">
       <input type="hidden" name="page" value="0">
       <div class="flex flex-col gap-1.5">
         <label for="q-input" class="text-sm font-medium text-stone-600">검색어</label>
@@ -132,7 +138,7 @@
 
         <div class="flex items-center gap-2">
           <button type="submit" class="btn-primary">검색</button>
-          <a th:href="@{/diaries(year=${year},month=${month},sort=${sort})}" class="btn-secondary">초기화</a>
+          <a th:href="@{/diaries(year=${year},month=${month},sort=${sort})}" class="btn-secondary" data-turbo-action="replace">초기화</a>
         </div>
       </div>
     </form>
@@ -196,9 +202,9 @@
   </div>
 
   <div th:if="${isSearchMode and (hasPrev or hasNext)}" class="mt-8 flex items-center justify-center gap-3">
-    <a th:if="${hasPrev}" th:href="@{/diaries(q=${keyword},sort=${sort},page=${prevPage})}" class="btn-secondary">이전</a>
+    <a th:if="${hasPrev}" th:href="@{/diaries(q=${keyword},sort=${sort},page=${prevPage})}" class="btn-secondary" data-turbo-action="replace">이전</a>
     <span class="text-sm text-stone-500" th:text="(${page} + 1) + ' / ' + ${totalPages}">1 / 1</span>
-    <a th:if="${hasNext}" th:href="@{/diaries(q=${keyword},sort=${sort},page=${nextPage})}" class="btn-secondary">다음</a>
+    <a th:if="${hasNext}" th:href="@{/diaries(q=${keyword},sort=${sort},page=${nextPage})}" class="btn-secondary" data-turbo-action="replace">다음</a>
   </div>
 </div>
 </body>
