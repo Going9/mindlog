@@ -22,7 +22,14 @@ public class GlobalModelAdvice {
     @ModelAttribute("isNative")
     public boolean isNative(HttpServletRequest request) {
         String userAgent = request.getHeader("User-Agent");
-        return userAgent != null && userAgent.contains("Mindlog");
+        if (userAgent == null || userAgent.isBlank()) {
+            return false;
+        }
+
+        String normalizedUserAgent = userAgent.toLowerCase();
+        return normalizedUserAgent.contains("mindlog")
+                || normalizedUserAgent.contains("hotwire native")
+                || normalizedUserAgent.contains("turbo native");
     }
 
     @ModelAttribute("isTurboFrame")

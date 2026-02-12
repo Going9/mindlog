@@ -164,7 +164,12 @@ if (window.__mindlogTurboInitialized) {
         console.log("[Mindlog] Turbo 화면 로드 완료")
 
         if (typeof HSStaticMethods !== 'undefined') {
-            HSStaticMethods.autoInit()
+            const isNative = document.body.classList.contains("is-native")
+            if (isNative) {
+                HSStaticMethods.autoInit(["collapse", "overlay"])
+            } else {
+                HSStaticMethods.autoInit()
+            }
         }
 
         closeNativeMenuIfNeeded()

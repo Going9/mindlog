@@ -118,9 +118,13 @@ public class AuthController {
         HttpSession session = request.getSession();
         log.debug("[AUTH] callback session - id={}, isNew={}", maskSessionId(session.getId()), session.isNew());
 
-        // 네이티브 앱 여부 판별 (source 파라미터 또는 User-Agent로 판단)
-        var isNativeApp = APP_SOURCE.equals(source) || isNativeAppRequest(request);
-        log.debug("[AUTH] 네이티브 앱 여부: {}", isNativeApp);
+        // 네이티브 앱 여부 판별:
+        // 1) source=app 이거나
+        // 2) verifier(v)가 콜백에 포함된 앱 플로우이거나
+        // 3) User-Agent/세션 기반 앱 요청으로 감지된 경우
+        var hasEncodedVerifier = encodedVerifier != null && !encodedVerifier.isEmpty();
+        var isNativeApp = APP_SOURCE.equals(source) || hasEncodedVerifier || isNativeAppRequest(request);
+        log.debug("[AUTH] 네이티브 앱 여부: {} (source={}, hasVerifier={})", isNativeApp, source, hasEncodedVerifier);
 
         String verifier;
         if (encodedVerifier != null && !encodedVerifier.isEmpty()) {

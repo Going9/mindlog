@@ -6,8 +6,7 @@
 
 <div class="page-shell" layout:fragment="content">
 
-    <turbo-frame id="diary_context">
-        <div data-controller="tag">
+    <div data-controller="tag">
 
         <div class="text-center space-y-2 mb-6">
             <h1 class="page-title" th:text="${diaryId == null ? '오늘의 기록' : '기록 수정'}"></h1>
@@ -15,8 +14,7 @@
         </div>
 
         <form class="surface-panel-strong space-y-6 p-5 sm:p-7 pb-20" id="diary-form" method="post"
-            th:action="@{${diaryId == null ? '/diaries' : '/diaries/' + diaryId}}" th:object="${diaryRequest}"
-            data-turbo-frame="_top">
+            th:action="@{${diaryId == null ? '/diaries' : '/diaries/' + diaryId}}" th:object="${diaryRequest}">
 
             <input name="_method" th:value="${diaryId == null} ? '' : 'put'" type="hidden">
 
@@ -105,7 +103,6 @@
                 <!-- 버튼 영역 -->
                 <div class="mt-8 flex justify-end gap-x-2">
                     <a class="btn-secondary"
-                        th:data-turbo-frame="${diaryId == null ? '_top' : ''}"
                         th:href="@{${diaryId == null ? '/diaries' : '/diaries/' + diaryId}}">
                         <th:block th:replace="~{fragments/spinner :: loading-spinner('text-stone-700')}"></th:block>
                         <span class="loading-hide">취소</span>
@@ -122,8 +119,7 @@
             </div>
         </form>
 
-        </div>
-    </turbo-frame>
+    </div>
 </div>
 
 </html>

@@ -8,95 +8,92 @@
 
 <body>
     <div class="page-shell" layout:fragment="content">
-        <turbo-frame id="diary_context">
-            <div class="space-y-6">
-                <div class="surface-panel-strong p-5 sm:p-8 animate-fade-in-up">
-                    <div class="flex justify-between items-start mb-6 gap-3">
-                        <a class="btn-secondary text-xs sm:text-sm"
-                            data-turbo-frame="_top" th:href="@{/diaries}" aria-label="목록으로 돌아가기">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                            </svg>
-                            목록으로
-                        </a>
-
-                        <span class="chip-soft"
-                            th:text="${#temporals.format(diary.date, 'yyyy.MM.dd (E)')}">
-                            2024.01.01 (월)
-                        </span>
-                    </div>
-
-                    <div class="text-center space-y-4">
-                        <h1 class="page-title text-2xl sm:text-3xl" th:text="${diary.shortContent}">
-                            일기 제목
-                        </h1>
-
-                        <div class="flex flex-wrap justify-center gap-2">
-                            <span class="tag-chip text-xs"
-                                th:each="tag : ${diary.tags}"
-                                th:style="'border-color:' + ${tag.color} + '; color:' + ${tag.color}"
-                                th:text="${tag.name}">
-                                태그명
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="space-y-4 animate-fade-in-up delay-100">
-                    <div class="surface-panel p-6" th:if="${diary.situation}">
-                        <h3 class="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-3">상황</h3>
-                        <p class="text-stone-700 leading-relaxed whitespace-pre-wrap" th:text="${diary.situation}"></p>
-                    </div>
-
-                    <div class="surface-panel p-6" th:if="${diary.reaction}">
-                        <h3 class="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-3">나의 반응</h3>
-                        <p class="text-stone-700 leading-relaxed whitespace-pre-wrap" th:text="${diary.reaction}"></p>
-                    </div>
-
-                    <div class="surface-panel p-6" th:if="${diary.physicalSensation}">
-                        <h3 class="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-3">신체 감각</h3>
-                        <p class="text-stone-700 leading-relaxed whitespace-pre-wrap"
-                            th:text="${diary.physicalSensation}"></p>
-                    </div>
-
-                    <div class="surface-panel p-6" th:if="${diary.desiredReaction}">
-                        <h3 class="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-3">원했던 반응</h3>
-                        <p class="text-stone-700 leading-relaxed whitespace-pre-wrap"
-                            th:text="${diary.desiredReaction}"></p>
-                    </div>
-
-                    <div class="surface-panel p-6" th:if="${diary.gratitudeMoment}">
-                        <h3 class="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-3">감사한 순간</h3>
-                        <p class="text-stone-700 leading-relaxed whitespace-pre-wrap"
-                            th:text="${diary.gratitudeMoment}"></p>
-                    </div>
-
-                    <div class="surface-panel p-6" th:if="${diary.selfKindWords}">
-                        <h3 class="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-3">나에게 해주고 싶은 말</h3>
-                        <p class="text-stone-700 leading-relaxed whitespace-pre-wrap" th:text="${diary.selfKindWords}"></p>
-                    </div>
-                </div>
-
-                <footer class="flex justify-center gap-3 animate-fade-in-up delay-200">
-                    <a id="edit-link"
-                        class="btn-secondary"
-                        th:href="@{/diaries/{id}/edit(id=${diary.id})}">
-                        <th:block th:replace="~{fragments/spinner :: loading-spinner('text-stone-700')}"></th:block>
-                        <span>수정하기</span>
+        <div class="space-y-6">
+            <div class="surface-panel-strong p-5 sm:p-8 animate-fade-in-up">
+                <div class="flex justify-between items-start mb-6 gap-3">
+                    <a class="btn-secondary text-xs sm:text-sm"
+                        th:href="@{/diaries}" aria-label="목록으로 돌아가기">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                        목록으로
                     </a>
 
-                    <form class="inline" method="post" th:action="@{/diaries/{id}(id=${diary.id})}"
-                        data-turbo-frame="_top">
-                        <input name="_method" type="hidden" value="delete" />
-                        <button
-                            class="inline-flex items-center justify-center gap-x-2 px-4 py-2.5 text-sm font-semibold rounded-xl border border-red-200 bg-white/80 text-red-600 hover:bg-red-50 transition-all"
-                            data-turbo-confirm="정말로 삭제하시겠습니까?" type="submit">
-                            삭제하기
-                        </button>
-                    </form>
-                </footer>
+                    <span class="chip-soft"
+                        th:text="${#temporals.format(diary.date, 'yyyy.MM.dd (E)')}">
+                        2024.01.01 (월)
+                    </span>
+                </div>
+
+                <div class="text-center space-y-4">
+                    <h1 class="page-title text-2xl sm:text-3xl" th:text="${diary.shortContent}">
+                        일기 제목
+                    </h1>
+
+                    <div class="flex flex-wrap justify-center gap-2">
+                        <span class="tag-chip text-xs"
+                            th:each="tag : ${diary.tags}"
+                            th:style="'border-color:' + ${tag.color} + '; color:' + ${tag.color}"
+                            th:text="${tag.name}">
+                            태그명
+                        </span>
+                    </div>
+                </div>
             </div>
-        </turbo-frame>
+
+            <div class="space-y-4 animate-fade-in-up delay-100">
+                <div class="surface-panel p-6" th:if="${diary.situation}">
+                    <h3 class="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-3">상황</h3>
+                    <p class="text-stone-700 leading-relaxed whitespace-pre-wrap" th:text="${diary.situation}"></p>
+                </div>
+
+                <div class="surface-panel p-6" th:if="${diary.reaction}">
+                    <h3 class="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-3">나의 반응</h3>
+                    <p class="text-stone-700 leading-relaxed whitespace-pre-wrap" th:text="${diary.reaction}"></p>
+                </div>
+
+                <div class="surface-panel p-6" th:if="${diary.physicalSensation}">
+                    <h3 class="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-3">신체 감각</h3>
+                    <p class="text-stone-700 leading-relaxed whitespace-pre-wrap"
+                        th:text="${diary.physicalSensation}"></p>
+                </div>
+
+                <div class="surface-panel p-6" th:if="${diary.desiredReaction}">
+                    <h3 class="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-3">원했던 반응</h3>
+                    <p class="text-stone-700 leading-relaxed whitespace-pre-wrap"
+                        th:text="${diary.desiredReaction}"></p>
+                </div>
+
+                <div class="surface-panel p-6" th:if="${diary.gratitudeMoment}">
+                    <h3 class="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-3">감사한 순간</h3>
+                    <p class="text-stone-700 leading-relaxed whitespace-pre-wrap"
+                        th:text="${diary.gratitudeMoment}"></p>
+                </div>
+
+                <div class="surface-panel p-6" th:if="${diary.selfKindWords}">
+                    <h3 class="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-3">나에게 해주고 싶은 말</h3>
+                    <p class="text-stone-700 leading-relaxed whitespace-pre-wrap" th:text="${diary.selfKindWords}"></p>
+                </div>
+            </div>
+
+            <footer class="flex justify-center gap-3 animate-fade-in-up delay-200">
+                <a id="edit-link"
+                    class="btn-secondary"
+                    th:href="@{/diaries/{id}/edit(id=${diary.id})}">
+                    <th:block th:replace="~{fragments/spinner :: loading-spinner('text-stone-700')}"></th:block>
+                    <span>수정하기</span>
+                </a>
+
+                <form class="inline" method="post" th:action="@{/diaries/{id}(id=${diary.id})}">
+                    <input name="_method" type="hidden" value="delete" />
+                    <button
+                        class="inline-flex items-center justify-center gap-x-2 px-4 py-2.5 text-sm font-semibold rounded-xl border border-red-200 bg-white/80 text-red-600 hover:bg-red-50 transition-all"
+                        data-turbo-confirm="정말로 삭제하시겠습니까?" type="submit">
+                        삭제하기
+                    </button>
+                </form>
+            </footer>
+        </div>
     </div>
 </body>
 
