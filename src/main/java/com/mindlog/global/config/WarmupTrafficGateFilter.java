@@ -73,13 +73,47 @@ public class WarmupTrafficGateFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
         var waitSeconds = Math.max(5, expectedWaitSeconds);
-        response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+        var browserPageRequest = isBrowserPageRequest(request);
+
+        response.setStatus(browserPageRequest ? HttpServletResponse.SC_OK : HttpServletResponse.SC_SERVICE_UNAVAILABLE);
         response.setHeader("Retry-After", String.valueOf(waitSeconds));
         response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
         response.setHeader("Pragma", "no-cache");
         response.setHeader("Expires", "0");
-        response.setContentType("text/html;charset=UTF-8");
-        response.getWriter().write(buildMaintenancePage(waitSeconds));
+
+        if (browserPageRequest) {
+            response.setContentType("text/html;charset=UTF-8");
+            response.getWriter().write(buildMaintenancePage(waitSeconds));
+            return;
+        }
+
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write("{\"message\":\"Service warming up\",\"retryAfterSeconds\":" + waitSeconds + "}");
+    }
+
+    private boolean isBrowserPageRequest(HttpServletRequest request) {
+        if (!"GET".equalsIgnoreCase(request.getMethod())) {
+            return false;
+        }
+
+        var uri = request.getRequestURI();
+        if (uri == null) {
+            uri = "";
+        }
+        if (hasStaticExtension(uri) || uri.startsWith("/api/")) {
+            return false;
+        }
+
+        var secFetchDest = request.getHeader("Sec-Fetch-Dest");
+        if ("document".equalsIgnoreCase(secFetchDest)) {
+            return true;
+        }
+
+        var accept = request.getHeader("Accept");
+        if (accept == null || accept.isBlank()) {
+            return true;
+        }
+        return accept.contains("text/html");
     }
 
     private boolean hasStaticExtension(String uri) {
