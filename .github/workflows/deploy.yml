@@ -56,10 +56,3 @@ jobs:
               git:
                 url: git@github.com:${{ github.repository }}.git
                 ref: ${{ github.ref }}
-      - name: Trigger manual warmup
-        if: ${{ secrets.WARMUP_TRIGGER_URL != '' && secrets.MANUAL_WARMUP_TOKEN != '' }}
-        run: |
-          curl --fail --show-error --silent \
-            -X POST "${{ secrets.WARMUP_TRIGGER_URL }}" \
-            -H "X-Warmup-Token: ${{ secrets.MANUAL_WARMUP_TOKEN }}" \
-            -H "Content-Type: application/json"
