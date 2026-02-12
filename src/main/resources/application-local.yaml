@@ -26,6 +26,8 @@ logging:
     io.netty.resolver.dns.DnsServerAddressStreamProviders: ERROR
 
 mindlog:
+  performance:
+    warmup-profile-id: ${WARMUP_PROFILE_ID:}
   logging:
     request:
       include-query-string: true

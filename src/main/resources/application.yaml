@@ -76,6 +76,13 @@ mindlog:
   serverPort: ${SERVER_PORT}
   performance:
     warmup-db-on-startup: true
+    warmup-redis-on-startup: true
+    warmup-business-on-startup: true
+    warmup-profile-id: ${WARMUP_PROFILE_ID:}
+    warmup-business-paths: /diaries,/insights/emotions
+    warmup-static-paths: /css/output.css,/js/turbo-init.js,/js/stimulus-init.js,/js/preline.js,/js/libs/turbo.js,/js/libs/stimulus.js,/images/logo-wordmark.svg
+    warmup-business-connect-timeout-ms: 2000
+    warmup-business-request-timeout-ms: 5000
     warmup-http-on-startup: false
     warmup-supabase-on-startup: false
     reject-traffic-until-warmup-complete: false
