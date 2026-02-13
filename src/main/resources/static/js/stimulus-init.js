@@ -1,7 +1,9 @@
 import { Application } from "@hotwired/stimulus"
+import DiaryTransitionController from "./controllers/diary_transition_controller.js"
+import FlashNoticeController from "./controllers/flash_notice_controller.js"
 import FormSubmitController from "./controllers/form_submit_controller.js"
-import TagController from "./controllers/tag_controller.js"
 import ModalController from "./controllers/modal_controller.js"
+import TagController from "./controllers/tag_controller.js"
 
 // 1. Stimulus 애플리케이션 싱글톤 시작
 // Turbo 네비게이션/스크립트 재실행 시 중복 start()가 발생하면
@@ -20,6 +22,8 @@ if (!existingApplication) {
 
 // 폼 제출 로딩 상태 컨트롤러
 if (!existingApplication) {
+    application.register("flash-notice", FlashNoticeController)
+
     application.register("form-submit", FormSubmitController)
 
     // 태그 관리 컨트롤러
@@ -27,6 +31,8 @@ if (!existingApplication) {
 
     // 범용 모달 컨트롤러
     application.register("modal", ModalController)
+
+    application.register("diary-transition", DiaryTransitionController)
 
     console.log("[Mindlog] Stimulus 초기화 완료 (FormSubmit Controller 포함)")
 } else {
