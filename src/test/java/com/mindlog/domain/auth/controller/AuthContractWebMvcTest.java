@@ -1,6 +1,11 @@
 package com.mindlog.domain.auth.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
@@ -101,6 +106,57 @@ class AuthContractWebMvcTest {
                         .param("source", "app"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/auth/login?source=app&error=invalid_session"));
+    }
+
+    @Test
+    void callback_AppSourceWithInvalidVerifierEncoding_RedirectsLoginWithInvalidSession() throws Exception {
+        mockMvc.perform(get("/auth/callback")
+                        .param("code", "code123")
+                        .param("source", "app")
+                        .param("v", "@@@"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/auth/login?source=app&error=invalid_session"));
+
+        verify(authLoginService, never()).processLoginForNativeApp(anyString(), anyString());
+    }
+
+    @Test
+    void callback_WithErrorParam_AppSource_RedirectsLoginWithAuthFailed() throws Exception {
+        mockMvc.perform(get("/auth/callback")
+                        .param("error", "access_denied")
+                        .param("source", "app"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/auth/login?source=app&error=auth_failed"));
+    }
+
+    @Test
+    void callback_AppSource_LoginFailure_RedirectsLoginProcessFailed() throws Exception {
+        var encodedVerifier = Base64.getUrlEncoder()
+                .withoutPadding()
+                .encodeToString("verifier123".getBytes(StandardCharsets.UTF_8));
+
+        when(authLoginService.processLoginForNativeApp("code123", "verifier123"))
+                .thenThrow(new RuntimeException("native login failed"));
+
+        mockMvc.perform(get("/auth/callback")
+                        .param("code", "code123")
+                        .param("source", "app")
+                        .param("v", encodedVerifier))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/auth/login?source=app&error=login_process_failed"));
+    }
+
+    @Test
+    void callback_WebSource_LoginFailure_RedirectsLoginProcessFailedWithoutSource() throws Exception {
+        doThrow(new RuntimeException("web login failed"))
+                .when(authLoginService)
+                .processLogin(anyString(), anyString(), any(), any());
+
+        mockMvc.perform(get("/auth/callback")
+                        .param("code", "code123")
+                        .sessionAttr("pkce_verifier", "verifier123"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/auth/login?error=login_process_failed"));
     }
 
     @Test

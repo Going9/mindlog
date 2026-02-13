@@ -93,7 +93,11 @@ public class AuthController {
 
         String verifier;
         if (hasEncodedVerifier) {
-            verifier = new String(Base64.getUrlDecoder().decode(encodedVerifier), StandardCharsets.UTF_8);
+            verifier = decodeVerifier(encodedVerifier);
+            if (verifier == null) {
+                session.removeAttribute(LOGIN_SOURCE_KEY);
+                return buildLoginErrorRedirect("invalid_session", isNativeApp ? APP_SOURCE : source);
+            }
         } else {
             verifier = (String) session.getAttribute(PKCE_VERIFIER_KEY);
         }
@@ -178,6 +182,15 @@ public class AuthController {
                 .withoutPadding()
                 .encodeToString(verifier.getBytes(StandardCharsets.UTF_8));
         return redirectUri + "?source=app&v=" + encodedVerifier;
+    }
+
+    private String decodeVerifier(String encodedVerifier) {
+        try {
+            return new String(Base64.getUrlDecoder().decode(encodedVerifier), StandardCharsets.UTF_8);
+        } catch (IllegalArgumentException ex) {
+            log.warn("[AUTH] 유효하지 않은 verifier 인코딩 값");
+            return null;
+        }
     }
 
     private String buildAuthUrl(String provider, String redirectUri, String challenge, String prompt) {
