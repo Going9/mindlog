@@ -160,7 +160,7 @@ class AuthContractWebMvcTest {
     }
 
     @Test
-    void exchange_ValidToken_RendersExchangeCompleteView() throws Exception {
+    void exchange_ValidToken_RedirectsToHome() throws Exception {
         var auth = new UsernamePasswordAuthenticationToken("user-id", "token", List.of());
         var result = new AuthHandoverService.HandoverResult(
                 auth,
@@ -168,9 +168,8 @@ class AuthContractWebMvcTest {
         when(authHandoverService.consumeToken("token-1")).thenReturn(result);
 
         mockMvc.perform(get("/auth/exchange").param("token", "token-1"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("auth/exchange-complete"))
-                .andExpect(model().attribute("redirectUrl", "/"));
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/"));
     }
 
     @Test

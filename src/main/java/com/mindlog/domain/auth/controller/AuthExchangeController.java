@@ -11,7 +11,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -32,8 +31,7 @@ public class AuthExchangeController {
     public String exchangeToken(
             @RequestParam("token") String token,
             HttpServletRequest request,
-            HttpServletResponse response,
-            Model model
+            HttpServletResponse response
     ) {
         log.info("토큰 교환 요청: {}", token.substring(0, Math.min(8, token.length())) + "...");
 
@@ -52,8 +50,6 @@ public class AuthExchangeController {
         HttpSession session = request.getSession();
         result.sessionAttributes().forEach(session::setAttribute);
         log.info("WebView 세션 생성 완료: 사용자 {}", result.authentication().getName());
-
-        model.addAttribute("redirectUrl", "/");
-        return "auth/exchange-complete";
+        return "redirect:/";
     }
 }
