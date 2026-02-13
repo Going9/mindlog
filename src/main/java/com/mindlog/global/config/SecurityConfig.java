@@ -74,8 +74,15 @@ public class SecurityConfig {
                                                                 response.sendError(
                                                                                 jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
                                                         } else {
-                                                                // 일반 브라우저 요청은 로그인 페이지로 이동
-                                                                response.sendRedirect("/auth/login");
+                                                                // 일반 브라우저 요청은 로그인 페이지로 이동.
+                                                                // 네이티브 WebView 요청은 source=app을 유지해 앱 로그인 플로우를 고정한다.
+                                                                String userAgent = request.getHeader("User-Agent");
+                                                                boolean isNativeWebView = userAgent != null
+                                                                                && (userAgent.toLowerCase().contains("wv")
+                                                                                                || userAgent.toLowerCase().contains("mindlog")
+                                                                                                || userAgent.toLowerCase().contains("hotwire"));
+                                                                String loginUrl = isNativeWebView ? "/auth/login?source=app" : "/auth/login";
+                                                                response.sendRedirect(loginUrl);
                                                         }
                                                 })
                                                 .accessDeniedHandler((request, response, accessDeniedException) -> {

@@ -82,7 +82,7 @@
             </div>
 
             <div class="max-w-xs mx-auto">
-                <a th:href="@{/auth/login}" data-turbo="false" class="btn-primary w-full justify-center">
+                <a th:href="${isNative} ? @{/auth/login(source='app')} : @{/auth/login}" data-turbo="false" class="btn-primary w-full justify-center">
                     <svg class="loading-spinner h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
                         viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">

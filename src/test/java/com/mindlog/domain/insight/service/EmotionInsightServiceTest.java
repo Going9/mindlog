@@ -38,10 +38,6 @@ class EmotionInsightServiceTest {
         LocalDate from = LocalDate.of(2026, 2, 1);
         LocalDate to = LocalDate.of(2026, 2, 10);
 
-        given(diaryEmotionRepository.countByCategoryInRange(profileId, from, to)).willReturn(List.of(
-                categoryCount(EmotionCategory.POSITIVE, 3L),
-                categoryCount(EmotionCategory.NEGATIVE, 1L)
-        ));
         given(diaryEmotionRepository.findTopTagsInRange(eq(profileId), eq(from), eq(to), any(Pageable.class)))
                 .willReturn(List.of(
                         tagCount(1L, "기쁨", "#f59e0b", EmotionCategory.POSITIVE, 3L),
@@ -85,7 +81,6 @@ class EmotionInsightServiceTest {
         LocalDate from = LocalDate.of(2026, 2, 1);
         LocalDate to = LocalDate.of(2026, 2, 10);
 
-        given(diaryEmotionRepository.countByCategoryInRange(profileId, from, to)).willReturn(List.of());
         given(diaryEmotionRepository.findTopTagsInRange(eq(profileId), eq(from), eq(to), any(Pageable.class)))
                 .willReturn(List.of());
         given(diaryEmotionRepository.findDailyTrendInRange(

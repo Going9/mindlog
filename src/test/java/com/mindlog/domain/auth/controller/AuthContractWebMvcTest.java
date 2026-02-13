@@ -66,6 +66,19 @@ class AuthContractWebMvcTest {
     }
 
     @Test
+    void socialLogin_WebSource_DoesNotContainNativeParams() throws Exception {
+        var result = mockMvc.perform(get("/auth/login/google")
+                        .header("Host", "www.mindlog.blog")
+                        .secure(true))
+                .andExpect(status().is3xxRedirection())
+                .andReturn();
+
+        var location = result.getResponse().getRedirectedUrl();
+        assertThat(location).isNotNull();
+        assertThat(location).doesNotContain("source%3Dapp%26v%3D");
+    }
+
+    @Test
     void callback_AppSource_ReturnsDeepLinkView() throws Exception {
         var encodedVerifier = Base64.getUrlEncoder()
                 .withoutPadding()
@@ -82,7 +95,16 @@ class AuthContractWebMvcTest {
     }
 
     @Test
-    void exchange_ValidToken_RedirectsToDiaries() throws Exception {
+    void callback_AppSourceWithoutVerifier_RedirectsLoginWithInvalidSession() throws Exception {
+        mockMvc.perform(get("/auth/callback")
+                        .param("code", "code123")
+                        .param("source", "app"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/auth/login?source=app&error=invalid_session"));
+    }
+
+    @Test
+    void exchange_ValidToken_RendersExchangeCompleteView() throws Exception {
         var auth = new UsernamePasswordAuthenticationToken("user-id", "token", List.of());
         var result = new AuthHandoverService.HandoverResult(
                 auth,
@@ -90,7 +112,17 @@ class AuthContractWebMvcTest {
         when(authHandoverService.consumeToken("token-1")).thenReturn(result);
 
         mockMvc.perform(get("/auth/exchange").param("token", "token-1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("auth/exchange-complete"))
+                .andExpect(model().attribute("redirectUrl", "/"));
+    }
+
+    @Test
+    void exchange_InvalidToken_RedirectsToLogin() throws Exception {
+        when(authHandoverService.consumeToken("invalid")).thenReturn(null);
+
+        mockMvc.perform(get("/auth/exchange").param("token", "invalid"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/diaries"));
+                .andExpect(redirectedUrl("/auth/login?error=invalid_token"));
     }
 }
