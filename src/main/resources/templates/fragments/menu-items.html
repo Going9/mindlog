@@ -14,6 +14,7 @@
             <a th:href="@{/diaries}" th:class="${linkClass}">나의 일기</a>
             <a th:href="@{/diaries/new}" th:class="${linkClass}">일기 쓰기</a>
             <form th:action="@{/auth/logout}" method="post" data-turbo="false" class="logout-form">
+                <input th:if="${isNative}" type="hidden" name="source" value="app">
                 <button type="submit" th:class="${buttonClass}">로그아웃</button>
             </form>
         </th:block>

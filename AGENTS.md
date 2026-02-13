@@ -21,6 +21,15 @@ Follow these guidelines strictly to maintain consistency and code quality.
 - **Run Single Test**: `./gradlew test --tests "com.mindlog.path.to.TestClass"`
 - **Run Specific Method**: `./gradlew test --tests "com.mindlog.path.to.TestClass.methodName"`
 
+## 2-1. Git Workflow (Required)
+- Do not implement directly on `main` or `release/*`.
+- Start implementation on a work branch with one of these prefixes:
+  - `feat/`, `fix/`, `refactor/`, `docs/`, `test/`, `chore/`, `perf/`, `build/`, `ci/`, `hotfix/`
+- Merge order: `work branch -> release/* -> main`.
+- Commit messages must follow Conventional Commits prefixes:
+  - `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`, `perf:`, `build:`, `ci:`, `revert:`
+- Commit title/body language in this workspace: Korean.
+
 ## 3. Code Style & Conventions
 
 ### Java
