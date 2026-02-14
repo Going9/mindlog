@@ -12,6 +12,15 @@
         rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/output.css}">
 
+    <script type="importmap">
+        {
+          "imports": {
+            "@hotwired/turbo": "/js/libs/turbo.js"
+          }
+        }
+    </script>
+    <script type="module" th:src="@{/js/turbo-init.js}"></script>
+
     <!-- Safe Area Padding for Native Apps (Edge-to-Edge) -->
     <style>
         body.is-native {
@@ -26,7 +35,7 @@
     <main layout:fragment="content" class="container mx-auto px-4 py-6 max-w-4xl">
     </main>
 
-    <!-- Turbo/Preline 스크립트 없음 - OAuth redirect가 브라우저 기본 동작으로 처리됨 -->
+    <!-- 로그인 화면에서도 Turbo 런타임은 로드하여 WebView 예외를 방지 -->
 </body>
 
 </html>

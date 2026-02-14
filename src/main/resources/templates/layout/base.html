@@ -17,7 +17,7 @@
     </style>
 </head>
 
-<body class="text-stone-800 antialiased min-h-screen" th:classappend="${isNative} ? 'is-native' : 'is-web'">
+<body data-controller="flash-notice" class="text-stone-800 antialiased min-h-screen" th:classappend="${isNative} ? 'is-native' : 'is-web'">
 
     <div class="sticky top-0 z-50">
         <nav th:replace="~{fragments/navbar :: navbar}"></nav>

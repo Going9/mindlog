@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="turbo-visit-control" content="reload">
+    <meta name="turbo-cache-control" content="no-cache">
     <title>로그인 처리 중...</title>
     <style>
         body {
@@ -23,8 +24,20 @@
 
 <script th:inline="javascript">
     (function () {
+        var minimumDisplayMs = 900;
+        var startedAt = Date.now();
         var redirectUrl = /*[[${redirectUrl}]]*/ "/";
-        window.location.replace(redirectUrl);
+        var navigate = function () {
+            if (window.Turbo && window.Turbo.cache && typeof window.Turbo.cache.clear === "function") {
+                window.Turbo.cache.clear();
+            }
+
+            window.location.replace(redirectUrl);
+        };
+
+        var elapsedMs = Date.now() - startedAt;
+        var remainingMs = Math.max(0, minimumDisplayMs - elapsedMs);
+        window.setTimeout(navigate, remainingMs);
     })();
 </script>
 </body>

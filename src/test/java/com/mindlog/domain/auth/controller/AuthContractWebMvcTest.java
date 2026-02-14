@@ -16,7 +16,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.mindlog.domain.auth.service.AuthHandoverService;
 import com.mindlog.domain.auth.service.AuthLoginService;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Base64;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -168,8 +170,9 @@ class AuthContractWebMvcTest {
         when(authHandoverService.consumeToken("token-1")).thenReturn(result);
 
         mockMvc.perform(get("/auth/exchange").param("token", "token-1"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/"));
+                .andExpect(status().isOk())
+                .andExpect(view().name("auth/exchange-complete"))
+                .andExpect(model().attribute("redirectUrl", "/"));
     }
 
     @Test
@@ -178,6 +181,39 @@ class AuthContractWebMvcTest {
 
         mockMvc.perform(get("/auth/exchange").param("token", "invalid"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/auth/login?error=invalid_token"));
+                .andExpect(redirectedUrl("/auth/login?source=app&error=invalid_token"));
+    }
+
+    @Test
+    void exchange_InvalidToken_WhenAlreadyAuthenticated_RedirectsHome() throws Exception {
+        when(authHandoverService.consumeToken("invalid")).thenReturn(null);
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken("user-id", "token", List.of()));
+
+        mockMvc.perform(get("/auth/exchange").param("token", "invalid"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/"));
+    }
+
+    @Test
+    void exchange_ReplayedToken_WhenAlreadyAuthenticated_SkipsConsumeAndRendersComplete() throws Exception {
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken("user-id", "token", List.of()));
+
+        mockMvc.perform(get("/auth/exchange")
+                        .param("token", "token-1")
+                        .sessionAttr(
+                                AuthExchangeController.LAST_EXCHANGE_TOKEN_FINGERPRINT,
+                                fingerprint("token-1")))
+                .andExpect(status().isOk())
+                .andExpect(view().name("auth/exchange-complete"))
+                .andExpect(model().attribute("redirectUrl", "/"));
+
+        verify(authHandoverService, never()).consumeToken(anyString());
+    }
+
+    private String fingerprint(String token) throws Exception {
+        var digest = MessageDigest.getInstance("SHA-256");
+        return HexFormat.of().formatHex(digest.digest(token.getBytes(StandardCharsets.UTF_8)));
     }
 }
