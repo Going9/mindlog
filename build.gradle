@@ -95,5 +95,18 @@ tasks.register('copyPreline', Copy) {
     into 'src/main/resources/static/js'
 }
 
+tasks.register('copyFlatpickrJs', Copy) {
+    dependsOn 'npmInstall'
+    from 'node_modules/flatpickr/dist/flatpickr.min.js'
+    from 'node_modules/flatpickr/dist/l10n/ko.js'
+    into 'src/main/resources/static/js/libs'
+}
+
+tasks.register('copyFlatpickrCss', Copy) {
+    dependsOn 'npmInstall'
+    from 'node_modules/flatpickr/dist/flatpickr.min.css'
+    into 'src/main/resources/static/css/libs'
+}
+
 // [수정] 2. 의존성 설정 (문자열로 태그 이름을 참조)
-processResources.dependsOn 'copyPreline'
+processResources.dependsOn 'copyPreline', 'copyFlatpickrJs', 'copyFlatpickrCss'

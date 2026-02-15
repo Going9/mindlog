@@ -28,10 +28,14 @@ if (!window.__mindlogTurboInitialized) {
 
     Turbo.start()
 
-    window.MindlogConfirm = (message) => Promise.resolve(window.confirm(message))
-
     if (Turbo?.config?.forms) {
-        Turbo.config.forms.confirm = (message) => window.MindlogConfirm(message)
+        Turbo.config.forms.confirm = (message) => {
+            if (typeof window.MindlogConfirm === "function") {
+                return window.MindlogConfirm(message)
+            }
+
+            return Promise.resolve(window.confirm(message))
+        }
     }
 
     const loginRedirectUrl = () => {

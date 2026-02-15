@@ -25,7 +25,6 @@ export default class extends Controller {
         document.removeEventListener("turbo:visit", this.onTurboVisit)
         document.removeEventListener("turbo:before-render", this.onBeforeRender)
         document.removeEventListener("turbo:load", this.onTurboLoad)
-
         this.clearResumeTimer()
         this.pendingTransition = null
     }

@@ -5,6 +5,7 @@ const NOTICE_MESSAGE_BY_CODE = {
     "diary-updated": "일기를 수정했어요.",
     "diary-deleted": "일기를 삭제했어요.",
 }
+const NOTICE_META_SELECTOR = "meta[name='mindlog-notice-code']"
 
 let toastTimer = null
 
@@ -65,16 +66,18 @@ function showToast(message, options = {}) {
 export default class extends Controller {
     connect() {
         this.handleToastEvent = this.handleToastEvent.bind(this)
+        this.handleBeforeCache = this.handleBeforeCache.bind(this)
 
         window.MindlogToast = showToast
-        window.MindlogConfirm = (message) => Promise.resolve(window.confirm(message))
 
         document.addEventListener("mindlog:toast", this.handleToastEvent)
-        this.consumeNoticeCodeFromUrl()
+        document.addEventListener("turbo:before-cache", this.handleBeforeCache)
+        this.consumeNoticeCodeFromMeta()
     }
 
     disconnect() {
         document.removeEventListener("mindlog:toast", this.handleToastEvent)
+        document.removeEventListener("turbo:before-cache", this.handleBeforeCache)
     }
 
     handleToastEvent(event) {
@@ -89,9 +92,19 @@ export default class extends Controller {
         })
     }
 
-    consumeNoticeCodeFromUrl() {
-        const params = new URLSearchParams(window.location.search)
-        const noticeCode = params.get("noticeCode")
+    handleBeforeCache() {
+        const host = document.getElementById("mindlog-toast-host")
+        if (host) {
+            host.innerHTML = ""
+        }
+
+        const noticeMeta = document.querySelector(NOTICE_META_SELECTOR)
+        noticeMeta?.remove()
+    }
+
+    consumeNoticeCodeFromMeta() {
+        const noticeMeta = document.querySelector(NOTICE_META_SELECTOR)
+        const noticeCode = noticeMeta?.content?.trim()
         if (!noticeCode) {
             return
         }
@@ -100,10 +113,6 @@ export default class extends Controller {
         if (message) {
             showToast(message, { tone: "success" })
         }
-
-        params.delete("noticeCode")
-        const query = params.toString()
-        const nextUrl = `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`
-        window.history.replaceState({}, "", nextUrl)
+        noticeMeta.remove()
     }
 }

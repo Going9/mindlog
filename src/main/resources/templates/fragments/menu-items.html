@@ -11,9 +11,9 @@
                     <span th:text="${userName} ?: '사용자'">사용자</span>님 반가워요!
                 </span>
             </div>
-            <a th:href="@{/diaries}" th:class="${linkClass}">나의 일기</a>
+            <a th:href="@{/diaries}" th:class="${linkClass}" data-turbo-prefetch="false">나의 일기</a>
             <a th:href="@{/diaries/new}" th:class="${linkClass}">일기 쓰기</a>
-            <a th:href="@{/insights/emotions}" th:class="${linkClass}">감정 인사이트</a>
+            <a th:href="@{/insights/emotions}" th:class="${linkClass}" data-turbo-prefetch="false">감정 인사이트</a>
             <form th:action="@{/auth/logout}" method="post" data-turbo="false" class="logout-form">
                 <input th:if="${isNative}" type="hidden" name="source" value="app">
                 <button type="submit" th:class="${buttonClass}">로그아웃</button>

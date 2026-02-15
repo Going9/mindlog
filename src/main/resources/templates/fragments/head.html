@@ -13,6 +13,7 @@
   <link rel="shortcut icon" th:href="@{/images/favicon-circle-m.svg}">
 
   <link th:href="@{/css/output.css(v=${#dates.format(#dates.createNow(), 'yyyyMMddHHmm')})}" rel="stylesheet">
+  <link th:href="@{/css/libs/flatpickr.min.css}" rel="stylesheet">
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css">
 
@@ -28,9 +29,10 @@
         }
     </script>
 
+  <script th:src="@{/js/libs/flatpickr.min.js}"></script>
+  <script th:src="@{/js/libs/ko.js}"></script>
   <script type="module" th:src="@{/js/turbo-init.js}"></script>
   <script type="module" th:src="@{/js/stimulus-init.js}"></script>
-
   <script th:src="@{/js/preline.js}" defer></script>
 </th:block>
 

@@ -23,11 +23,19 @@
                 <!-- 기록 날짜 -->
                 <div>
                     <label class="block text-sm font-medium mb-2 text-stone-700" for="date">기록 날짜</label>
-                    <input
-                        class="form-input"
-                        id="date" name="date"
-                        th:classappend="${#fields.hasErrors('date')} ? '!border-red-500 focus:!border-red-500 focus:!ring-red-500' : ''"
-                        th:value="${#temporals.format(diaryRequest.date, 'yyyy-MM-dd')}" type="date">
+                    <div data-controller="date-picker" data-date-picker-format-value="Y-m-d">
+                        <input
+                            class="form-input"
+                            id="date"
+                            name="date"
+                            type="text"
+                            inputmode="numeric"
+                            autocomplete="off"
+                            placeholder="YYYY-MM-DD"
+                            data-date-picker-target="input"
+                            th:classappend="${#fields.hasErrors('date')} ? '!border-red-500 focus:!border-red-500 focus:!ring-red-500' : ''"
+                            th:value="${#temporals.format(diaryRequest.date, 'yyyy-MM-dd')}">
+                    </div>
                     <p class="mt-2 text-sm text-red-600" th:errors="*{date}" th:if="${#fields.hasErrors('date')}">날짜 에러
                     </p>
                 </div>

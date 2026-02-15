@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
 
 import com.mindlog.domain.diary.dto.DiaryFormDTO;
 import com.mindlog.domain.diary.dto.DiaryListItemResponse;
@@ -116,7 +117,8 @@ class DiaryControllerWebMvcTest {
                         .param("date", "2026-02-11")
                         .param("shortContent", "test"))
                 .andExpect(status().isSeeOther())
-                .andExpect(redirectedUrl("/diaries/10?noticeCode=diary-created"));
+                .andExpect(redirectedUrl("/diaries/10"))
+                .andExpect(flash().attribute("noticeCode", "diary-created"));
     }
 
     @Test
@@ -140,7 +142,8 @@ class DiaryControllerWebMvcTest {
     void delete_WhenSuccess_Returns303() throws Exception {
         mockMvc.perform(delete("/diaries/10"))
                 .andExpect(status().isSeeOther())
-                .andExpect(redirectedUrl("/diaries?noticeCode=diary-deleted"));
+                .andExpect(redirectedUrl("/diaries"))
+                .andExpect(flash().attribute("noticeCode", "diary-deleted"));
 
         verify(diaryService).deleteDiary(profileId, 10L);
     }

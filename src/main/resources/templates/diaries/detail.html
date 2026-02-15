@@ -12,7 +12,9 @@
             <div class="surface-panel-strong p-5 sm:p-8 animate-fade-in-up">
                 <div class="flex justify-between items-start mb-6 gap-3">
                     <a class="btn-secondary text-xs sm:text-sm"
-                        th:href="@{/diaries}" aria-label="목록으로 돌아가기">
+                        th:href="@{/diaries}"
+                        data-turbo-prefetch="false"
+                        aria-label="목록으로 돌아가기">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                         </svg>
@@ -84,12 +86,26 @@
                     <span>수정하기</span>
                 </a>
 
-                <form class="inline" method="post" th:action="@{/diaries/{id}(id=${diary.id})}">
+                <form class="inline"
+                      method="post"
+                      th:action="@{/diaries/{id}(id=${diary.id})}"
+                      data-controller="form-submit"
+                      data-action="submit->form-submit#submit"
+                      >
                     <input name="_method" type="hidden" value="delete" />
                     <button
                         class="inline-flex items-center justify-center gap-x-2 px-4 py-2.5 text-sm font-semibold rounded-xl border border-red-200 bg-white/80 text-red-600 hover:bg-red-50 transition-all"
-                        data-turbo-confirm="정말로 삭제하시겠습니까?" type="submit">
-                        삭제하기
+                        data-turbo-confirm="정말로 삭제하시겠습니까?"
+                        data-form-submit-target="submit"
+                        data-form-submit-loading-text-value="삭제 중..."
+                        type="submit">
+                        <svg data-form-submit-target="spinner" class="hidden h-4 w-4 text-red-600 animate-spin"
+                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span data-form-submit-target="text">삭제하기</span>
                     </button>
                 </form>
             </footer>

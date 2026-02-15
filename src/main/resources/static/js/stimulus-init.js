@@ -1,8 +1,12 @@
 import { Application } from "@hotwired/stimulus"
+import ConfirmModalController from "./controllers/confirm_modal_controller.js"
+import CustomSelectController from "./controllers/custom_select_controller.js"
+import DatePickerController from "./controllers/date_picker_controller.js"
 import DiaryTransitionController from "./controllers/diary_transition_controller.js"
 import FlashNoticeController from "./controllers/flash_notice_controller.js"
 import FormSubmitController from "./controllers/form_submit_controller.js"
 import ModalController from "./controllers/modal_controller.js"
+import NavbarCollapseController from "./controllers/navbar_collapse_controller.js"
 import TagController from "./controllers/tag_controller.js"
 
 // 1. Stimulus 애플리케이션 싱글톤 시작
@@ -22,6 +26,11 @@ if (!existingApplication) {
 
 // 폼 제출 로딩 상태 컨트롤러
 if (!existingApplication) {
+    application.register("confirm-modal", ConfirmModalController)
+    application.register("custom-select", CustomSelectController)
+    application.register("date-picker", DatePickerController)
+    application.register("navbar-collapse", NavbarCollapseController)
+
     application.register("flash-notice", FlashNoticeController)
 
     application.register("form-submit", FormSubmitController)
