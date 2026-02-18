@@ -17,6 +17,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.LocalDate;
@@ -43,6 +44,7 @@ public class DiaryController {
             @RequestParam(required = false) Integer year,
             @RequestParam(required = false) Integer month,
             @RequestParam(required = false, defaultValue = "latest") String sort,
+            @RequestParam(name = "_refresh", required = false) Long refreshToken,
             @RequestParam(name = "q", required = false) String keyword,
             @RequestParam(required = false, defaultValue = "0") Integer page,
             Model model) {
@@ -90,7 +92,9 @@ public class DiaryController {
             return "diaries/index";
         }
 
-        List<DiaryListItemResponse> diaries = diaryService.getMonthlyDiaries(profileId, y, m, newestFirst);
+        List<DiaryListItemResponse> diaries = refreshToken != null
+                ? diaryService.getMonthlyDiariesFresh(profileId, y, m, newestFirst)
+                : diaryService.getMonthlyDiaries(profileId, y, m, newestFirst);
 
         model.addAttribute("diaries", diaries);
         model.addAttribute("year", y);
@@ -142,7 +146,8 @@ public class DiaryController {
             @Valid @ModelAttribute DiaryRequest request,
             BindingResult bindingResult,
             Model model,
-            HttpServletResponse response) {
+            HttpServletResponse response,
+            RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
             var formData = diaryFormService.getFormOnError(profileId, request, null);
             return renderUnprocessableForm(response, model, formData);
@@ -150,7 +155,7 @@ public class DiaryController {
 
         try {
             var id = diaryService.createDiary(profileId, request);
-            return redirectToDiaryDetail(id, "diary-created");
+            return redirectToDiaryDetail(id, "diary-created", redirectAttributes);
         } catch (DuplicateDiaryDateException e) {
             bindingResult.rejectValue("date", "duplicate", e.getMessage());
             var formData = diaryFormService.getFormOnError(profileId, request, null);
@@ -180,7 +185,8 @@ public class DiaryController {
             @Valid @ModelAttribute DiaryRequest request,
             BindingResult bindingResult,
             Model model,
-            HttpServletResponse response) {
+            HttpServletResponse response,
+            RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
             var formData = diaryFormService.getFormOnError(profileId, request, id);
             return renderUnprocessableForm(response, model, formData);
@@ -188,7 +194,7 @@ public class DiaryController {
 
         try {
             diaryService.updateDiary(profileId, id, request);
-            return redirectToDiaryDetail(id, "diary-updated");
+            return redirectToDiaryDetail(id, "diary-updated", redirectAttributes);
         } catch (DuplicateDiaryDateException e) {
             bindingResult.rejectValue("date", "duplicate", e.getMessage());
             var formData = diaryFormService.getFormOnError(profileId, request, id);
@@ -204,9 +210,10 @@ public class DiaryController {
     @DeleteMapping("/{id}")
     public RedirectView delete(
             @CurrentProfileId UUID profileId,
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            RedirectAttributes redirectAttributes) {
         diaryService.deleteDiary(profileId, id);
-        return redirectToDiaryList("diary-deleted");
+        return redirectToDiaryList("diary-deleted", redirectAttributes);
     }
 
     // Ajax 검증용 (Turbo와 무관하게 유지)
@@ -235,17 +242,19 @@ public class DiaryController {
         return FORM_VIEW;
     }
 
-    private RedirectView redirectToDiaryDetail(Long id, String noticeCode) {
+    private RedirectView redirectToDiaryDetail(Long id, String noticeCode, RedirectAttributes redirectAttributes) {
+        redirectAttributes.addFlashAttribute("noticeCode", noticeCode);
         var redirectUrl = UriComponentsBuilder.fromPath("/diaries/{id}")
-                .queryParam("noticeCode", noticeCode)
                 .buildAndExpand(id)
                 .toUriString();
         return new RedirectView(redirectUrl, true, false, false);
     }
 
-    private RedirectView redirectToDiaryList(String noticeCode) {
+    private RedirectView redirectToDiaryList(String noticeCode, RedirectAttributes redirectAttributes) {
+        redirectAttributes.addFlashAttribute("noticeCode", noticeCode);
+        // 삭제 직후 목록 복귀는 캐시 프리뷰를 피하고 서버 최신 목록을 즉시 반영한다.
         var redirectUrl = UriComponentsBuilder.fromPath("/diaries")
-                .queryParam("noticeCode", noticeCode)
+                .queryParam("_refresh", System.currentTimeMillis())
                 .toUriString();
         return new RedirectView(redirectUrl, true, false, false);
     }

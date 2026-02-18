@@ -8,6 +8,7 @@
 
     <meta name="_csrf" th:content="${_csrf?.token}" th:if="${_csrf}" />
     <meta name="_csrf_header" th:content="${_csrf?.headerName}" th:if="${_csrf}" />
+    <meta name="mindlog-notice-code" th:content="${noticeCode}" th:if="${noticeCode != null}" />
 
     <style>
         body.is-native {
@@ -17,13 +18,17 @@
     </style>
 </head>
 
-<body data-controller="flash-notice" class="text-stone-800 antialiased min-h-screen" th:classappend="${isNative} ? 'is-native' : 'is-web'">
+<body data-controller="flash-notice"
+      class="text-stone-800 antialiased min-h-screen"
+      th:classappend="${isNative} ? 'is-native' : 'is-web'">
 
     <div class="sticky top-0 z-50">
         <nav th:replace="~{fragments/navbar :: navbar}"></nav>
     </div>
 
     <main layout:fragment="content" class="container mx-auto px-4 py-6 max-w-4xl"></main>
+
+    <th:block th:replace="~{fragments/confirm-modal :: confirm-modal}"></th:block>
 
     <div th:replace="~{fragments/scripts :: scripts(
                 ${@environment.getProperty('mindlog.supabase.url')},

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<body>
+<div th:fragment="confirm-modal"
+     id="mindlog-confirm-modal"
+     class="hidden fixed inset-0 z-[90] px-4"
+     data-controller="confirm-modal"
+     data-action="keydown@window->confirm-modal#handleWindowKeydown"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="mindlog-confirm-title">
+    <div class="absolute inset-0 bg-stone-900/35 backdrop-blur-sm" data-action="click->confirm-modal#cancel"></div>
+
+    <div class="relative flex min-h-screen items-center justify-center">
+        <div class="w-full max-w-sm rounded-2xl border border-stone-200/80 bg-[#f7f7f4] p-5 shadow-xl">
+            <h2 id="mindlog-confirm-title" class="text-base font-semibold text-stone-800">확인이 필요해요</h2>
+            <p class="mt-2 text-sm text-stone-600 leading-relaxed" data-confirm-modal-target="message">
+                계속 진행할까요?
+            </p>
+
+            <div class="mt-5 flex items-center justify-end gap-2">
+                <button type="button"
+                        class="btn-secondary !px-4 !py-2"
+                        data-confirm-modal-target="cancelButton"
+                        data-action="confirm-modal#cancel">
+                    취소
+                </button>
+                <button type="button"
+                        class="btn-primary !px-4 !py-2"
+                        data-confirm-modal-target="confirmButton"
+                        data-action="confirm-modal#confirm">
+                    확인
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

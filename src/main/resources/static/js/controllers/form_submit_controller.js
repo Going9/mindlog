@@ -20,6 +20,8 @@ export default class extends Controller {
     }
 
     submit() {
+        const loadingText = this.submitTarget?.dataset?.formSubmitLoadingTextValue || this.loadingTextValue
+
         if (this.hasSubmitTarget) {
             this.submitTarget.disabled = true
         }
@@ -29,7 +31,7 @@ export default class extends Controller {
         }
 
         if (this.hasTextTarget) {
-            this.textTarget.textContent = this.loadingTextValue
+            this.textTarget.textContent = loadingText
         }
     }
 
