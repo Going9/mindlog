@@ -76,6 +76,40 @@
             transform: scale(0.98);
         }
 
+        .manual-link[aria-disabled="true"] {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .progress {
+            margin-top: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        .progress-spinner {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid rgba(31, 41, 55, 0.2);
+            border-top-color: rgba(31, 41, 55, 0.75);
+            animation: spin 0.9s linear infinite;
+        }
+
+        .is-hidden {
+            display: none;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
         .hint {
             margin-top: 1rem;
             font-size: 0.85rem;
@@ -92,23 +126,38 @@
             </svg>
         </div>
         <h1>로그인 성공!</h1>
-        <p>아래 버튼을 눌러 앱으로 돌아가세요</p>
+        <p>아래 버튼을 눌러 앱으로 돌아가세요.</p>
         <a id="manualLink" class="manual-link">앱으로 이동하기</a>
-        <p class="hint">또는 상단의 "Continue" 버튼을 눌러주세요</p>
+        <div id="handoffProgress" class="progress is-hidden" aria-live="polite">
+            <span class="progress-spinner" aria-hidden="true"></span>
+            <span>앱으로 연결 중입니다...</span>
+        </div>
+        <p class="hint">연결이 지연되면 버튼을 다시 눌러주세요.</p>
     </div>
 
     <script th:inline="javascript">
         (function () {
             var deepLinkUrl = /*[[${deepLinkUrl}]]*/ '';
             var manualLink = document.getElementById('manualLink');
+            var handoffProgress = document.getElementById('handoffProgress');
+            var isRedirecting = false;
+
             manualLink.href = deepLinkUrl;
 
-            // 자동 딥링크 시도 (일부 기기에서 작동할 수 있음)
-            try {
+            manualLink.addEventListener('click', function (event) {
+                event.preventDefault();
+                if (isRedirecting || !deepLinkUrl) {
+                    return;
+                }
+
+                isRedirecting = true;
+                manualLink.setAttribute('aria-disabled', 'true');
+                if (handoffProgress) {
+                    handoffProgress.classList.remove('is-hidden');
+                }
+
                 window.location.href = deepLinkUrl;
-            } catch (e) {
-                console.log('Auto deep link failed:', e);
-            }
+            });
         })();
     </script>
 </body>

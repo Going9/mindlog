@@ -8,82 +8,27 @@
 
     <meta name="_csrf" th:content="${_csrf?.token}" th:if="${_csrf}" />
     <meta name="_csrf_header" th:content="${_csrf?.headerName}" th:if="${_csrf}" />
+    <meta name="mindlog-notice-code" th:content="${noticeCode}" th:if="${noticeCode != null}" />
 
-    <!-- Safe Area Padding for Native Apps (Edge-to-Edge) -->
     <style>
-        /* 네이티브 앱에서만 Safe Area 패딩 적용 */
         body.is-native {
+            padding-top: env(safe-area-inset-top);
             padding-bottom: env(safe-area-inset-bottom);
         }
     </style>
 </head>
 
-<body class="text-stone-800 antialiased min-h-screen" th:classappend="${isNative} ? 'is-native' : 'is-web'">
+<body data-controller="flash-notice"
+      class="text-stone-800 antialiased min-h-screen"
+      th:classappend="${isNative} ? 'is-native' : 'is-web'">
 
-    <!-- 네이티브 앱용 고정 헤더 -->
-    <header th:if="${isNative}"
-        class="sticky top-0 z-50 border-b border-[#d2d3cf]/80 bg-[#f5f5f2]/90 backdrop-blur-md"
-        style="box-shadow: 0 8px 24px -22px rgba(24, 24, 27, 0.3);">
-        <nav class="flex items-center justify-between max-w-4xl mx-auto px-4 sm:px-6 h-16">
-            <a id="native-logo-link" data-turbo-permanent th:href="@{/}" class="inline-flex h-full items-center leading-none" aria-label="Mindlog">
-                <img th:src="@{/images/logo-wordmark.svg}" src="/images/logo-wordmark.svg" alt="Mindlog" class="block h-7 sm:h-8 w-auto">
-            </a>
-            <button type="button"
-                class="hs-collapse-toggle p-2 inline-flex justify-center items-center gap-2 rounded-lg border border-stone-300/80 text-stone-700 bg-[#f5f5f2]/95 hover:bg-[#f5f5f2] transition-all text-sm"
-                data-hs-collapse="#native-navbar-menu" aria-controls="native-navbar-menu"
-                aria-label="Toggle navigation">
-                <svg class="hs-collapse-open:hidden w-4 h-4" width="16" height="16" fill="currentColor"
-                    viewBox="0 0 16 16">
-                    <path fill-rule="evenodd"
-                        d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z" />
-                </svg>
-                <svg class="hs-collapse-open:block hidden w-4 h-4" width="16" height="16" fill="currentColor"
-                    viewBox="0 0 16 16">
-                    <path
-                        d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
-                </svg>
-            </button>
-        </nav>
-        <!-- 모바일 메뉴 (네이티브 앱용) -->
-        <div id="native-navbar-menu" class="hidden overflow-hidden transition-all duration-300 border-t border-stone-200/70">
-            <div class="flex flex-col gap-2 py-2 px-4 sm:px-6 bg-[#f5f5f2]/95">
-
-                <!-- 공통 메뉴 항목 사용 -->
-                <style>
-                    /* 네이티브 앱 전용 스타일 */
-                    #native-navbar-menu .menu-greeting {
-                        display: block;
-                        padding: 0.75rem 0.5rem;
-                        color: #44403c;
-                        font-weight: 500;
-                        border-bottom: 1px solid #f5f5f4;
-                        margin-bottom: 0.5rem;
-                    }
-
-                    #native-navbar-menu .logout-form {
-                        margin-top: 0.5rem;
-                    }
-                </style>
-
-                <th:block th:replace="~{fragments/menu-items :: menu-items(
-                    styleClass='',
-                        linkClass='px-2 py-2 text-stone-600 hover:text-stone-900 hover:bg-stone-100/70 rounded-lg block',
-                        buttonClass='w-full text-left px-2 py-2 text-stone-600 hover:text-stone-900 hover:bg-stone-100/70 rounded-lg'
-                )}"></th:block>
-
-            </div>
-        </div>
-    </header>
-
-    <!-- 웹용 네비게이션 바 (sticky) -->
-    <div th:unless="${isNative}" class="sticky top-0 z-50">
+    <div class="sticky top-0 z-50">
         <nav th:replace="~{fragments/navbar :: navbar}"></nav>
     </div>
 
-    <main layout:fragment="content" class="container mx-auto px-4 py-6 max-w-4xl">
-    </main>
+    <main layout:fragment="content" class="container mx-auto px-4 py-6 max-w-4xl"></main>
 
-    <div class="h-20" th:if="${isNative}"></div>
+    <th:block th:replace="~{fragments/confirm-modal :: confirm-modal}"></th:block>
 
     <div th:replace="~{fragments/scripts :: scripts(
                 ${@environment.getProperty('mindlog.supabase.url')},
@@ -91,66 +36,6 @@
             )}"></div>
 
     <th:block layout:fragment="script"></th:block>
-
-    <!-- Global Toast -->
-    <div id="mindlog-toast"
-         class="mindlog-toast hidden"
-         role="status"
-         aria-live="polite"
-         aria-atomic="true">
-        <div id="mindlog-toast-content" class="mindlog-toast-content">
-            <span id="mindlog-toast-message">완료되었습니다.</span>
-        </div>
-    </div>
-
-    <!-- Global Turbo Confirm Modal (Preline) -->
-    <div id="turbo-confirm-modal"
-        class="hs-overlay hidden size-full fixed top-0 start-0 z-[80] overflow-x-hidden overflow-y-auto pointer-events-none"
-        role="dialog" tabindex="-1" aria-labelledby="turbo-confirm-modal-label">
-        <div
-            class="hs-overlay-open:mt-7 hs-overlay-open:opacity-100 hs-overlay-open:duration-500 mt-0 opacity-0 ease-out transition-all sm:max-w-lg sm:w-full m-3 sm:mx-auto">
-            <div class="flex flex-col border rounded-2xl pointer-events-auto backdrop-blur-md"
-                 style="background: rgba(248, 248, 245, 0.96); border-color: var(--line); box-shadow: 0 20px 36px -26px rgba(24,24,27,0.45), 0 10px 20px -18px rgba(24,24,27,0.3);">
-                <div class="flex justify-between items-center py-3 px-4 border-b"
-                     style="border-color: var(--line);">
-                    <h3 id="turbo-confirm-modal-label" class="font-bold text-stone-800">
-                        확인
-                    </h3>
-                    <button type="button"
-                        class="inline-flex justify-center items-center size-8 text-sm font-semibold rounded-full text-stone-700 hover:bg-stone-200/60 focus:outline-none focus:bg-stone-200/60 disabled:opacity-50 disabled:pointer-events-none"
-                        aria-label="Close" data-hs-overlay="#turbo-confirm-modal">
-                        <span class="sr-only">Close</span>
-                        <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                            stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M18 6 6 18"></path>
-                            <path d="m6 6 12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-                <div class="p-4 overflow-y-auto">
-                    <p id="turbo-confirm-message" class="text-stone-800 leading-relaxed">
-                        정말로 진행하시겠습니까?
-                    </p>
-                </div>
-                <div class="flex justify-end items-center gap-x-2 py-3 px-4 border-t"
-                     style="border-color: var(--line);">
-                    <button type="button"
-                        class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-xl border text-stone-700 disabled:opacity-50 disabled:pointer-events-none"
-                        style="border-color: var(--line); background: rgba(248,248,245,0.82);"
-                        data-hs-overlay="#turbo-confirm-modal">
-                        취소
-                    </button>
-                    <button id="turbo-confirm-button" type="button"
-                        class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-xl border disabled:opacity-50 disabled:pointer-events-none"
-                        style="border-color: var(--emotion-negative-soft); background: var(--emotion-negative); color: #fff;">
-                        확인
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
 </body>
 
 </html>

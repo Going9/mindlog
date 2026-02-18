@@ -5,17 +5,17 @@
 
 <head>
   <title>내 일기</title>
+  <meta name="turbo-cache-control" content="no-cache">
 </head>
 
 <body>
 <div layout:fragment="content" class="page-shell">
-  <turbo-frame id="diary_list_frame">
     <div class="flex flex-col md:flex-row justify-between items-center mb-2 gap-4">
       <div class="w-full md:w-auto text-center md:text-left">
         <h1 class="page-title">내 일기</h1>
         <p class="page-subtitle mt-1">당신의 감정 기록들</p>
       </div>
-      <a th:href="@{/diaries/new}" data-turbo-frame="_top" data-turbo-prefetch="false" class="btn-primary" aria-label="새 일기 쓰기">
+      <a th:href="@{/diaries/new}" data-turbo-prefetch="false" class="btn-primary" aria-label="새 일기 쓰기">
         <svg class="flex-shrink-0 w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
              stroke-linejoin="round">
@@ -30,6 +30,7 @@
       <div class="grid grid-cols-[auto,1fr,auto] items-center gap-3">
         <a th:href="@{/diaries(year=${prevYear},month=${prevMonth},sort=${sort})}"
            class="btn-secondary whitespace-nowrap"
+           data-turbo-prefetch="false"
            aria-label="이전 달 보기">
           <span aria-hidden="true">←</span>
           <span>이전 달</span>
@@ -38,6 +39,7 @@
            th:text="${monthLabel}">2026년 2월</p>
         <a th:href="@{/diaries(year=${nextYear},month=${nextMonth},sort=${sort})}"
            class="btn-secondary whitespace-nowrap"
+           data-turbo-prefetch="false"
            aria-label="다음 달 보기">
           <span>다음 달</span>
           <span aria-hidden="true">→</span>
@@ -45,31 +47,65 @@
       </div>
     </div>
 
-    <div class="mb-4 surface-panel px-4 py-4 space-y-4">
+    <div class="mb-4 surface-panel px-4 py-4 space-y-4 overflow-visible">
       <form method="get" th:action="@{/diaries}" class="space-y-3">
         <input type="hidden" name="sort" th:value="${sort}">
-        <div class="flex items-center gap-2.5 overflow-x-auto whitespace-nowrap pb-1">
-          <span class="text-sm font-medium text-stone-600 whitespace-nowrap">연도</span>
-          <select name="year" class="form-input py-2 pl-3 pr-9 min-w-24 text-sm">
-            <option th:each="yearOption : ${yearOptions}"
-                    th:value="${yearOption}"
-                    th:text="${yearOption + '년'}"
-                    th:selected="${yearOption == year}">
-              2026년
-            </option>
-          </select>
+        <div class="flex flex-wrap items-end gap-2.5">
+          <div class="min-w-[9rem] flex-1 space-y-1.5">
+            <label class="text-sm font-medium text-stone-600">연도</label>
+            <div class="mindlog-select w-full" data-controller="custom-select">
+              <select name="year" class="sr-only" data-custom-select-target="source">
+                <option th:each="yearOption : ${yearOptions}"
+                        th:value="${yearOption}"
+                        th:text="${yearOption + '년'}"
+                        th:selected="${yearOption == year}">
+                  2026년
+                </option>
+              </select>
+              <button type="button"
+                      class="mindlog-select-trigger text-sm"
+                      aria-label="연도 선택"
+                      data-custom-select-target="trigger"
+                      data-action="click->custom-select#toggle keydown->custom-select#handleTriggerKeydown">
+                <span data-custom-select-target="label">연도</span>
+                <span aria-hidden="true">▾</span>
+              </button>
+              <ul class="mindlog-select-menu hidden"
+                  role="listbox"
+                  tabindex="-1"
+                  data-custom-select-target="menu"
+                  data-action="keydown->custom-select#handleMenuKeydown"></ul>
+            </div>
+          </div>
 
-          <span class="text-sm font-medium text-stone-600 whitespace-nowrap ml-1">월</span>
-          <select name="month" class="form-input py-2 pl-3 pr-9 min-w-20 text-sm">
-            <option th:each="monthOption : ${monthOptions}"
-                    th:value="${monthOption}"
-                    th:text="${monthOption + '월'}"
-                    th:selected="${monthOption == month}">
-              2월
-            </option>
-          </select>
+          <div class="min-w-[7.5rem] flex-1 space-y-1.5">
+            <label class="text-sm font-medium text-stone-600">월</label>
+            <div class="mindlog-select w-full" data-controller="custom-select">
+              <select name="month" class="sr-only" data-custom-select-target="source">
+                <option th:each="monthOption : ${monthOptions}"
+                        th:value="${monthOption}"
+                        th:text="${monthOption + '월'}"
+                        th:selected="${monthOption == month}">
+                  2월
+                </option>
+              </select>
+              <button type="button"
+                      class="mindlog-select-trigger text-sm"
+                      aria-label="월 선택"
+                      data-custom-select-target="trigger"
+                      data-action="click->custom-select#toggle keydown->custom-select#handleTriggerKeydown">
+                <span data-custom-select-target="label">월</span>
+                <span aria-hidden="true">▾</span>
+              </button>
+              <ul class="mindlog-select-menu hidden"
+                  role="listbox"
+                  tabindex="-1"
+                  data-custom-select-target="menu"
+                  data-action="keydown->custom-select#handleMenuKeydown"></ul>
+            </div>
+          </div>
 
-          <button type="submit" class="btn-primary !py-2 !px-5 text-sm whitespace-nowrap flex-shrink-0">이동</button>
+          <button type="submit" class="btn-primary !py-2 !px-5 text-sm whitespace-nowrap flex-shrink-0 w-full sm:w-auto">이동</button>
         </div>
       </form>
 
@@ -79,19 +115,23 @@
           <a th:if="${isSearchMode}"
              th:href="@{/diaries(q=${keyword},sort='latest',page=0)}"
              class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+             data-turbo-prefetch="false"
              th:classappend="${sort == 'latest'} ? ' bg-stone-800 text-white' : ' text-stone-600 hover:text-stone-800'">최신순</a>
           <a th:unless="${isSearchMode}"
              th:href="@{/diaries(year=${year},month=${month},sort='latest')}"
              class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+             data-turbo-prefetch="false"
              th:classappend="${sort == 'latest'} ? ' bg-stone-800 text-white' : ' text-stone-600 hover:text-stone-800'">최신순</a>
 
           <a th:if="${isSearchMode}"
              th:href="@{/diaries(q=${keyword},sort='oldest',page=0)}"
              class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+             data-turbo-prefetch="false"
              th:classappend="${sort == 'oldest'} ? ' bg-stone-800 text-white' : ' text-stone-600 hover:text-stone-800'">오래된순</a>
           <a th:unless="${isSearchMode}"
              th:href="@{/diaries(year=${year},month=${month},sort='oldest')}"
              class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+             data-turbo-prefetch="false"
              th:classappend="${sort == 'oldest'} ? ' bg-stone-800 text-white' : ' text-stone-600 hover:text-stone-800'">오래된순</a>
         </div>
       </div>
@@ -151,7 +191,7 @@
       <p class="mt-1 text-sm text-stone-500"
          th:text="${isSearchMode} ? '검색어 또는 기간을 조정해 보세요.' : '첫 번째 감정 일기를 기록해보세요.'">첫 번째 감정 일기를 기록해보세요.</p>
       <div class="mt-6" th:unless="${isSearchMode}">
-        <a th:href="@{/diaries/new}" data-turbo-frame="_top" class="btn-secondary">
+        <a th:href="@{/diaries/new}" class="btn-secondary">
           <svg class="flex-shrink-0 w-3 h-3" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                stroke-linecap="round" stroke-linejoin="round">
@@ -165,9 +205,8 @@
 
     <div th:unless="${#lists.isEmpty(diaries)}" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
       <a th:each="diary : ${diaries}" th:href="@{/diaries/{id}(id=${diary.id})}"
-         class="group flex flex-col h-full surface-panel transition-all duration-300 hover:-translate-y-0.5"
-         data-turbo-frame="_top"
-         data-turbo-prefetch="false">
+          class="group flex flex-col h-full surface-panel transition-all duration-300 hover:-translate-y-0.5"
+          data-turbo-prefetch="false">
 
         <div class="p-5 md:p-6 flex flex-col h-full">
           <div class="flex flex-col gap-2 mb-3">
@@ -198,11 +237,10 @@
     </div>
 
     <div th:if="${isSearchMode and (hasPrev or hasNext)}" class="mt-8 flex items-center justify-center gap-3">
-      <a th:if="${hasPrev}" th:href="@{/diaries(q=${keyword},sort=${sort},page=${prevPage})}" class="btn-secondary">이전</a>
+      <a th:if="${hasPrev}" th:href="@{/diaries(q=${keyword},sort=${sort},page=${prevPage})}" class="btn-secondary" data-turbo-prefetch="false">이전</a>
       <span class="text-sm text-stone-500" th:text="(${page} + 1) + ' / ' + ${totalPages}">1 / 1</span>
-      <a th:if="${hasNext}" th:href="@{/diaries(q=${keyword},sort=${sort},page=${nextPage})}" class="btn-secondary">다음</a>
+      <a th:if="${hasNext}" th:href="@{/diaries(q=${keyword},sort=${sort},page=${nextPage})}" class="btn-secondary" data-turbo-prefetch="false">다음</a>
     </div>
-  </turbo-frame>
 </div>
 </body>
 </html>

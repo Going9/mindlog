@@ -1,0 +1,16 @@
+server:
+  port: ${HTTPS_PORT:8443}
+  ssl:
+    enabled: true
+    key-store: classpath:certs/local-dev.p12
+    key-store-type: PKCS12
+    key-store-password: ${SSL_KEYSTORE_PASSWORD:changeit}
+    key-alias: local-dev
+  servlet:
+    session:
+      cookie:
+        secure: true
+
+mindlog:
+  security:
+    require-https: true

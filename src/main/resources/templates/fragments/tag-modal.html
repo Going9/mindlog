@@ -31,12 +31,28 @@
                                 </div>
                                 <div>
                                     <label class="form-label">카테고리</label>
-                                    <select class="form-input appearance-none pl-3 pr-10"
-                                        data-tag-target="tagCategory">
-                                        <option value="POSITIVE">긍정</option>
-                                        <option value="NEGATIVE">부정</option>
-                                        <option value="NEUTRAL">중립</option>
-                                    </select>
+                                    <div class="mindlog-select" data-controller="custom-select">
+                                        <select class="sr-only"
+                                            data-tag-target="tagCategory"
+                                            data-custom-select-target="source">
+                                            <option value="POSITIVE">긍정</option>
+                                            <option value="NEGATIVE">부정</option>
+                                            <option value="NEUTRAL">중립</option>
+                                        </select>
+                                        <button type="button"
+                                                class="mindlog-select-trigger"
+                                                aria-label="태그 카테고리 선택"
+                                                data-custom-select-target="trigger"
+                                                data-action="click->custom-select#toggle keydown->custom-select#handleTriggerKeydown">
+                                            <span data-custom-select-target="label">긍정</span>
+                                            <span aria-hidden="true">▾</span>
+                                        </button>
+                                        <ul class="mindlog-select-menu hidden"
+                                            role="listbox"
+                                            tabindex="-1"
+                                            data-custom-select-target="menu"
+                                            data-action="keydown->custom-select#handleMenuKeydown"></ul>
+                                    </div>
                                 </div>
                                 <div>
                                     <label class="form-label">색상 선택</label>

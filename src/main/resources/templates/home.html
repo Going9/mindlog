@@ -4,6 +4,7 @@
     xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 
 <head>
+    <meta name="turbo-cache-control" content="no-cache">
 </head>
 
 <th:block layout:fragment="title">홈</th:block>
@@ -48,13 +49,14 @@
                     </svg>
                     일기 쓰기
                 </a>
-                <a th:href="@{/diaries}" class="btn-secondary w-full sm:w-auto">
+                <a th:href="@{/diaries}" class="btn-secondary w-full sm:w-auto" data-turbo-prefetch="false">
                     내 일기장
                 </a>
             </div>
 
             <div class="pt-4 border-t border-stone-200/70">
                 <form th:action="@{/auth/logout}" method="post">
+                    <input th:if="${isNative}" type="hidden" name="source" value="app">
                     <button type="submit"
                         class="text-sm text-stone-400 hover:text-stone-600 transition-colors underline decoration-stone-200 underline-offset-4">
                         로그아웃
@@ -82,7 +84,7 @@
             </div>
 
             <div class="max-w-xs mx-auto">
-                <a th:href="@{/auth/login}" data-turbo="false" class="btn-primary w-full justify-center">
+                <a th:href="${isNative} ? @{/auth/login(source='app')} : @{/auth/login}" data-turbo="false" class="btn-primary w-full justify-center">
                     <svg class="loading-spinner h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
                         viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">

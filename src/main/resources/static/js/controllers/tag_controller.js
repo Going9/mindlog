@@ -471,6 +471,7 @@ export default class extends Controller {
 
         if (this.hasTagCategoryTarget) {
             this.tagCategoryTarget.value = this.defaultCategoryValue
+            this.tagCategoryTarget.dispatchEvent(new Event("change", { bubbles: true }))
         }
 
         this._applySelectedColor(this.defaultColorValue)

@@ -10,8 +10,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
 
 import com.mindlog.domain.diary.dto.DiaryFormDTO;
 import com.mindlog.domain.diary.dto.DiaryListItemResponse;
@@ -75,6 +77,23 @@ class DiaryControllerWebMvcTest {
     }
 
     @Test
+    void index_WhenRefreshTokenExists_BypassesCache() throws Exception {
+        when(diaryService.getMonthlyDiariesFresh(eq(profileId), eq(2026), eq(2), eq(true)))
+                .thenReturn(List.<DiaryListItemResponse>of());
+        when(diaryService.getAvailableYears(eq(profileId), eq(2026))).thenReturn(List.of(2026));
+
+        mockMvc.perform(get("/diaries")
+                        .param("year", "2026")
+                        .param("month", "2")
+                        .param("sort", "latest")
+                        .param("_refresh", "1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("diaries/index"));
+
+        verify(diaryService).getMonthlyDiariesFresh(eq(profileId), eq(2026), eq(2), eq(true));
+    }
+
+    @Test
     void search_WhenCalled_PassesSearchParamsToService() throws Exception {
         when(diaryService.searchDiaries(
                 eq(profileId), eq("행복"), eq(null), eq(null),
@@ -116,7 +135,8 @@ class DiaryControllerWebMvcTest {
                         .param("date", "2026-02-11")
                         .param("shortContent", "test"))
                 .andExpect(status().isSeeOther())
-                .andExpect(redirectedUrl("/diaries/10?noticeCode=diary-created"));
+                .andExpect(redirectedUrl("/diaries/10"))
+                .andExpect(flash().attribute("noticeCode", "diary-created"));
     }
 
     @Test
@@ -140,7 +160,8 @@ class DiaryControllerWebMvcTest {
     void delete_WhenSuccess_Returns303() throws Exception {
         mockMvc.perform(delete("/diaries/10"))
                 .andExpect(status().isSeeOther())
-                .andExpect(redirectedUrl("/diaries?noticeCode=diary-deleted"));
+                .andExpect(redirectedUrlPattern("/diaries?_refresh=*"))
+                .andExpect(flash().attribute("noticeCode", "diary-deleted"));
 
         verify(diaryService).deleteDiary(profileId, 10L);
     }

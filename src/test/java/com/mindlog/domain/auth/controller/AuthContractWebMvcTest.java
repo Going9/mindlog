@@ -1,6 +1,11 @@
 package com.mindlog.domain.auth.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
@@ -11,7 +16,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.mindlog.domain.auth.service.AuthHandoverService;
 import com.mindlog.domain.auth.service.AuthLoginService;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Base64;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -66,6 +73,19 @@ class AuthContractWebMvcTest {
     }
 
     @Test
+    void socialLogin_WebSource_DoesNotContainNativeParams() throws Exception {
+        var result = mockMvc.perform(get("/auth/login/google")
+                        .header("Host", "www.mindlog.blog")
+                        .secure(true))
+                .andExpect(status().is3xxRedirection())
+                .andReturn();
+
+        var location = result.getResponse().getRedirectedUrl();
+        assertThat(location).isNotNull();
+        assertThat(location).doesNotContain("source%3Dapp%26v%3D");
+    }
+
+    @Test
     void callback_AppSource_ReturnsDeepLinkView() throws Exception {
         var encodedVerifier = Base64.getUrlEncoder()
                 .withoutPadding()
@@ -82,7 +102,67 @@ class AuthContractWebMvcTest {
     }
 
     @Test
-    void exchange_ValidToken_RedirectsToDiaries() throws Exception {
+    void callback_AppSourceWithoutVerifier_RedirectsLoginWithInvalidSession() throws Exception {
+        mockMvc.perform(get("/auth/callback")
+                        .param("code", "code123")
+                        .param("source", "app"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/auth/login?source=app&error=invalid_session"));
+    }
+
+    @Test
+    void callback_AppSourceWithInvalidVerifierEncoding_RedirectsLoginWithInvalidSession() throws Exception {
+        mockMvc.perform(get("/auth/callback")
+                        .param("code", "code123")
+                        .param("source", "app")
+                        .param("v", "@@@"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/auth/login?source=app&error=invalid_session"));
+
+        verify(authLoginService, never()).processLoginForNativeApp(anyString(), anyString());
+    }
+
+    @Test
+    void callback_WithErrorParam_AppSource_RedirectsLoginWithAuthFailed() throws Exception {
+        mockMvc.perform(get("/auth/callback")
+                        .param("error", "access_denied")
+                        .param("source", "app"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/auth/login?source=app&error=auth_failed"));
+    }
+
+    @Test
+    void callback_AppSource_LoginFailure_RedirectsLoginProcessFailed() throws Exception {
+        var encodedVerifier = Base64.getUrlEncoder()
+                .withoutPadding()
+                .encodeToString("verifier123".getBytes(StandardCharsets.UTF_8));
+
+        when(authLoginService.processLoginForNativeApp("code123", "verifier123"))
+                .thenThrow(new RuntimeException("native login failed"));
+
+        mockMvc.perform(get("/auth/callback")
+                        .param("code", "code123")
+                        .param("source", "app")
+                        .param("v", encodedVerifier))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/auth/login?source=app&error=login_process_failed"));
+    }
+
+    @Test
+    void callback_WebSource_LoginFailure_RedirectsLoginProcessFailedWithoutSource() throws Exception {
+        doThrow(new RuntimeException("web login failed"))
+                .when(authLoginService)
+                .processLogin(anyString(), anyString(), any(), any());
+
+        mockMvc.perform(get("/auth/callback")
+                        .param("code", "code123")
+                        .sessionAttr("pkce_verifier", "verifier123"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/auth/login?error=login_process_failed"));
+    }
+
+    @Test
+    void exchange_ValidToken_RedirectsToHome() throws Exception {
         var auth = new UsernamePasswordAuthenticationToken("user-id", "token", List.of());
         var result = new AuthHandoverService.HandoverResult(
                 auth,
@@ -90,7 +170,50 @@ class AuthContractWebMvcTest {
         when(authHandoverService.consumeToken("token-1")).thenReturn(result);
 
         mockMvc.perform(get("/auth/exchange").param("token", "token-1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("auth/exchange-complete"))
+                .andExpect(model().attribute("redirectUrl", "/"));
+    }
+
+    @Test
+    void exchange_InvalidToken_RedirectsToLogin() throws Exception {
+        when(authHandoverService.consumeToken("invalid")).thenReturn(null);
+
+        mockMvc.perform(get("/auth/exchange").param("token", "invalid"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/diaries"));
+                .andExpect(redirectedUrl("/auth/login?source=app&error=invalid_token"));
+    }
+
+    @Test
+    void exchange_InvalidToken_WhenAlreadyAuthenticated_RedirectsHome() throws Exception {
+        when(authHandoverService.consumeToken("invalid")).thenReturn(null);
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken("user-id", "token", List.of()));
+
+        mockMvc.perform(get("/auth/exchange").param("token", "invalid"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/"));
+    }
+
+    @Test
+    void exchange_ReplayedToken_WhenAlreadyAuthenticated_SkipsConsumeAndRendersComplete() throws Exception {
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken("user-id", "token", List.of()));
+
+        mockMvc.perform(get("/auth/exchange")
+                        .param("token", "token-1")
+                        .sessionAttr(
+                                AuthExchangeController.LAST_EXCHANGE_TOKEN_FINGERPRINT,
+                                fingerprint("token-1")))
+                .andExpect(status().isOk())
+                .andExpect(view().name("auth/exchange-complete"))
+                .andExpect(model().attribute("redirectUrl", "/"));
+
+        verify(authHandoverService, never()).consumeToken(anyString());
+    }
+
+    private String fingerprint(String token) throws Exception {
+        var digest = MessageDigest.getInstance("SHA-256");
+        return HexFormat.of().formatHex(digest.digest(token.getBytes(StandardCharsets.UTF_8)));
     }
 }

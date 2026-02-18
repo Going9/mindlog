@@ -21,6 +21,15 @@ Follow these guidelines strictly to maintain consistency and code quality.
 - **Run Single Test**: `./gradlew test --tests "com.mindlog.path.to.TestClass"`
 - **Run Specific Method**: `./gradlew test --tests "com.mindlog.path.to.TestClass.methodName"`
 
+## 2-1. Git Workflow (Required)
+- Do not implement directly on `main` or `release/*`.
+- Start implementation on a work branch with one of these prefixes:
+  - `feat/`, `fix/`, `refactor/`, `docs/`, `test/`, `chore/`, `perf/`, `build/`, `ci/`, `hotfix/`
+- Merge order: `work branch -> release/* -> main`.
+- Commit messages must follow Conventional Commits prefixes:
+  - `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`, `perf:`, `build:`, `ci:`, `revert:`
+- Commit title/body language in this workspace: Korean.
+
 ## 3. Code Style & Conventions
 
 ### Java
@@ -74,3 +83,13 @@ This project uses **Hotwire (Turbo Drive)**. Controllers must follow specific HT
 2. **Verify Auth**: Ensure `@CurrentProfileId` is used for user-scoped data.
 3. **Run Tests**: Verify logic with `./gradlew test`.
 4. **DTOs**: Use specific DTOs for requests/responses; do not expose Entities directly in Controller.
+
+## 6. Request Review Policy (Required)
+1. Before implementation, verify whether the request conflicts with platform/framework standards (Spring, Thymeleaf, Turbo, Stimulus, Hotwire Native).
+2. If a more standard or operationally safer option exists, propose it first before coding.
+3. If requested direction conflicts with the standard option, respond in this order:
+   - conflict point
+   - likely risk
+   - recommended alternative
+   - implementation path based on user choice
+4. Do not execute requests blindly; guide toward maintainable and platform-aligned outcomes.
