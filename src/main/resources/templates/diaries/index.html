@@ -5,10 +5,11 @@
 
 <head>
   <title>내 일기</title>
+  <meta name="turbo-cache-control" content="no-cache">
 </head>
 
 <body>
-<div layout:fragment="content" class="page-shell" data-controller="diary-transition" data-diary-transition-min-visible-ms-value="500">
+<div layout:fragment="content" class="page-shell">
     <div class="flex flex-col md:flex-row justify-between items-center mb-2 gap-4">
       <div class="w-full md:w-auto text-center md:text-left">
         <h1 class="page-title">내 일기</h1>
@@ -205,8 +206,7 @@
     <div th:unless="${#lists.isEmpty(diaries)}" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
       <a th:each="diary : ${diaries}" th:href="@{/diaries/{id}(id=${diary.id})}"
           class="group flex flex-col h-full surface-panel transition-all duration-300 hover:-translate-y-0.5"
-          data-turbo-prefetch="false"
-          data-diary-transition="detail">
+          data-turbo-prefetch="false">
 
         <div class="p-5 md:p-6 flex flex-col h-full">
           <div class="flex flex-col gap-2 mb-3">

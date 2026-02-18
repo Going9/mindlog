@@ -2,7 +2,6 @@ import { Application } from "@hotwired/stimulus"
 import ConfirmModalController from "./controllers/confirm_modal_controller.js"
 import CustomSelectController from "./controllers/custom_select_controller.js"
 import DatePickerController from "./controllers/date_picker_controller.js"
-import DiaryTransitionController from "./controllers/diary_transition_controller.js"
 import FlashNoticeController from "./controllers/flash_notice_controller.js"
 import FormSubmitController from "./controllers/form_submit_controller.js"
 import ModalController from "./controllers/modal_controller.js"
@@ -40,8 +39,6 @@ if (!existingApplication) {
 
     // 범용 모달 컨트롤러
     application.register("modal", ModalController)
-
-    application.register("diary-transition", DiaryTransitionController)
 
     console.log("[Mindlog] Stimulus 초기화 완료 (FormSubmit Controller 포함)")
 } else {

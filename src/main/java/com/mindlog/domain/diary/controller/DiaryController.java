@@ -44,6 +44,7 @@ public class DiaryController {
             @RequestParam(required = false) Integer year,
             @RequestParam(required = false) Integer month,
             @RequestParam(required = false, defaultValue = "latest") String sort,
+            @RequestParam(name = "_refresh", required = false) Long refreshToken,
             @RequestParam(name = "q", required = false) String keyword,
             @RequestParam(required = false, defaultValue = "0") Integer page,
             Model model) {
@@ -91,7 +92,9 @@ public class DiaryController {
             return "diaries/index";
         }
 
-        List<DiaryListItemResponse> diaries = diaryService.getMonthlyDiaries(profileId, y, m, newestFirst);
+        List<DiaryListItemResponse> diaries = refreshToken != null
+                ? diaryService.getMonthlyDiariesFresh(profileId, y, m, newestFirst)
+                : diaryService.getMonthlyDiaries(profileId, y, m, newestFirst);
 
         model.addAttribute("diaries", diaries);
         model.addAttribute("year", y);
@@ -249,7 +252,10 @@ public class DiaryController {
 
     private RedirectView redirectToDiaryList(String noticeCode, RedirectAttributes redirectAttributes) {
         redirectAttributes.addFlashAttribute("noticeCode", noticeCode);
-        var redirectUrl = UriComponentsBuilder.fromPath("/diaries").toUriString();
+        // 삭제 직후 목록 복귀는 캐시 프리뷰를 피하고 서버 최신 목록을 즉시 반영한다.
+        var redirectUrl = UriComponentsBuilder.fromPath("/diaries")
+                .queryParam("_refresh", System.currentTimeMillis())
+                .toUriString();
         return new RedirectView(redirectUrl, true, false, false);
     }
 

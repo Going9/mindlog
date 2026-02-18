@@ -58,6 +58,25 @@ public class DiaryService {
       int year,
       int month,
       boolean newestFirst) {
+    return loadMonthlyDiaries(profileId, year, month, newestFirst);
+  }
+
+  /**
+   * 캐시 우회가 필요한 호출(예: 삭제 직후 강제 갱신)에 사용한다.
+   */
+  public List<DiaryListItemResponse> getMonthlyDiariesFresh(
+      UUID profileId,
+      int year,
+      int month,
+      boolean newestFirst) {
+    return loadMonthlyDiaries(profileId, year, month, newestFirst);
+  }
+
+  private List<DiaryListItemResponse> loadMonthlyDiaries(
+      UUID profileId,
+      int year,
+      int month,
+      boolean newestFirst) {
     YearMonth yearMonth = resolveYearMonth(year, month);
     List<DiaryMonthlySummary> diaries = findDiariesByMonth(profileId, yearMonth, newestFirst);
     if (diaries.isEmpty()) {

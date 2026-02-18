@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
@@ -73,6 +74,23 @@ class DiaryControllerWebMvcTest {
                 .andExpect(view().name("diaries/index"));
 
         verify(diaryService).getMonthlyDiaries(eq(profileId), eq(2026), eq(2), eq(true));
+    }
+
+    @Test
+    void index_WhenRefreshTokenExists_BypassesCache() throws Exception {
+        when(diaryService.getMonthlyDiariesFresh(eq(profileId), eq(2026), eq(2), eq(true)))
+                .thenReturn(List.<DiaryListItemResponse>of());
+        when(diaryService.getAvailableYears(eq(profileId), eq(2026))).thenReturn(List.of(2026));
+
+        mockMvc.perform(get("/diaries")
+                        .param("year", "2026")
+                        .param("month", "2")
+                        .param("sort", "latest")
+                        .param("_refresh", "1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("diaries/index"));
+
+        verify(diaryService).getMonthlyDiariesFresh(eq(profileId), eq(2026), eq(2), eq(true));
     }
 
     @Test
@@ -142,7 +160,7 @@ class DiaryControllerWebMvcTest {
     void delete_WhenSuccess_Returns303() throws Exception {
         mockMvc.perform(delete("/diaries/10"))
                 .andExpect(status().isSeeOther())
-                .andExpect(redirectedUrl("/diaries"))
+                .andExpect(redirectedUrlPattern("/diaries?_refresh=*"))
                 .andExpect(flash().attribute("noticeCode", "diary-deleted"));
 
         verify(diaryService).deleteDiary(profileId, 10L);
