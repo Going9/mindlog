@@ -2,9 +2,10 @@ package com.mindlog.domain.diary.controller;
 
 import com.mindlog.domain.diary.dto.DiaryFormDTO;
 import com.mindlog.domain.diary.dto.DiaryRequest;
-import com.mindlog.domain.diary.exception.DuplicateDiaryDateException;
+import com.mindlog.domain.diary.dto.DiaryWriteAllowance;
 import com.mindlog.domain.diary.service.DiaryFormService;
 import com.mindlog.domain.diary.service.DiaryService;
+import com.mindlog.domain.diary.service.DiaryWritePolicyService;
 import com.mindlog.global.security.CurrentProfileId;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -36,11 +37,16 @@ public class DiaryController {
 
   private final DiaryService diaryService;
   private final DiaryFormService diaryFormService;
+  private final DiaryWritePolicyService diaryWritePolicyService;
   private final DiaryIndexPageComposer diaryIndexPageComposer;
 
-  public DiaryController(DiaryService diaryService, DiaryFormService diaryFormService) {
+  public DiaryController(
+      DiaryService diaryService,
+      DiaryFormService diaryFormService,
+      DiaryWritePolicyService diaryWritePolicyService) {
     this.diaryService = diaryService;
     this.diaryFormService = diaryFormService;
+    this.diaryWritePolicyService = diaryWritePolicyService;
     this.diaryIndexPageComposer = new DiaryIndexPageComposer(diaryService);
   }
 
@@ -101,14 +107,8 @@ public class DiaryController {
       return renderUnprocessableForm(response, model, formData);
     }
 
-    try {
-      var id = diaryService.createDiary(profileId, request);
-      return redirectToDiaryDetail(id, "diary-created", redirectAttributes);
-    } catch (DuplicateDiaryDateException e) {
-      bindingResult.rejectValue("date", "duplicate", e.getMessage());
-      var formData = diaryFormService.getFormOnError(profileId, request, null);
-      return renderUnprocessableForm(response, model, formData);
-    }
+    var id = diaryService.createDiary(profileId, request);
+    return redirectToDiaryDetail(id, "diary-created", redirectAttributes);
   }
 
   @GetMapping("/{id}/edit")
@@ -140,14 +140,8 @@ public class DiaryController {
       return renderUnprocessableForm(response, model, formData);
     }
 
-    try {
-      diaryService.updateDiary(profileId, id, request);
-      return redirectToDiaryDetail(id, "diary-updated", redirectAttributes);
-    } catch (DuplicateDiaryDateException e) {
-      bindingResult.rejectValue("date", "duplicate", e.getMessage());
-      var formData = diaryFormService.getFormOnError(profileId, request, id);
-      return renderUnprocessableForm(response, model, formData);
-    }
+    diaryService.updateDiary(profileId, id, request);
+    return redirectToDiaryDetail(id, "diary-updated", redirectAttributes);
   }
 
   /**
@@ -163,14 +157,13 @@ public class DiaryController {
     return redirectToDiaryList("diary-deleted", redirectAttributes);
   }
 
-  // Ajax 검증용 (Turbo와 무관하게 유지)
-  @GetMapping("/check")
+  // 작성 제한 정책 조회용 (Turbo와 무관하게 유지)
+  @GetMapping("/write-allowance")
   @ResponseBody
-  public ResponseEntity<Long> checkDiaryDate(
+  public ResponseEntity<DiaryWriteAllowance> writeAllowance(
       @CurrentProfileId UUID profileId,
       @RequestParam LocalDate date) {
-    var diaryId = diaryService.findIdByDate(profileId, date);
-    return ResponseEntity.ok(diaryId);
+    return ResponseEntity.ok(diaryWritePolicyService.getAllowance(profileId, date));
   }
 
   private void populateModel(Model model, DiaryFormDTO formData) {
