@@ -26,7 +26,7 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
             WHERE d.profile_id = :profileId
               AND d.date BETWEEN :start AND :end
               AND d.is_deleted = false
-            ORDER BY d.date ASC
+            ORDER BY d.date ASC, d.created_at ASC, d.id ASC
             """, nativeQuery = true)
     List<DiaryMonthlySummaryRow> findMonthlySummaryByProfileIdAndDateBetween(
             @Param("profileId") UUID profileId,
@@ -43,7 +43,7 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
             WHERE d.profile_id = :profileId
               AND d.date BETWEEN :start AND :end
               AND d.is_deleted = false
-            ORDER BY d.date DESC
+            ORDER BY d.date DESC, d.created_at DESC, d.id DESC
             """, nativeQuery = true)
     List<DiaryMonthlySummaryRow> findMonthlySummaryByProfileIdAndDateBetweenDesc(
             @Param("profileId") UUID profileId,
@@ -69,7 +69,7 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
                     coalesce(d.gratitude_moment, '') || ' ' ||
                     coalesce(d.self_kind_words, '')
               ) LIKE '%' || lower(cast(:keyword as text)) || '%'
-            ORDER BY d.date ASC
+            ORDER BY d.date ASC, d.created_at ASC, d.id ASC
             """, countQuery = """
             SELECT COUNT(*)
             FROM public.diaries d
@@ -112,7 +112,7 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
                     coalesce(d.gratitude_moment, '') || ' ' ||
                     coalesce(d.self_kind_words, '')
               ) LIKE '%' || lower(cast(:keyword as text)) || '%'
-            ORDER BY d.date DESC
+            ORDER BY d.date DESC, d.created_at DESC, d.id DESC
             """, countQuery = """
             SELECT COUNT(*)
             FROM public.diaries d
@@ -146,9 +146,16 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
             """)
     DateRangeView findDateRangeByProfileId(@Param("profileId") UUID profileId);
 
-    Optional<Diary> findByProfileIdAndDate(UUID profileId, LocalDate date);
-    boolean existsByProfileIdAndDate(UUID profileId, LocalDate date);
-    boolean existsByProfileIdAndDateAndIdNot(UUID profileId, LocalDate date, Long id);
+    @Query("""
+            SELECT COUNT(d)
+            FROM Diary d
+            WHERE d.profileId = :profileId
+              AND d.date = :date
+              AND d.isDeleted = false
+            """)
+    long countActiveByProfileIdAndDate(
+            @Param("profileId") UUID profileId,
+            @Param("date") LocalDate date);
 
     interface DateRangeView {
         @Nullable

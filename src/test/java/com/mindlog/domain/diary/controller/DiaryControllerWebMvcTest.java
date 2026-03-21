@@ -2,13 +2,13 @@ package com.mindlog.domain.diary.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -18,9 +18,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.mindlog.domain.diary.dto.DiaryFormDTO;
 import com.mindlog.domain.diary.dto.DiaryListItemResponse;
 import com.mindlog.domain.diary.dto.DiaryRequest;
-import com.mindlog.domain.diary.exception.DuplicateDiaryDateException;
+import com.mindlog.domain.diary.dto.DiaryWriteAllowance;
 import com.mindlog.domain.diary.service.DiaryFormService;
 import com.mindlog.domain.diary.service.DiaryService;
+import com.mindlog.domain.diary.service.DiaryWritePolicyService;
 import com.mindlog.global.security.CurrentProfileId;
 import java.time.LocalDate;
 import java.util.List;
@@ -47,6 +48,9 @@ class DiaryControllerWebMvcTest {
     @Mock
     private DiaryFormService diaryFormService;
 
+    @Mock
+    private DiaryWritePolicyService diaryWritePolicyService;
+
     private MockMvc mockMvc;
     private UUID profileId;
 
@@ -54,7 +58,7 @@ class DiaryControllerWebMvcTest {
     void setUp() {
         profileId = UUID.randomUUID();
 
-        var controller = new DiaryController(diaryService, diaryFormService);
+        var controller = new DiaryController(diaryService, diaryFormService, diaryWritePolicyService);
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setCustomArgumentResolvers(new FixedProfileIdResolver(profileId))
                 .build();
@@ -140,20 +144,15 @@ class DiaryControllerWebMvcTest {
     }
 
     @Test
-    void update_WhenDuplicateDate_Returns422() throws Exception {
-        var formData = new DiaryFormDTO(
-                new DiaryRequest(LocalDate.now(), null, null, null, null, null, null, null, null, List.of()),
-                List.of(),
-                10L);
-        when(diaryFormService.getFormOnError(eq(profileId), any(DiaryRequest.class), eq(10L))).thenReturn(formData);
-        doThrow(new DuplicateDiaryDateException("중복"))
-                .when(diaryService)
-                .updateDiary(eq(profileId), eq(10L), any(DiaryRequest.class));
-
+    void update_WhenSuccess_Returns303() throws Exception {
         mockMvc.perform(put("/diaries/10")
-                        .param("date", "2026-02-11"))
-                .andExpect(status().isUnprocessableEntity())
-                .andExpect(view().name("diaries/form"));
+                        .param("date", "2026-02-11")
+                        .param("shortContent", "updated"))
+                .andExpect(status().isSeeOther())
+                .andExpect(redirectedUrl("/diaries/10"))
+                .andExpect(flash().attribute("noticeCode", "diary-updated"));
+
+        verify(diaryService).updateDiary(eq(profileId), eq(10L), any(DiaryRequest.class));
     }
 
     @Test
@@ -164,6 +163,21 @@ class DiaryControllerWebMvcTest {
                 .andExpect(flash().attribute("noticeCode", "diary-deleted"));
 
         verify(diaryService).deleteDiary(profileId, 10L);
+    }
+
+    @Test
+    void writeAllowance_WhenCalled_ReturnsUsageSnapshot() throws Exception {
+        when(diaryWritePolicyService.getAllowance(eq(profileId), eq(LocalDate.of(2026, 2, 11))))
+                .thenReturn(DiaryWriteAllowance.unlimited(LocalDate.of(2026, 2, 11), 2L));
+
+        mockMvc.perform(get("/diaries/write-allowance")
+                        .param("date", "2026-02-11"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.date").value("2026-02-11"))
+                .andExpect(jsonPath("$.usedCount").value(2))
+                .andExpect(jsonPath("$.dailyLimit").doesNotExist())
+                .andExpect(jsonPath("$.remainingCount").doesNotExist())
+                .andExpect(jsonPath("$.canWrite").value(true));
     }
 
     private static final class FixedProfileIdResolver implements HandlerMethodArgumentResolver {

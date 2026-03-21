@@ -5,7 +5,6 @@ import com.mindlog.domain.diary.dto.DiaryMonthlySummary;
 import com.mindlog.domain.diary.dto.DiaryRequest;
 import com.mindlog.domain.diary.dto.DiaryResponse;
 import com.mindlog.domain.diary.entity.Diary;
-import com.mindlog.domain.diary.exception.DuplicateDiaryDateException;
 import com.mindlog.domain.diary.repository.DiaryRepository;
 import com.mindlog.domain.tag.dto.TagResponse;
 import com.mindlog.domain.tag.repository.DiaryEmotionRepository;
@@ -221,8 +220,6 @@ public class DiaryService {
   @Transactional
   @CacheEvict(cacheNames = {"monthlyDiaries", "emotionAnalysis"}, allEntries = true)
   public Long createDiary(UUID profileId, DiaryRequest request) {
-    validateDiaryNotExists(profileId, request.date());
-
     Diary diary = buildDiaryFromRequest(profileId, request);
     Diary savedDiary = diaryRepository.save(diary);
 
@@ -230,12 +227,6 @@ public class DiaryService {
     diaryYearOptionsSupport.invalidate(profileId);
 
     return savedDiary.getId();
-  }
-
-  private void validateDiaryNotExists(UUID profileId, LocalDate date) {
-    if (diaryRepository.existsByProfileIdAndDate(profileId, date)) {
-      throw new DuplicateDiaryDateException("이미 해당 날짜에 일기가 존재합니다");
-    }
   }
 
   private Diary buildDiaryFromRequest(UUID profileId, DiaryRequest request) {
@@ -258,11 +249,8 @@ public class DiaryService {
   public void updateDiary(UUID profileId, Long id, DiaryRequest request) {
     var diary = findOwnedDiary(profileId, id);
 
-    if (diaryRepository.existsByProfileIdAndDateAndIdNot(profileId, request.date(), id)) {
-      throw new DuplicateDiaryDateException("이미 해당 날짜에 일기가 존재합니다");
-    }
-
     diary.update(
+        request.date(),
         request.shortContent(),
         request.situation(),
         request.reaction(),
@@ -283,14 +271,6 @@ public class DiaryService {
     diaryTagSupport.deleteDiaryTagRelations(id);
     diary.softDelete();
     diaryYearOptionsSupport.invalidate(profileId);
-  }
-
-  @Transactional(readOnly = true)
-  @Nullable
-  public Long findIdByDate(UUID profileId, LocalDate date) {
-    return diaryRepository.findByProfileIdAndDate(profileId, date)
-        .map(Diary::getId)
-        .orElse(null);
   }
 
   private Diary findOwnedDiary(UUID profileId, Long diaryId) {

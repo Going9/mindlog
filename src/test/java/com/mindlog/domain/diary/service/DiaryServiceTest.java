@@ -3,9 +3,7 @@ package com.mindlog.domain.diary.service;
 import com.mindlog.domain.diary.dto.DiaryRequest;
 import com.mindlog.domain.diary.dto.DiaryResponse;
 import com.mindlog.domain.diary.entity.Diary;
-import com.mindlog.domain.diary.exception.DuplicateDiaryDateException;
 import com.mindlog.domain.diary.repository.DiaryRepository;
-import com.mindlog.domain.tag.entity.DiaryTag;
 import com.mindlog.domain.tag.entity.EmotionTag;
 import com.mindlog.domain.tag.repository.DiaryEmotionRepository;
 import com.mindlog.domain.tag.repository.DiaryTagRepository;
@@ -23,11 +21,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class DiaryServiceTest {
@@ -45,7 +43,7 @@ class DiaryServiceTest {
     private DiaryService diaryService;
 
     @Test
-    @DisplayName("일기 생성 - 성공")
+    @DisplayName("일기 생성 - 같은 날짜도 저장 가능")
     void createDiary_Success() {
         // given
         UUID profileId = UUID.randomUUID();
@@ -55,7 +53,6 @@ class DiaryServiceTest {
                 "desired", "gratitude", "selfKind", "imgUrl", List.of(1L, 2L)
         );
 
-        given(diaryRepository.existsByProfileIdAndDate(profileId, today)).willReturn(false);
         given(diaryRepository.save(any(Diary.class))).willAnswer(inv -> {
             Diary d = inv.getArgument(0);
             return d; 
@@ -73,24 +70,6 @@ class DiaryServiceTest {
         // then
         verify(diaryRepository).save(any(Diary.class));
         verify(diaryTagRepository).saveAll(anyList());
-    }
-
-    @Test
-    @DisplayName("일기 생성 - 실패 (중복 날짜)")
-    void createDiary_Fail_DuplicateDate() {
-        // given
-        UUID profileId = UUID.randomUUID();
-        LocalDate today = LocalDate.now();
-        DiaryRequest request = new DiaryRequest(
-                today, "content", null, null, null, null, null, null, null, null
-        );
-
-        given(diaryRepository.existsByProfileIdAndDate(profileId, today)).willReturn(true);
-
-        // when & then
-        assertThatThrownBy(() -> diaryService.createDiary(profileId, request))
-                .isInstanceOf(DuplicateDiaryDateException.class)
-                .hasMessageContaining("이미 해당 날짜에 일기가 존재합니다");
     }
 
     @Test
@@ -115,5 +94,34 @@ class DiaryServiceTest {
         // then
         assertThat(response).isNotNull();
         assertThat(response.profileId()).isEqualTo(profileId);
+    }
+
+    @Test
+    @DisplayName("일기 수정 - 날짜 변경이 실제 엔티티에 반영된다")
+    void updateDiary_UpdatesDate() {
+        UUID profileId = UUID.randomUUID();
+        Long diaryId = 1L;
+        LocalDate originalDate = LocalDate.of(2026, 2, 11);
+        LocalDate updatedDate = LocalDate.of(2026, 2, 12);
+
+        Diary diary = Diary.builder()
+                .profileId(profileId)
+                .date(originalDate)
+                .shortContent("before")
+                .build();
+        ReflectionTestUtils.setField(diary, "id", diaryId);
+
+        DiaryRequest request = new DiaryRequest(
+                updatedDate, "after", null, null, null, null, null, null, null, List.of()
+        );
+
+        given(diaryRepository.findById(diaryId)).willReturn(Optional.of(diary));
+
+        diaryService.updateDiary(profileId, diaryId, request);
+
+        assertThat(diary.getDate()).isEqualTo(updatedDate);
+        assertThat(diary.getShortContent()).isEqualTo("after");
+        verify(diaryTagRepository).deleteAllByDiaryId(diaryId);
+        verify(diaryEmotionRepository).deleteAllByDiaryId(diaryId);
     }
 }

@@ -97,6 +97,7 @@ public class Diary extends BaseTimeEntity {
     }
 
     public void update(
+            LocalDate date,
             @Nullable String shortContent,
             @Nullable String situation,
             @Nullable String reaction,
@@ -106,6 +107,7 @@ public class Diary extends BaseTimeEntity {
             @Nullable String selfKindWords,
             @Nullable String imageUrl
     ) {
+        this.date = date;
         this.shortContent = shortContent;
         this.situation = situation;
         this.reaction = reaction;
