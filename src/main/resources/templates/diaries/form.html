@@ -2,6 +2,10 @@
 <html layout:decorate="~{${viewLayout}}" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
     xmlns:th="http://www.thymeleaf.org">
 
+<head>
+    <meta name="turbo-cache-control" content="no-cache">
+</head>
+
 <th:block layout:fragment="title" th:text="${diaryId == null ? '새 일기 쓰기' : '일기 수정하기'}"></th:block>
 
 <div class="page-shell" layout:fragment="content">

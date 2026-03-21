@@ -58,6 +58,41 @@
     animation: none !important;
     transition-delay: 0s !important;
   }
+
+  /* body gradient → 단색 대체 (합성 레이어 절감) */
+  .is-native {
+    background: #F7F7F4 !important;
+  }
+
+  /* box-shadow 제거 — 다중 레이어 shadow는 WebView 합성 비용이 높음 */
+  .is-native .surface-panel,
+  .is-native .surface-panel-strong,
+  .is-native .mindlog-card,
+  .is-native .tag-chip,
+  .is-native .btn-primary,
+  .is-native .btn-secondary {
+    box-shadow: none !important;
+  }
+
+  /* transition 제거 — reflow/repaint 트리거 차단 */
+  .is-native .mindlog-card,
+  .is-native .btn-primary,
+  .is-native .btn-secondary,
+  .is-native .tag-chip,
+  .is-native .mindlog-select-option {
+    transition: none !important;
+  }
+
+  /* hover transform 제거 */
+  .is-native .btn-primary:hover {
+    transform: none !important;
+  }
+
+  /* toast backdrop-filter 제거 */
+  .is-native .mindlog-toast-content {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
 }
 
 @layer components {

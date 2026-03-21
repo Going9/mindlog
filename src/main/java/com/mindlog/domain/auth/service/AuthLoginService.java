@@ -3,6 +3,7 @@ package com.mindlog.domain.auth.service;
 import com.mindlog.domain.profile.entity.Profile;
 import com.mindlog.domain.profile.entity.UserRole;
 import com.mindlog.domain.profile.repository.ProfileRepository;
+import com.mindlog.global.exception.SupabaseAuthException;
 import com.mindlog.global.security.SupabaseAuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -73,33 +74,48 @@ public class AuthLoginService {
      * OAuth 제공자로부터 받은 사용자 정보에서 name과 avatar를 추출합니다.
      */
     private UserMetadata extractUserMetadata(String email, Map<String, Object> userMap) {
-        Map<String, Object> userMeta = (Map<String, Object>) userMap.get("user_metadata");
         String name = email.split("@")[0];
         String avatar = null;
 
-        if (userMeta != null) {
-            if (userMeta.get("full_name") != null)
-                name = (String) userMeta.get("full_name");
-            else if (userMeta.get("name") != null)
-                name = (String) userMeta.get("name");
+        var rawMeta = userMap.get("user_metadata");
+        if (rawMeta instanceof Map<?, ?> userMeta) {
+            var fullName = userMeta.get("full_name");
+            var nameVal = userMeta.get("name");
+            if (fullName instanceof String s) {
+                name = s;
+            } else if (nameVal instanceof String s) {
+                name = s;
+            }
 
-            if (userMeta.get("avatar_url") != null)
-                avatar = (String) userMeta.get("avatar_url");
-            else if (userMeta.get("picture") != null)
-                avatar = (String) userMeta.get("picture");
+            var avatarUrl = userMeta.get("avatar_url");
+            var picture = userMeta.get("picture");
+            if (avatarUrl instanceof String s) {
+                avatar = s;
+            } else if (picture instanceof String s) {
+                avatar = s;
+            }
         }
 
         return new UserMetadata(name, avatar);
     }
 
+    @SuppressWarnings("unchecked")
     private LoginContext authenticateWithSupabase(String code, String verifier) throws Exception {
         Map<String, Object> tokenData = supabaseAuthService.exchangeCodeForToken(code, verifier);
         var accessToken = (String) tokenData.get("access_token");
         var refreshToken = (String) tokenData.get("refresh_token");
 
-        Map<String, Object> userMap = (Map<String, Object>) tokenData.get("user");
+        var rawUser = tokenData.get("user");
+        if (!(rawUser instanceof Map<?, ?>)) {
+            throw new SupabaseAuthException("인증 응답에서 사용자 정보를 찾을 수 없습니다.");
+        }
+        Map<String, Object> userMap = (Map<String, Object>) rawUser;
+
         var userId = (String) userMap.get("id");
         var email = (String) userMap.get("email");
+        if (userId == null || email == null) {
+            throw new SupabaseAuthException("인증 응답에 필수 사용자 정보(id, email)가 누락되었습니다.");
+        }
         var profileId = UUID.fromString(userId);
         var metadata = extractUserMetadata(email, userMap);
 

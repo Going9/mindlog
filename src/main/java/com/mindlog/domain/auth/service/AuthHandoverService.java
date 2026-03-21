@@ -50,9 +50,6 @@ public class AuthHandoverService {
     private final ObjectMapper objectMapper;
     private final Map<String, HandoverData> fallbackTokenStore = new ConcurrentHashMap<>();
 
-    // 토큰 유효 시간: 60초
-    private static final long TOKEN_TTL_SECONDS = 60;
-
     /**
      * 일회용 토큰을 생성합니다.
      * 
@@ -89,7 +86,7 @@ public class AuthHandoverService {
     public HandoverResult consumeToken(String token) {
         var fromRedis = consumeFromRedis(token);
         if (fromRedis != null) {
-            if (Instant.now().isAfter(fromRedis.createdAt().plusSeconds(TOKEN_TTL_SECONDS))) {
+            if (Instant.now().isAfter(fromRedis.createdAt().plusSeconds(TOKEN_TTL.toSeconds()))) {
                 log.warn("Handover 토큰 만료: {} (생성: {})", token.substring(0, 8) + "...", fromRedis.createdAt());
                 return null;
             }
@@ -108,7 +105,7 @@ public class AuthHandoverService {
             return null;
         }
 
-        if (Instant.now().isAfter(fallback.createdAt().plusSeconds(TOKEN_TTL_SECONDS))) {
+        if (Instant.now().isAfter(fallback.createdAt().plusSeconds(TOKEN_TTL.toSeconds()))) {
             log.warn("Handover 토큰 만료: {} (생성: {})", token.substring(0, 8) + "...", fallback.createdAt());
             return null;
         }
@@ -123,7 +120,7 @@ public class AuthHandoverService {
     private void cleanupExpiredFallbackTokens() {
         var now = Instant.now();
         fallbackTokenStore.entrySet()
-                .removeIf(entry -> now.isAfter(entry.getValue().createdAt().plusSeconds(TOKEN_TTL_SECONDS * 2)));
+                .removeIf(entry -> now.isAfter(entry.getValue().createdAt().plusSeconds(TOKEN_TTL.toSeconds() * 2)));
     }
 
     private boolean saveToRedis(String token, StoredHandoverData payload) {

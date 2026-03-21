@@ -40,7 +40,5 @@ if (!existingApplication) {
     // 범용 모달 컨트롤러
     application.register("modal", ModalController)
 
-    console.log("[Mindlog] Stimulus 초기화 완료 (FormSubmit Controller 포함)")
-} else {
-    console.log("[Mindlog] Stimulus 재초기화 요청 감지 - 기존 인스턴스 재사용")
 }
+

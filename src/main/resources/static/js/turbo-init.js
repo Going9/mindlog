@@ -47,7 +47,7 @@ if (!window.__mindlogTurboInitialized) {
     }
 
     document.addEventListener("turbo:load", () => {
-        if (typeof HSStaticMethods !== "undefined") {
+        if (typeof HSStaticMethods !== "undefined" && !document.body.classList.contains("is-native")) {
             HSStaticMethods.autoInit()
         }
     })

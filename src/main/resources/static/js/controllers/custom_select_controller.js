@@ -231,7 +231,7 @@ export default class extends Controller {
     }
 
     renderOptions() {
-        this.menuTarget.innerHTML = ""
+        const fragment = document.createDocumentFragment()
         this.optionButtons = []
 
         Array.from(this.sourceTarget.options).forEach((option, index) => {
@@ -247,8 +247,11 @@ export default class extends Controller {
             button.addEventListener("click", this.select.bind(this))
 
             item.appendChild(button)
-            this.menuTarget.appendChild(item)
+            fragment.appendChild(item)
             this.optionButtons.push(button)
         })
+
+        this.menuTarget.innerHTML = ""
+        this.menuTarget.appendChild(fragment)
     }
 }

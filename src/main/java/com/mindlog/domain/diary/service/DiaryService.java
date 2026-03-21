@@ -10,19 +10,21 @@ import com.mindlog.domain.tag.dto.TagResponse;
 import com.mindlog.domain.tag.repository.DiaryEmotionRepository;
 import com.mindlog.domain.tag.repository.DiaryTagRepository;
 import com.mindlog.domain.tag.repository.EmotionTagRepository;
+import com.mindlog.global.exception.DiaryAccessDeniedException;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,22 +35,27 @@ public class DiaryService {
   private static final String DIARY_NOT_FOUND_MESSAGE = "Diary not found";
   private static final String UNAUTHORIZED_ACCESS_MESSAGE = "Unauthorized access";
   private static final long SEARCH_DEFAULT_RANGE_DAYS = 365;
+  private static final String MONTHLY_DIARIES_CACHE = "v2::monthlyDiaries::";
+  private static final String EMOTION_ANALYSIS_CACHE = "v2::emotionAnalysis::";
 
   private final DiaryRepository diaryRepository;
   private final DiaryTagSupport diaryTagSupport;
   private final DiaryYearOptionsSupport diaryYearOptionsSupport;
+  private final StringRedisTemplate redisTemplate;
 
   public DiaryService(
       DiaryRepository diaryRepository,
       DiaryEmotionRepository diaryEmotionRepository,
       DiaryTagRepository diaryTagRepository,
-      EmotionTagRepository emotionTagRepository) {
+      EmotionTagRepository emotionTagRepository,
+      StringRedisTemplate redisTemplate) {
     this.diaryRepository = diaryRepository;
     this.diaryTagSupport = new DiaryTagSupport(
         diaryEmotionRepository,
         diaryTagRepository,
         emotionTagRepository);
     this.diaryYearOptionsSupport = new DiaryYearOptionsSupport(diaryRepository);
+    this.redisTemplate = redisTemplate;
   }
 
   @Cacheable(
@@ -99,16 +106,16 @@ public class DiaryService {
       boolean newestFirst) {
     LocalDate start = yearMonth.atDay(1);
     LocalDate end = yearMonth.atEndOfMonth();
-    if (newestFirst) {
-      return diaryRepository.findMonthlySummaryByProfileIdAndDateBetweenDesc(profileId, start, end)
-          .stream()
-          .map(DiaryRepository.DiaryMonthlySummaryRow::toSummary)
-          .toList();
-    }
-    return diaryRepository.findMonthlySummaryByProfileIdAndDateBetween(profileId, start, end)
+    var summaries = diaryRepository.findMonthlySummaryByProfileIdAndDateBetween(profileId, start, end)
         .stream()
         .map(DiaryRepository.DiaryMonthlySummaryRow::toSummary)
         .toList();
+    if (newestFirst) {
+      var reversed = new java.util.ArrayList<>(summaries);
+      Collections.reverse(reversed);
+      return List.copyOf(reversed);
+    }
+    return summaries;
   }
 
   public Page<DiaryListItemResponse> searchDiaries(
@@ -218,13 +225,13 @@ public class DiaryService {
   }
 
   @Transactional
-  @CacheEvict(cacheNames = {"monthlyDiaries", "emotionAnalysis"}, allEntries = true)
   public Long createDiary(UUID profileId, DiaryRequest request) {
     Diary diary = buildDiaryFromRequest(profileId, request);
     Diary savedDiary = diaryRepository.save(diary);
 
     diaryTagSupport.saveDiaryTags(savedDiary.getId(), profileId, savedDiary.getDate(), request.tagIds());
     diaryYearOptionsSupport.invalidate(profileId);
+    evictCachesForProfile(profileId);
 
     return savedDiary.getId();
   }
@@ -245,7 +252,6 @@ public class DiaryService {
   }
 
   @Transactional
-  @CacheEvict(cacheNames = {"monthlyDiaries", "emotionAnalysis"}, allEntries = true)
   public void updateDiary(UUID profileId, Long id, DiaryRequest request) {
     var diary = findOwnedDiary(profileId, id);
 
@@ -262,15 +268,16 @@ public class DiaryService {
 
     diaryTagSupport.replaceDiaryTags(diary, request.tagIds());
     diaryYearOptionsSupport.invalidate(profileId);
+    evictCachesForProfile(profileId);
   }
 
   @Transactional
-  @CacheEvict(cacheNames = {"monthlyDiaries", "emotionAnalysis"}, allEntries = true)
   public void deleteDiary(UUID profileId, Long id) {
     var diary = findOwnedDiary(profileId, id);
     diaryTagSupport.deleteDiaryTagRelations(id);
     diary.softDelete();
     diaryYearOptionsSupport.invalidate(profileId);
+    evictCachesForProfile(profileId);
   }
 
   private Diary findOwnedDiary(UUID profileId, Long diaryId) {
@@ -282,7 +289,24 @@ public class DiaryService {
 
   private void validateOwner(UUID profileId, Diary diary) {
     if (!diary.getProfileId().equals(profileId)) {
-      throw new IllegalArgumentException(UNAUTHORIZED_ACCESS_MESSAGE);
+      throw new DiaryAccessDeniedException(UNAUTHORIZED_ACCESS_MESSAGE);
+    }
+  }
+
+  private void evictCachesForProfile(UUID profileId) {
+    var prefix = profileId.toString();
+    evictByPattern(MONTHLY_DIARIES_CACHE + prefix);
+    evictByPattern(EMOTION_ANALYSIS_CACHE + prefix);
+  }
+
+  private void evictByPattern(String pattern) {
+    try {
+      var keys = redisTemplate.keys(pattern + "*");
+      if (keys != null && !keys.isEmpty()) {
+        redisTemplate.delete(keys);
+      }
+    } catch (Exception e) {
+      // Redis 장애 시 캐시 eviction 실패는 무시 (TTL로 자연 만료)
     }
   }
 

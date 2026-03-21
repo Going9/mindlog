@@ -8,12 +8,14 @@ import com.mindlog.domain.tag.entity.EmotionTag;
 import com.mindlog.domain.tag.repository.DiaryEmotionRepository;
 import com.mindlog.domain.tag.repository.DiaryTagRepository;
 import com.mindlog.domain.tag.repository.EmotionTagRepository;
+import com.mindlog.global.exception.DiaryAccessDeniedException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -21,6 +23,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.BDDMockito.given;
@@ -38,6 +41,8 @@ class DiaryServiceTest {
     private DiaryTagRepository diaryTagRepository;
     @Mock
     private EmotionTagRepository emotionTagRepository;
+    @Mock
+    private StringRedisTemplate redisTemplate;
 
     @InjectMocks
     private DiaryService diaryService;
@@ -55,7 +60,7 @@ class DiaryServiceTest {
 
         given(diaryRepository.save(any(Diary.class))).willAnswer(inv -> {
             Diary d = inv.getArgument(0);
-            return d; 
+            return d;
         });
 
         List<EmotionTag> tags = List.of(
@@ -123,5 +128,43 @@ class DiaryServiceTest {
         assertThat(diary.getShortContent()).isEqualTo("after");
         verify(diaryTagRepository).deleteAllByDiaryId(diaryId);
         verify(diaryEmotionRepository).deleteAllByDiaryId(diaryId);
+    }
+
+    @Test
+    @DisplayName("타인의 일기 조회 시 DiaryAccessDeniedException 발생")
+    void getDiary_WhenUnauthorized_ThrowsDiaryAccessDeniedException() {
+        UUID ownerId = UUID.randomUUID();
+        UUID otherProfileId = UUID.randomUUID();
+        Long diaryId = 1L;
+
+        Diary diary = Diary.builder()
+                .profileId(ownerId)
+                .date(LocalDate.now())
+                .shortContent("content")
+                .build();
+
+        given(diaryRepository.findById(diaryId)).willReturn(Optional.of(diary));
+
+        assertThatThrownBy(() -> diaryService.getDiary(otherProfileId, diaryId))
+                .isInstanceOf(DiaryAccessDeniedException.class);
+    }
+
+    @Test
+    @DisplayName("타인의 일기 삭제 시 DiaryAccessDeniedException 발생")
+    void deleteDiary_WhenUnauthorized_ThrowsDiaryAccessDeniedException() {
+        UUID ownerId = UUID.randomUUID();
+        UUID otherProfileId = UUID.randomUUID();
+        Long diaryId = 1L;
+
+        Diary diary = Diary.builder()
+                .profileId(ownerId)
+                .date(LocalDate.now())
+                .shortContent("content")
+                .build();
+
+        given(diaryRepository.findById(diaryId)).willReturn(Optional.of(diary));
+
+        assertThatThrownBy(() -> diaryService.deleteDiary(otherProfileId, diaryId))
+                .isInstanceOf(DiaryAccessDeniedException.class);
     }
 }

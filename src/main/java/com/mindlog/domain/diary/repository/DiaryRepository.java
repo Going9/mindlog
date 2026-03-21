@@ -41,23 +41,6 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
                 d.situation AS situation
             FROM public.diaries d
             WHERE d.profile_id = :profileId
-              AND d.date BETWEEN :start AND :end
-              AND d.is_deleted = false
-            ORDER BY d.date DESC, d.created_at DESC, d.id DESC
-            """, nativeQuery = true)
-    List<DiaryMonthlySummaryRow> findMonthlySummaryByProfileIdAndDateBetweenDesc(
-            @Param("profileId") UUID profileId,
-            @Param("start") LocalDate start,
-            @Param("end") LocalDate end);
-
-    @Query(value = """
-            SELECT
-                d.id AS id,
-                d.date AS date,
-                d.short_content AS shortContent,
-                d.situation AS situation
-            FROM public.diaries d
-            WHERE d.profile_id = :profileId
               AND d.is_deleted = false
               AND d.date BETWEEN :fromDate AND :toDate
               AND lower(

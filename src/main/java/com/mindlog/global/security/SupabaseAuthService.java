@@ -1,7 +1,9 @@
 package com.mindlog.global.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mindlog.global.exception.SupabaseAuthException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -12,6 +14,7 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SupabaseAuthService {
@@ -53,15 +56,13 @@ public class SupabaseAuthService {
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() != 200) {
-            throw new RuntimeException("Token exchange failed: " + response.body());
+            log.error("[Supabase] 토큰 교환 실패 (HTTP {}): {}", response.statusCode(), response.body());
+            throw new SupabaseAuthException("인증 토큰 교환에 실패했습니다. 다시 시도해주세요.");
         }
 
         return objectMapper.readValue(response.body(), Map.class);
     }
 
-    // SupabaseAuthService.java 내부에 추가
-
-    // [신규] Refresh Token으로 Access Token 갱신하기 (부활)
     public Map<String, Object> refreshToken(String refreshToken) throws Exception {
         String tokenUrl = supabaseUrl + "/auth/v1/token?grant_type=refresh_token";
 
@@ -80,7 +81,8 @@ public class SupabaseAuthService {
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() != 200) {
-            throw new RuntimeException("토큰 갱신 실패 (다시 로그인 필요): " + response.body());
+            log.error("[Supabase] 토큰 갱신 실패 (HTTP {}): {}", response.statusCode(), response.body());
+            throw new SupabaseAuthException("토큰 갱신에 실패했습니다. 다시 로그인해주세요.");
         }
 
         return objectMapper.readValue(response.body(), Map.class);
