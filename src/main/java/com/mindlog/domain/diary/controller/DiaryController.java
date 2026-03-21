@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.UUID;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -107,8 +108,12 @@ public class DiaryController {
       return renderUnprocessableForm(response, model, formData);
     }
 
-    var id = diaryService.createDiary(profileId, request);
-    return redirectToDiaryDetail(id, "diary-created", redirectAttributes);
+    try {
+      var id = diaryService.createDiary(profileId, request);
+      return redirectToDiaryDetail(id, "diary-created", redirectAttributes);
+    } catch (DataIntegrityViolationException e) {
+      return renderWriteConflict(response, model, bindingResult, profileId, request, null);
+    }
   }
 
   @GetMapping("/{id}/edit")
@@ -140,8 +145,12 @@ public class DiaryController {
       return renderUnprocessableForm(response, model, formData);
     }
 
-    diaryService.updateDiary(profileId, id, request);
-    return redirectToDiaryDetail(id, "diary-updated", redirectAttributes);
+    try {
+      diaryService.updateDiary(profileId, id, request);
+      return redirectToDiaryDetail(id, "diary-updated", redirectAttributes);
+    } catch (DataIntegrityViolationException e) {
+      return renderWriteConflict(response, model, bindingResult, profileId, request, id);
+    }
   }
 
   /**
@@ -179,6 +188,18 @@ public class DiaryController {
     response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
     populateModel(model, formData);
     return FORM_VIEW;
+  }
+
+  private String renderWriteConflict(
+      HttpServletResponse response,
+      Model model,
+      BindingResult bindingResult,
+      UUID profileId,
+      DiaryRequest request,
+      Long diaryId) {
+    bindingResult.reject("writeConflict", "저장 중 충돌이 발생했습니다. 잠시 후 다시 시도해주세요.");
+    var formData = diaryFormService.getFormOnError(profileId, request, diaryId);
+    return renderUnprocessableForm(response, model, formData);
   }
 
   private RedirectView redirectToDiaryDetail(

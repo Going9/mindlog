@@ -2,6 +2,7 @@ package com.mindlog.domain.diary.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -27,6 +28,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -144,6 +146,24 @@ class DiaryControllerWebMvcTest {
     }
 
     @Test
+    void create_WhenWriteConflict_Returns422() throws Exception {
+        var formData = new DiaryFormDTO(
+                new DiaryRequest(LocalDate.of(2026, 2, 11), "test", null, null, null, null, null, null, null, List.of()),
+                List.of(),
+                null);
+        when(diaryFormService.getFormOnError(eq(profileId), any(DiaryRequest.class), eq(null))).thenReturn(formData);
+        doThrow(new DataIntegrityViolationException("conflict"))
+                .when(diaryService)
+                .createDiary(eq(profileId), any(DiaryRequest.class));
+
+        mockMvc.perform(post("/diaries")
+                        .param("date", "2026-02-11")
+                        .param("shortContent", "test"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(view().name("diaries/form"));
+    }
+
+    @Test
     void update_WhenSuccess_Returns303() throws Exception {
         mockMvc.perform(put("/diaries/10")
                         .param("date", "2026-02-11")
@@ -153,6 +173,24 @@ class DiaryControllerWebMvcTest {
                 .andExpect(flash().attribute("noticeCode", "diary-updated"));
 
         verify(diaryService).updateDiary(eq(profileId), eq(10L), any(DiaryRequest.class));
+    }
+
+    @Test
+    void update_WhenWriteConflict_Returns422() throws Exception {
+        var formData = new DiaryFormDTO(
+                new DiaryRequest(LocalDate.of(2026, 2, 11), "updated", null, null, null, null, null, null, null, List.of()),
+                List.of(),
+                10L);
+        when(diaryFormService.getFormOnError(eq(profileId), any(DiaryRequest.class), eq(10L))).thenReturn(formData);
+        doThrow(new DataIntegrityViolationException("conflict"))
+                .when(diaryService)
+                .updateDiary(eq(profileId), eq(10L), any(DiaryRequest.class));
+
+        mockMvc.perform(put("/diaries/10")
+                        .param("date", "2026-02-11")
+                        .param("shortContent", "updated"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(view().name("diaries/form"));
     }
 
     @Test
